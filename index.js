@@ -1,3 +1,9 @@
+import "normalize.css";
+import "./index.css"
+import "./fonts/fonts.css";
+import Plyr from "plyr";
+import "./node_modules/plyr/dist/plyr.css";
+
 const playlist = [
     {
         type: "video",
