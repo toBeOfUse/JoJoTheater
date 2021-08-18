@@ -27,7 +27,6 @@ function initVideoPlayer() {
             "mute",
             "volume",
             "fullscreen",
-            "settings"
         ],
         invertTime: false,
         ratio: "16:9",
