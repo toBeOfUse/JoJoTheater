@@ -1,3 +1,11 @@
+const playlist = [
+    {
+        type: "video",
+        sources: [{ src: "/videos/jojo15.mp4", type: "video/mp4", size: 720 }],
+        tracks: [{ kind: "subtitles", label: "English subs", srclang: "en", src: "/videos/jojo15.vtt", default: true }]
+    }
+]
+
 const player = new Plyr("#video-player", {
     title: "JOJO",
     controls: [
@@ -10,11 +18,14 @@ const player = new Plyr("#video-player", {
         "fullscreen",
         "settings"
     ],
-    settings: ["captions"]
+    settings: ["captions"],
+    captions: { active: true },
+    invertTime: false,
+    ratio: "16:9",
 });
 
 player.on("canplaythrough", () => console.log("client can play through"));
-player.on("playing", console.log("client has started playing"));
+player.on("play", console.log("client has started playing"));
 player.on("seeking", () => console.log("client is seeking"));
 player.on("seeked", () => {
     console.log("client has seeked");

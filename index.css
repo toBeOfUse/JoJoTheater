@@ -14,15 +14,22 @@
   --plyr-font-size-base: 25px;
 }
 
+html {
+  min-height: 100%;
+  display: flex;
+}
+
 body {
   background-color: black;
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 
 #container-container {
-  background-image: url(images/jojo-frame.svg);
-  background-size: contain;
-  padding-bottom: 56.5%;
   position: relative;
+  overflow: hidden;
+  width: 100%;
 }
 
 #video-container {
@@ -38,6 +45,10 @@ body {
 
 #video-player {
   height: 100%;
+  width: 100%;
+}
+
+#frame-image {
   width: 100%;
 }
 
