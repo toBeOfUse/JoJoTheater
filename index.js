@@ -12,6 +12,8 @@ const playlist = [
     }
 ]
 
+let currentPlaylistItem = 0;
+
 const player = new Plyr("#video-player", {
     title: "JOJO",
     controls: [
@@ -30,11 +32,41 @@ const player = new Plyr("#video-player", {
     ratio: "16:9",
 });
 
+player.source = playlist[currentPlaylistItem];
+
 player.on("canplaythrough", () => console.log("client can play through"));
-player.on("play", console.log("client has started playing"));
+player.on("playing", () => {
+    console.log("client has started playing")
+});
 player.on("seeking", () => console.log("client is seeking"));
 player.on("seeked", () => {
     console.log("client has seeked");
     console.log("current time is", player.currentTime);
 });
 player.on("pause", () => console.log("client has paused"));
+
+const next = document.querySelector("#next-button");
+const prev = document.querySelector("#prev-button");
+
+function renderPlaylistButtons() {
+    next.setAttribute("disabled", currentPlaylistItem == playlist.length - 1);
+    prev.setAttribute("disabled", currentPlaylistItem == 0);
+}
+
+function moveWithinPlaylist(to) {
+    if (to > playlist.length - 1 || to < 0) {
+        return;
+    }
+    currentPlaylistItem = to;
+    player.source = playlist[to];
+    renderPlaylistButtons();
+}
+
+next.addEventListener("click", () => {
+    moveWithinPlaylist(currentPlaylistItem + 1);
+});
+prev.addEventListener("click", () => {
+    moveWithinPlaylist(currentPlaylistItem - 1);
+});
+
+renderPlaylistButtons();

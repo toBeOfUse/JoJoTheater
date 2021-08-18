@@ -129,3 +129,19 @@ body {
   cursor: pointer;
   transform: translate(-7.5px, -7.5px);
 }
+
+.playlist-button {
+  width: 100px;
+  position: absolute;
+  border-radius: 4px;
+  top: calc(75% + 5px);
+  font-family: Impact, "Arial Narrow Bold", sans-serif;
+}
+
+#prev-button {
+  left: 25%;
+}
+
+#next-button {
+  left: calc(75% - 100px);
+}
