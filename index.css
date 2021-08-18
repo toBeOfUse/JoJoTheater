@@ -131,7 +131,6 @@ body {
   background-position: center center;
   background-repeat: no-repeat;
   cursor: pointer;
-  transform: translate(-7.5px, -7.5px);
 }
 
 .playlist-button {
@@ -140,9 +139,31 @@ body {
   border-radius: 4px;
   top: 75%;
   font-family: Impact, "Arial Narrow Bold", sans-serif;
-  max-height: 7.5%;
   background-color: rgb(86, 5, 12);
   color: white;
+}
+
+@media (max-width: 400px) {
+  .playlist-button {
+    font-size: 0.5em;
+    width: 60px;
+  }
+  :root {
+    --plyr-control-icon-size: 8px;
+    --plyr-control-spacing: 5px;
+    --plyr-font-size-small: 8px;
+    --plyr-range-thumb-height: 9px;
+  }
+  #video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
+    width: 9px;
+    height: 9px;
+    transform: translate(0px, 0px);
+  }
+  #video-container .plyr__progress input[type="range"]::-moz-range-thumb {
+    width: 9px;
+    height: 9px;
+    transform: translate(0px, 0px);
+  }
 }
 
 .playlist-button:disabled {
