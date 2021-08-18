@@ -9,8 +9,7 @@ import "./node_modules/plyr/dist/plyr.css";
 const playlist = [
     {
         type: "video",
-        sources: [{ src: "/videos/jojo15.mp4", type: "video/mp4", size: 720 }],
-        tracks: [{ kind: "subtitles", label: "English subs", srclang: "en", src: "/videos/jojo15.vtt", default: true }]
+        sources: [{ src: "/videos/s01e16.mp4", type: "video/mp4", size: 720 }],
     }
 ]
 
@@ -27,12 +26,9 @@ function initVideoPlayer() {
             "current-time",
             "mute",
             "volume",
-            "captions",
             "fullscreen",
             "settings"
         ],
-        settings: ["captions"],
-        captions: { active: true },
         invertTime: false,
         ratio: "16:9",
     });
@@ -59,6 +55,7 @@ let importantImages = 0;
 let loadedImages = 0;
 function checkImageCompletion() {
     if (loadedImages == importantImages) {
+        console.log("all images loaded");
         document.querySelector("#initial-loading-spinner").remove();
         document.querySelector("#container-container").style.display = "initial";
         initVideoPlayer();
