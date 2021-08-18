@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.plyr.io/3.6.8/plyr.css" />
     <script src="https://cdn.plyr.io/3.6.8/plyr.polyfilled.js"></script>
     <link rel="stylesheet" href="normalize.css" />
+    <link rel="stylesheet" href="fonts/fonts.css" />
     <link rel="stylesheet" href="index.css" />
 </head>
 
@@ -21,8 +22,9 @@
         <img class="flavor-image" src="images/lisa.png" id="flavor-image-5" />
         <img class="flavor-image" src="images/pillarman.png" id="flavor-image-6" />
         <div id="video-container">
-            <video id="video-player">
-                <source src="videos/catra.mp4" type="video/mp4" />
+            <video id="video-player" crossorigin="">
+                <source src="videos/jojo15.mp4" type="video/mp4" />
+                <track default label="English" kind="subtitles" srclang="en" src="videos/jojo15.vtt" />
             </video>
         </div>
     </div>

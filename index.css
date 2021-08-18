@@ -9,6 +9,11 @@
   }
 }
 
+:root {
+  --plyr-font-family: "Manga Temple", sans-serif;
+  --plyr-font-size-base: 25px;
+}
+
 body {
   background-color: black;
 }
