@@ -6,18 +6,87 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JOJO</title>
+    <style>
+        .lds-heart {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+            transform: rotate(45deg);
+            transform-origin: 40px 40px;
+        }
+
+        .lds-heart div {
+            top: 32px;
+            left: 32px;
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: #fff;
+            animation: lds-heart 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+
+        .lds-heart div:after,
+        .lds-heart div:before {
+            content: " ";
+            position: absolute;
+            display: block;
+            width: 32px;
+            height: 32px;
+            background: #fff;
+        }
+
+        .lds-heart div:before {
+            left: -24px;
+            border-radius: 50% 0 0 50%;
+        }
+
+        .lds-heart div:after {
+            top: -24px;
+            border-radius: 50% 50% 0 0;
+        }
+
+        @keyframes lds-heart {
+            0% {
+                transform: scale(0.95);
+            }
+
+            5% {
+                transform: scale(1.1);
+            }
+
+            39% {
+                transform: scale(0.85);
+            }
+
+            45% {
+                transform: scale(1);
+            }
+
+            60% {
+                transform: scale(0.95);
+            }
+
+            100% {
+                transform: scale(0.9);
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div style="width: 100%;">
-        <div id="container-container">
-            <img id="frame-image" src="images/jojo-frame.svg" />
-            <img class="flavor-image" src="images/josephjo.png" id="flavor-image-1" />
-            <img class="flavor-image" src="images/erina.png" id="flavor-image-2" />
-            <img class="flavor-image" src="images/oldspeedwagon.png" id="flavor-image-3" />
-            <img class="flavor-image" src="images/caesar.png" id="flavor-image-4" />
-            <img class="flavor-image" src="images/lisa.png" id="flavor-image-5" />
-            <img class="flavor-image" src="images/pillarman.png" id="flavor-image-6" />
+    <div style="width: 100%; display: flex; justify-content: center;">
+        <div id="initial-loading-spinner" class="lds-heart">
+            <div></div>
+        </div>
+        <div id="container-container" style="display: none;">
+            <img id="frame-image" class="wait-for-load" src="images/jojo-frame.svg" />
+            <img class="flavor-image wait-for-load" src="images/josephjo.png" id="flavor-image-1" />
+            <img class="flavor-image wait-for-load" src="images/erina.png" id="flavor-image-2" />
+            <img class="flavor-image wait-for-load" src="images/oldspeedwagon.png" id="flavor-image-3" />
+            <img class="flavor-image wait-for-load" src="images/caesar.png" id="flavor-image-4" />
+            <img class="flavor-image wait-for-load" src="images/lisa.png" id="flavor-image-5" />
+            <img class="flavor-image wait-for-load" src="images/pillarman.png" id="flavor-image-6" />
             <div id="video-container">
                 <video id="video-player"></video>
             </div>
