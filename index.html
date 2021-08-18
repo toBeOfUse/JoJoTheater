@@ -6,14 +6,26 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JOJO</title>
-    <script src="https://cdn.plyr.io/3.6.8/plyr.polyfilled.js"></script>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.6.8/plyr.css" />
+    <script src="https://cdn.plyr.io/3.6.8/plyr.polyfilled.js"></script>
+    <link rel="stylesheet" href="normalize.css" />
+    <link rel="stylesheet" href="index.css" />
 </head>
 
 <body>
-    <video id="video-player" controls>
-        <source src="catra.mp4" type="video/mp4" />
-    </video>
+    <div id="container-container">
+        <img class="flavor-image" src="images/josephjo.png" id="flavor-image-1" />
+        <img class="flavor-image" src="images/erina.png" id="flavor-image-2" />
+        <img class="flavor-image" src="images/oldspeedwagon.png" id="flavor-image-3" />
+        <img class="flavor-image" src="images/caesar.png" id="flavor-image-4" />
+        <img class="flavor-image" src="images/lisa.png" id="flavor-image-5" />
+        <img class="flavor-image" src="images/pillarman.png" id="flavor-image-6" />
+        <div id="video-container">
+            <video id="video-player">
+                <source src="videos/catra.mp4" type="video/mp4" />
+            </video>
+        </div>
+    </div>
     <script src="index.js"></script>
 </body>
 

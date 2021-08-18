@@ -1,0 +1,115 @@
+@keyframes fadeInUp {
+  from {
+    transform: translate(0, 40px);
+  }
+
+  to {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+body {
+  background-color: black;
+}
+
+#container-container {
+  background-image: url(images/jojo-frame.svg);
+  background-size: contain;
+  padding-bottom: 56.5%;
+  position: relative;
+}
+
+#video-container {
+  position: absolute;
+  left: 25%;
+  top: 25%;
+  width: 50%;
+  height: 50%;
+  border: 3px solid #d42332ff;
+  background-color: #d42332ff;
+  overflow: hidden;
+}
+
+#video-player {
+  height: 100%;
+  width: 100%;
+}
+
+.flavor-image {
+  animation-name: fadeInUp;
+  animation-duration: 1s;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+#flavor-image-1 {
+  position: absolute;
+  left: 0%;
+  top: 5%;
+  height: 95%;
+}
+
+#flavor-image-2 {
+  position: absolute;
+  left: 26.625%;
+  top: 15%;
+  width: 7.125%;
+  animation-delay: 0.5s;
+}
+
+#flavor-image-3 {
+  position: absolute;
+  left: 30%;
+  top: 15%;
+  width: 11.6%;
+  animation-delay: 1s;
+}
+
+#flavor-image-4 {
+  position: absolute;
+  left: 60%;
+  top: 15%;
+  width: 7%;
+  animation-delay: 1.5s;
+}
+
+#flavor-image-5 {
+  position: absolute;
+  left: 65%;
+  top: 15%;
+  width: 10%;
+  animation-delay: 2s;
+}
+
+#flavor-image-6 {
+  position: absolute;
+  left: 71%;
+  top: 0%;
+  height: 100%;
+  animation-delay: 2.5s;
+}
+
+#video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  background-image: url("images/face.png");
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  transform: translate(-7.5px, -7.5px);
+}
+
+#video-container .plyr__progress input[type="range"]::-moz-range-thumb {
+  appearance: none;
+  background-image: url("images/face.png");
+  width: 30px;
+  height: 30px;
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  transform: translate(-7.5px, -7.5px);
+}
