@@ -5,23 +5,51 @@ import Plyr from "plyr";
 import "../node_modules/plyr/dist/plyr.css";
 import { io } from "socket.io-client";
 
-const socket = io();
-socket.on("id_set", (e) => console.log(e));
+let socket;
 
-// create playlist
-
-const playlist = [
-    {
-        type: "video",
-        sources: [{ src: "/videos/s01e16.mp4", type: "video/mp4", size: 720 }],
-    }
-]
-
+let playlist = [];
 let currentPlaylistItem = 0;
 
 let player = undefined;
 
+const next = document.querySelector("#next-button");
+const prev = document.querySelector("#prev-button");
+
+let popupTimer = undefined;
+function displayMessage(message) {
+    const popup = document.querySelector("#toast");
+    popup.innerHTML = message;
+    popup.style.opacity = 1;
+    if (popupTimer !== undefined) {
+        clearTimeout(popupTimer);
+    }
+    popupTimer = setTimeout(() => {
+        popup.style.opacity = 0;
+        popupTimer = undefined;
+    }, 4000);
+}
+
+function setCurrentSource() {
+    if (!player) {
+        return;
+    }
+    const newSource = {
+        type: "video",
+        title: playlist[currentPlaylistItem].title,
+        sources: [playlist[currentPlaylistItem]],
+    };
+    player.source = newSource;
+    renderPlaylistButtons();
+    document.querySelector("#video-title").innerHTML = newSource.title;
+}
+
 function initVideoPlayer() {
+    socket = io();
+    socket.on("id_set", (e) => console.log("client has id", e));
+    socket.onAny(function () {
+        console.log(arguments);
+    });
+
     player = new Plyr("#video-player", {
         title: "JOJO",
         controls: [
@@ -34,33 +62,61 @@ function initVideoPlayer() {
         ],
         invertTime: false,
         ratio: "16:9",
+        disableContextMenu: false,
     });
 
-    // log video events
-
-    player.on("canplaythrough", () => console.log("client can play through"));
+    player.on("canplaythrough", () => {
+        socket.emit("change_buffering_state", false);
+    });
+    player.on("stalled", () => {
+        socket.emit("change_buffering_state", true);
+    });
     player.on("playing", () => {
-        console.log("client has started playing")
+        socket.emit("play_request");
     });
     player.on("seeking", () => console.log("client is seeking"));
     player.on("seeked", () => {
         console.log("client has seeked");
         console.log("current time is", player.currentTime);
     });
-    player.on("pause", () => console.log("client has paused"));
+    player.on("pause", () => {
+        socket.emit("pause_request");
+    });
 
-    // give the player something to play
-    player.source = playlist[currentPlaylistItem];
+    socket.on("playlist_set", (newPlaylist) => {
+        playlist = newPlaylist;
+        setCurrentSource();
+        renderPlaylistButtons();
+    });
+    socket.on("index_set", (newIndex) => {
+        currentPlaylistItem = newIndex;
+        setCurrentSource();
+        renderPlaylistButtons();
+    });
+    socket.on("play", () => {
+        player.play().catch((err) => {
+            console.log(err);
+            displayMessage(
+                'someone else hit play, but your browser is blocking autoplay - u should click "play" too'
+            );
+            socket.emit("pause_request");
+        });
+    });
+    socket.on("pause", () => player.pause());
+    socket.on("message", (message) => console.log(message));
 }
 
 // remove the loading spinner and create the video player once all the images have shown up
 let importantImages = 0;
 let loadedImages = 0;
+let imagesComplete = false;
 function checkImageCompletion() {
-    if (loadedImages == importantImages) {
+    if (loadedImages == importantImages && !imagesComplete) {
+        imagesComplete = true;
         console.log("all images loaded");
         document.querySelector("#initial-loading-spinner").remove();
-        document.querySelector("#container-container").style.display = "initial";
+        document.querySelector("#container-container").style.display =
+            "initial";
         initVideoPlayer();
     }
 }
@@ -78,28 +134,17 @@ for (const img of Array.from(document.querySelectorAll(".wait-for-load"))) {
 }
 
 // set up playlist interactivity
-const next = document.querySelector("#next-button");
-const prev = document.querySelector("#prev-button");
 
 function renderPlaylistButtons() {
-    next.setAttribute("disabled", currentPlaylistItem == playlist.length - 1);
-    prev.setAttribute("disabled", currentPlaylistItem == 0);
-}
-
-function moveWithinPlaylist(to) {
-    if (to > playlist.length - 1 || to < 0) {
-        return;
-    }
-    currentPlaylistItem = to;
-    player.source = playlist[to];
-    renderPlaylistButtons();
+    next.disabled = currentPlaylistItem == playlist.length - 1;
+    prev.disabled = currentPlaylistItem == 0;
 }
 
 next.addEventListener("click", () => {
-    moveWithinPlaylist(currentPlaylistItem + 1);
+    socket.emit("next_item_request");
 });
 prev.addEventListener("click", () => {
-    moveWithinPlaylist(currentPlaylistItem - 1);
+    socket.emit("prev_item_request");
 });
 
 renderPlaylistButtons();
