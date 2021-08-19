@@ -112,7 +112,7 @@ body {
 
 #video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
   appearance: none;
-  background-image: url("images/face.png");
+  background-image: url("/images/face.png");
   width: 30px;
   height: 30px;
   background-size: contain;
@@ -124,7 +124,7 @@ body {
 
 #video-container .plyr__progress input[type="range"]::-moz-range-thumb {
   appearance: none;
-  background-image: url("images/face.png");
+  background-image: url("/images/face.png");
   width: 30px;
   height: 30px;
   background-size: contain;
