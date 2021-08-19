@@ -1,5 +1,5 @@
 import "normalize.css";
-import "./index.css";
+import "./index.scss";
 import "../fonts/fonts.css";
 import Plyr from "plyr";
 import "../node_modules/plyr/dist/plyr.css";
