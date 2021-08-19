@@ -15,7 +15,8 @@ type ClientSentEvent =
     | "play_request"
     | "pause_request"
     | "next_item_request"
-    | "prev_item_request";
+    | "prev_item_request"
+    | "autoplay_error";
 
 class AudienceMember {
     private socket: Socket;
@@ -119,6 +120,13 @@ class Theater {
                 this.playlistIndex -= 1;
                 this.emitAll("index_set", this.playlistIndex);
             }
+        });
+        member.on("autoplay_error", () => {
+            this.audience
+                .filter((a) => a.id != member.id)
+                .forEach((a) =>
+                    a.emit("message", "someone's browser is blocking autoplay")
+                );
         });
     }
     removeMember(member: AudienceMember) {

@@ -97,13 +97,14 @@ function initVideoPlayer() {
         player.play().catch((err) => {
             console.log(err);
             displayMessage(
-                'someone else hit play, but your browser is blocking autoplay - u should click "play" too'
+                'someone else hit play, but your browser is blocking autoplay - you need to click "play" too'
             );
+            socket.emit("autoplay_error");
             socket.emit("pause_request");
         });
     });
     socket.on("pause", () => player.pause());
-    socket.on("message", (message) => console.log(message));
+    socket.on("message", (message) => displayMessage(message));
 }
 
 // remove the loading spinner and create the video player once all the images have shown up
