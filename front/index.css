@@ -1,179 +1,222 @@
 @keyframes fadeInUp {
-  from {
-    transform: translate(0, 40px);
-  }
+    from {
+        transform: translate(0, 40px);
+    }
 
-  to {
-    transform: translate(0, 0);
-    opacity: 1;
-  }
+    to {
+        transform: translate(0, 0);
+        opacity: 1;
+    }
 }
 
 :root {
-  --plyr-font-family: "Manga Temple", sans-serif;
-  --plyr-font-size-base: 25px;
+    --plyr-font-family: "Manga Temple", sans-serif;
+    --plyr-font-size-base: 25px;
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html {
-  min-height: 100%;
-  display: flex;
+    min-height: 100%;
+    display: flex;
 }
 
 body {
-  background-color: black;
-  display: flex;
-  align-items: center;
-  flex: 1;
+    background-color: black;
+    display: flex;
+    align-items: center;
+    flex: 1;
 }
 
 #container-container {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
 }
 
 #video-container {
-  position: absolute;
-  left: 25%;
-  top: 25%;
-  width: 50%;
-  height: 50%;
-  border: 3px solid #d42332ff;
-  background-color: #d42332ff;
-  overflow: hidden;
+    position: absolute;
+    left: 25%;
+    top: 25%;
+    width: 50%;
+    height: 50%;
+    border: 3px solid #d42332ff;
+    background-color: #d42332ff;
+    overflow: hidden;
 }
 
 #video-player {
-  height: 100%;
-  width: 100%;
+    height: 100%;
+    width: 100%;
+}
+
+#toast {
+    position: absolute;
+    left: 25%;
+    width: 50%;
+    top: 15%;
+    background-color: gray;
+    color: white;
+    text-align: center;
+    font-family: sans-serif;
+    border-radius: 10px;
+    padding: 10px 10px;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
 }
 
 #frame-image {
-  width: 100%;
+    width: 100%;
 }
 
 .flavor-image {
-  animation-name: fadeInUp;
-  animation-duration: 1s;
-  opacity: 0;
-  animation-fill-mode: forwards;
+    animation-name: fadeInUp;
+    animation-duration: 1s;
+    opacity: 0;
+    animation-fill-mode: forwards;
 }
 
 #flavor-image-1 {
-  position: absolute;
-  left: 0%;
-  top: 5%;
-  height: 95%;
+    position: absolute;
+    left: 0%;
+    top: 5%;
+    height: 95%;
 }
 
 #flavor-image-2 {
-  position: absolute;
-  left: 26.625%;
-  top: 15%;
-  width: 7.125%;
-  animation-delay: 0.5s;
+    position: absolute;
+    left: 26.625%;
+    top: 15%;
+    width: 7.125%;
+    animation-delay: 0.5s;
 }
 
 #flavor-image-3 {
-  position: absolute;
-  left: 30%;
-  top: 15%;
-  width: 11.6%;
-  animation-delay: 1s;
+    position: absolute;
+    left: 30%;
+    top: 15%;
+    width: 11.6%;
+    animation-delay: 1s;
 }
 
 #flavor-image-4 {
-  position: absolute;
-  left: 60%;
-  top: 15%;
-  width: 7%;
-  animation-delay: 1.5s;
+    position: absolute;
+    left: 60%;
+    top: 15%;
+    width: 7%;
+    animation-delay: 1.5s;
 }
 
 #flavor-image-5 {
-  position: absolute;
-  left: 65%;
-  top: 15%;
-  width: 10%;
-  animation-delay: 2s;
+    position: absolute;
+    left: 65%;
+    top: 15%;
+    width: 10%;
+    animation-delay: 2s;
 }
 
 #flavor-image-6 {
-  position: absolute;
-  left: 71%;
-  top: 0%;
-  height: 100%;
-  animation-delay: 2.5s;
+    position: absolute;
+    left: 71%;
+    top: 0%;
+    height: 100%;
+    animation-delay: 2.5s;
 }
 
 #video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
-  appearance: none;
-  background-image: url("/images/face.png");
-  width: 30px;
-  height: 30px;
-  background-size: contain;
-  background-position: center center;
-  background-repeat: no-repeat;
-  cursor: pointer;
-  transform: translate(-7.5px, -7.5px);
+    appearance: none;
+    background-image: url("/images/face.png");
+    width: 30px;
+    height: 30px;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    transform: translate(-7.5px, -7.5px);
 }
 
 #video-container .plyr__progress input[type="range"]::-moz-range-thumb {
-  appearance: none;
-  background-image: url("/images/face.png");
-  width: 30px;
-  height: 30px;
-  background-size: contain;
-  background-position: center center;
-  background-repeat: no-repeat;
-  cursor: pointer;
+    appearance: none;
+    background-image: url("/images/face.png");
+    width: 30px;
+    height: 30px;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+
+#video-title {
+    width: 200px;
+    background-color: #d42332ff;
+    border-radius: 3px;
+    border: 2px solid black;
+    position: absolute;
+    top: 75%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    font-family: "Manga Temple", sans-serif;
+    color: white;
+    text-shadow: black 1px 1px;
+    text-align: center;
 }
 
 .playlist-button {
-  width: 100px;
-  position: absolute;
-  border-radius: 4px;
-  top: 75%;
-  font-family: Impact, "Arial Narrow Bold", sans-serif;
-  background-color: rgb(86, 5, 12);
-  color: white;
+    width: 125px;
+    position: absolute;
+    border-radius: 3px;
+    border: 2px solid black;
+    top: 75%;
+    font-family: "Manga Temple", sans-serif;
+    color: white;
+    text-shadow: black 1px 1px;
+    background-color: #d42332ff;
+    cursor: pointer;
 }
 
 @media (max-width: 500px) {
-  .playlist-button {
-    font-size: 0.5em;
-    width: 60px;
-  }
-  :root {
-    --plyr-control-icon-size: 8px;
-    --plyr-control-spacing: 5px;
-    --plyr-font-size-small: 8px;
-    --plyr-range-thumb-height: 9px;
-  }
-  #video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
-    width: 9px;
-    height: 9px;
-    transform: translate(0px, 0px);
-  }
-  #video-container .plyr__progress input[type="range"]::-moz-range-thumb {
-    width: 9px;
-    height: 9px;
-    transform: translate(0px, 0px);
-  }
+    .playlist-button {
+        font-size: 0.5em;
+        width: 60px;
+    }
+
+    #video-title {
+        font-size: 0.4em;
+        width: 100px;
+    }
+
+    :root {
+        --plyr-control-icon-size: 8px;
+        --plyr-control-spacing: 5px;
+        --plyr-font-size-small: 8px;
+        --plyr-range-thumb-height: 9px;
+    }
+
+    #video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
+        width: 9px;
+        height: 9px;
+        transform: translate(0px, 0px);
+    }
+
+    #video-container .plyr__progress input[type="range"]::-moz-range-thumb {
+        width: 9px;
+        height: 9px;
+        transform: translate(0px, 0px);
+    }
 }
 
 .playlist-button:disabled {
-  color: gray;
+    color: gray;
+    text-shadow: unset;
+    cursor: default;
 }
 
 #prev-button {
-  left: 25%;
+    left: 25%;
 }
 
 #next-button {
-  right: 25%;
+    right: 25%;
 }

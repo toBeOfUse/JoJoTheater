@@ -1,15 +1,15 @@
-import path from 'path';
-import HtmlWebpackPlugin from 'html-webpack-plugin';
+import path from "path";
+import HtmlWebpackPlugin from "html-webpack-plugin";
 import CopyWebpackPlugin from "copy-webpack-plugin";
-import webpack from 'webpack';
+import webpack from "webpack";
 
 const config: webpack.Configuration = {
     mode: "development",
-    entry: './front/index.js',
+    entry: "./front/index.js",
     output: {
-        filename: 'main.[contenthash].js',
-        path: path.resolve(__dirname, 'dist'),
-        publicPath: "./"
+        filename: "main.[contenthash].js",
+        path: path.resolve(__dirname, "dist"),
+        publicPath: "./",
     },
     module: {
         rules: [
@@ -21,15 +21,15 @@ const config: webpack.Configuration = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-            template: './front/index.html'
+            template: "./front/index.html",
         }),
         new CopyWebpackPlugin({
             patterns: [
-                { from: './images/', to: './images/' },
-                { from: './videos/', to: './videos/' },
-            ]
-        })
-    ]
+                { from: "./images/", to: "./images/" },
+                // { from: './videos/', to: './videos/' },
+            ],
+        }),
+    ],
 };
 
 export default config;
