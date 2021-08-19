@@ -1,8 +1,10 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyWebpackPlugin = require("copy-webpack-plugin");
+import path from 'path';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import CopyWebpackPlugin from "copy-webpack-plugin";
+import webpack from 'webpack';
 
-export default {
+const config: webpack.Configuration = {
+    mode: "development",
     entry: './front/index.js',
     output: {
         filename: 'main.[contenthash].js',
@@ -29,3 +31,5 @@ export default {
         })
     ]
 };
+
+export default config;

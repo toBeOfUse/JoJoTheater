@@ -9,7 +9,10 @@
     "serve": "nodemon --watch back --exec \"ts-node\" back/index.ts"
   },
   "dependencies": {
+    "@types/connect": "^3.4.35",
+    "@types/copy-webpack-plugin": "^8.0.1",
     "@types/node": "^16.6.2",
+    "@types/serve-static": "^1.13.10",
     "connect": "^3.7.0",
     "copy-webpack-plugin": "^9.0.1",
     "css-loader": "^6.2.0",
@@ -19,6 +22,7 @@
     "plyr": "^3.6.8",
     "serve-static": "^1.14.1",
     "socket.io": "^4.1.3",
+    "socket.io-client": "^4.1.3",
     "style-loader": "^3.2.1",
     "ts-node": "^10.2.1",
     "typescript": "^4.3.5",

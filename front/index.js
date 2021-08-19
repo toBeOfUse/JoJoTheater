@@ -3,6 +3,10 @@ import "./index.css";
 import "../fonts/fonts.css";
 import Plyr from "plyr";
 import "../node_modules/plyr/dist/plyr.css";
+import { io } from "socket.io-client";
+
+const socket = io();
+socket.on("id_set", (e) => console.log(e));
 
 // create playlist
 

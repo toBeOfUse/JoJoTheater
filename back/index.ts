@@ -21,8 +21,11 @@ webpacker.watch(
     }
 );
 
-const connect = require("connect");
-const serveStatic = require("serve-static");
-connect()
+import connect from "connect";
+import serveStatic from "serve-static";
+const server = connect()
     .use(serveStatic("./dist/"))
     .listen(8080, () => console.log("Server running on 8080..."));
+
+import init from "./sockets";
+init(server);
