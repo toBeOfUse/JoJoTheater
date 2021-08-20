@@ -63,6 +63,7 @@ function initVideoPlayer() {
     });
 
     let waitingForUserInteraction = false;
+    let firstPlay = true;
     player.ignoreNext = [];
     player.updateState = function (state) {
         if (state.playing != this.playing) {
@@ -84,6 +85,7 @@ function initVideoPlayer() {
             }
         }
         if (Math.abs(state.currentTimeMs - this.currentTimeMs) > 100) {
+            console.log("updating player current time to", state.currentTimeMs);
             this.currentTimeMs = state.currentTimeMs;
             this.ignoreNext.push("seeked");
         }
@@ -114,6 +116,13 @@ function initVideoPlayer() {
 
     player.on("playing", () => {
         console.log("local player emitted 'playing' event");
+        if (firstPlay) {
+            firstPlay = false;
+            // we need an extra state update the first time the player starts playing
+            // bc sometimes setting the current time in the initial
+            // player.updateState() doesn't work bc it's not ready yet. apparently
+            socket.emit("state_update_request");
+        }
         if (!player.ignoreNext.includes("playing")) {
             if (waitingForUserInteraction) {
                 waitingForUserInteraction = false;
@@ -145,6 +154,8 @@ function initVideoPlayer() {
     });
 
     socket.on("state_set", (newState) => {
+        console.log("server sent state_set event");
+        console.log(newState);
         player.updateState(newState);
         renderPlaylistButtons();
     });
