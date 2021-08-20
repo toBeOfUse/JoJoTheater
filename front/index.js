@@ -29,25 +29,11 @@ function displayMessage(message) {
     }, 4000);
 }
 
-function setCurrentSource() {
-    if (!player) {
-        return;
-    }
-    const newSource = {
-        type: "video",
-        title: playlist[currentPlaylistItem].title,
-        sources: [playlist[currentPlaylistItem]],
-    };
-    player.source = newSource;
-    renderPlaylistButtons();
-    document.querySelector("#video-title").innerHTML = newSource.title;
-}
-
 function initVideoPlayer() {
     socket = io();
     socket.on("id_set", (e) => console.log("client has id", e));
-    socket.onAny(function () {
-        console.log(arguments);
+    socket.on("ping", (pingID) => {
+        socket.emit("pong_" + pingID);
     });
 
     player = new Plyr("#video-player", {
@@ -65,45 +51,103 @@ function initVideoPlayer() {
         disableContextMenu: false,
     });
 
-    player.on("canplaythrough", () => {
-        socket.emit("change_buffering_state", false);
-    });
-    player.on("stalled", () => {
-        socket.emit("change_buffering_state", true);
-    });
-    player.on("playing", () => {
-        socket.emit("play_request");
-    });
-    player.on("seeking", () => console.log("client is seeking"));
-    player.on("seeked", () => {
-        console.log("client has seeked");
-        console.log("current time is", player.currentTime);
-    });
-    player.on("pause", () => {
-        socket.emit("pause_request");
+    player.lastPlaylist = playlist;
+
+    Object.defineProperty(player, "currentTimeMs", {
+        get() {
+            return this.currentTime * 1000;
+        },
+        set(newValue) {
+            this.currentTime = newValue / 1000;
+        },
     });
 
+    let waitingForUserInteraction = false;
+    player.ignoreNext = [];
+    player.updateState = function (state) {
+        if (state.playing != this.playing) {
+            if (state.playing) {
+                this.play().catch(() => {
+                    displayMessage(
+                        "autoplay is blocked; press play to sync up with the server"
+                    );
+                    waitingForUserInteraction = true;
+                });
+                this.ignoreNext.push("playing");
+            } else {
+                this.pause();
+                this.ignoreNext.push("pause");
+            }
+        }
+        if (Math.abs(state.currentTimeMs - this.currentTimeMs) > 100) {
+            this.currentTimeMs = state.currentTimeMs;
+            this.ignoreNext.push("seeked");
+        }
+        if (
+            state.currentItem != currentPlaylistItem ||
+            playlist != player.lastPlaylist
+        ) {
+            player.lastPlaylist = playlist;
+            currentPlaylistItem = state.currentItem;
+            const newSource = {
+                type: "video",
+                title: playlist[currentPlaylistItem].title,
+                sources: [playlist[currentPlaylistItem]],
+            };
+            player.source = newSource;
+            renderPlaylistButtons();
+            document.querySelector("#video-title").innerHTML = newSource.title;
+        }
+    };
+
+    player.getCurrentState = function () {
+        return {
+            playing: this.playing,
+            currentTimeMs: this.currentTimeMs,
+            currentItem: currentPlaylistItem,
+        };
+    };
+
+    player.on("playing", () => {
+        console.log("local player emitted 'playing' event");
+        if (!player.ignoreNext.includes("playing")) {
+            if (waitingForUserInteraction) {
+                socket.emit("state_update_request");
+            } else {
+                socket.emit("state_change_request", player.getCurrentState());
+            }
+        } else {
+            player.ignoreNext.splice(player.ignoreNext.indexOf("playing"), 1);
+        }
+    });
+
+    player.on("pause", () => {
+        console.log("local player emitted 'pause' event");
+        if (!player.ignoreNext.includes("pause")) {
+            socket.emit("state_change_request", player.getCurrentState());
+        } else {
+            player.ignoreNext.splice(player.ignoreNext.indexOf("pause"), 1);
+        }
+    });
+
+    player.on("seeked", () => {
+        console.log("local player emitted 'seeked' event");
+        if (!player.ignoreNext.includes("seeked")) {
+            socket.emit("state_change_request", player.getCurrentState());
+        } else {
+            player.ignoreNext.splice(player.ignoreNext.indexOf("seeked"), 1);
+        }
+    });
+
+    socket.on("state_set", (newState) => {
+        player.updateState(newState);
+        renderPlaylistButtons();
+    });
     socket.on("playlist_set", (newPlaylist) => {
         playlist = newPlaylist;
-        setCurrentSource();
+        player.updateState(player.getCurrentState()); // shrug
         renderPlaylistButtons();
     });
-    socket.on("index_set", (newIndex) => {
-        currentPlaylistItem = newIndex;
-        setCurrentSource();
-        renderPlaylistButtons();
-    });
-    socket.on("play", () => {
-        player.play().catch((err) => {
-            console.log(err);
-            displayMessage(
-                'someone else hit play, but your browser is blocking autoplay - you need to click "play" too'
-            );
-            socket.emit("autoplay_error");
-            socket.emit("pause_request");
-        });
-    });
-    socket.on("pause", () => player.pause());
     socket.on("message", (message) => displayMessage(message));
 }
 
@@ -142,10 +186,16 @@ function renderPlaylistButtons() {
 }
 
 next.addEventListener("click", () => {
-    socket.emit("next_item_request");
+    if (currentPlaylistItem < this.playlist.length - 1) {
+        currentPlaylistItem += 1;
+        socket.emit("state_change_request", player.getCurrentState());
+    }
 });
 prev.addEventListener("click", () => {
-    socket.emit("prev_item_request");
+    if (currentPlaylistItem > 0) {
+        currentPlaylistItem -= 1;
+        socket.emit("state_change_request", player.getCurrentState());
+    }
 });
 
 renderPlaylistButtons();
