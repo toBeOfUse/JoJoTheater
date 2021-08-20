@@ -67,13 +67,17 @@ function initVideoPlayer() {
     player.updateState = function (state) {
         if (state.playing != this.playing) {
             if (state.playing) {
+                this.ignoreNext.push("playing");
                 this.play().catch(() => {
                     displayMessage(
                         "autoplay is blocked; press play to sync up with the server"
                     );
+                    this.ignoreNext.splice(
+                        this.ignoreNext.indexOf("playing"),
+                        1
+                    );
                     waitingForUserInteraction = true;
                 });
-                this.ignoreNext.push("playing");
             } else {
                 this.pause();
                 this.ignoreNext.push("pause");
@@ -112,6 +116,7 @@ function initVideoPlayer() {
         console.log("local player emitted 'playing' event");
         if (!player.ignoreNext.includes("playing")) {
             if (waitingForUserInteraction) {
+                waitingForUserInteraction = false;
                 socket.emit("state_update_request");
             } else {
                 socket.emit("state_change_request", player.getCurrentState());

@@ -71,8 +71,7 @@ class Theater {
             ...this.lastKnownState,
             currentTimeMs: this.lastKnownState.playing
                 ? this.lastKnownState.currentTimeMs +
-                  Date.now() -
-                  this.lastKnownStateTime
+                  (Date.now() - this.lastKnownStateTime)
                 : this.lastKnownState.currentTimeMs,
         };
     }
