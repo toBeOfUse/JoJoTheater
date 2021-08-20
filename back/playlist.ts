@@ -24,6 +24,54 @@ const playlist: Video[] = [
         type: "video/mp4",
         size: 720,
     },
+    {
+        src: "/videos/s01e19.mp4",
+        title: "Episode 19",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e20.mp4",
+        title: "Episode 20",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e21.mp4",
+        title: "Episode 21",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e22.mp4",
+        title: "Episode 22",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e23.mp4",
+        title: "Episode 23",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e24.mp4",
+        title: "Episode 24",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e25.mp4",
+        title: "Episode 25",
+        type: "video/mp4",
+        size: 720,
+    },
+    {
+        src: "/videos/s01e26.mp4",
+        title: "Episode 26",
+        type: "video/mp4",
+        size: 720,
+    },
 ];
 
 export { Video, playlist };
