@@ -212,3 +212,29 @@ body {
 #next-button {
     right: 25%;
 }
+
+.xp * {
+    box-sizing: initial;
+}
+
+#chat-window {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+}
+
+.window-body {
+    font-family: "Trebuchet MS";
+}
+
+.avatar-option {
+    display: inline;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border: 2px solid transparent;
+}
+
+.avatar-option.selected {
+    border: 2px solid black;
+}

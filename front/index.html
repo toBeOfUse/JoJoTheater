@@ -1,101 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JOJO</title>
-    <style>
-        .lds-heart {
-            display: inline-block;
-            position: relative;
-            width: 80px;
-            height: 80px;
-            transform: rotate(45deg);
-            transform-origin: 40px 40px;
-        }
-
-        .lds-heart div {
-            top: 32px;
-            left: 32px;
-            position: absolute;
-            width: 32px;
-            height: 32px;
-            background: #fff;
-            animation: lds-heart 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
-        }
-
-        .lds-heart div:after,
-        .lds-heart div:before {
-            content: " ";
-            position: absolute;
-            display: block;
-            width: 32px;
-            height: 32px;
-            background: #fff;
-        }
-
-        .lds-heart div:before {
-            left: -24px;
-            border-radius: 50% 0 0 50%;
-        }
-
-        .lds-heart div:after {
-            top: -24px;
-            border-radius: 50% 50% 0 0;
-        }
-
-        @keyframes lds-heart {
-            0% {
-                transform: scale(0.95);
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>JOJO</title>
+        <style>
+            .lds-heart {
+                display: inline-block;
+                position: relative;
+                width: 80px;
+                height: 80px;
+                transform: rotate(45deg);
+                transform-origin: 40px 40px;
             }
 
-            5% {
-                transform: scale(1.1);
+            .lds-heart div {
+                top: 32px;
+                left: 32px;
+                position: absolute;
+                width: 32px;
+                height: 32px;
+                background: #fff;
+                animation: lds-heart 1.2s infinite
+                    cubic-bezier(0.215, 0.61, 0.355, 1);
             }
 
-            39% {
-                transform: scale(0.85);
+            .lds-heart div:after,
+            .lds-heart div:before {
+                content: " ";
+                position: absolute;
+                display: block;
+                width: 32px;
+                height: 32px;
+                background: #fff;
             }
 
-            45% {
-                transform: scale(1);
+            .lds-heart div:before {
+                left: -24px;
+                border-radius: 50% 0 0 50%;
             }
 
-            60% {
-                transform: scale(0.95);
+            .lds-heart div:after {
+                top: -24px;
+                border-radius: 50% 50% 0 0;
             }
 
-            100% {
-                transform: scale(0.9);
-            }
-        }
-    </style>
-</head>
+            @keyframes lds-heart {
+                0% {
+                    transform: scale(0.95);
+                }
 
-<body>
-    <div style="width: 100%; display: flex; justify-content: center;">
-        <div id="initial-loading-spinner" class="lds-heart">
-            <div></div>
-        </div>
-        <div id="container-container" style="display: none;">
-            <img id="frame-image" class="wait-for-load" src="images/jojo-frame-opt.svg" />
-            <img class="flavor-image wait-for-load" src="images/josephjo.svg" id="flavor-image-1" />
-            <img class="flavor-image wait-for-load" src="images/erina.svg" id="flavor-image-2" />
-            <img class="flavor-image wait-for-load" src="images/oldspeedwagon.svg" id="flavor-image-3" />
-            <img class="flavor-image wait-for-load" src="images/caesar.svg" id="flavor-image-4" />
-            <img class="flavor-image wait-for-load" src="images/lisa.svg" id="flavor-image-5" />
-            <img class="flavor-image wait-for-load" src="images/pillarman.svg" id="flavor-image-6" />
-            <div id="video-container">
-                <video id="video-player"></video>
-                <div id="toast">pop up message here</div>
+                5% {
+                    transform: scale(1.1);
+                }
+
+                39% {
+                    transform: scale(0.85);
+                }
+
+                45% {
+                    transform: scale(1);
+                }
+
+                60% {
+                    transform: scale(0.95);
+                }
+
+                100% {
+                    transform: scale(0.9);
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div style="width: 100%; display: flex; justify-content: center">
+            <div id="initial-loading-spinner" class="lds-heart">
+                <div></div>
             </div>
-            <button class="playlist-button" id="prev-button">&#9754;</button>
-            <span id="video-title">JOJO</span>
-            <button class="playlist-button" id="next-button">&#9755;</button>
+            <div id="container-container" style="display: none">
+                <img
+                    id="frame-image"
+                    class="wait-for-load"
+                    src="images/jojo-frame-opt.svg"
+                />
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/josephjo.svg"
+                    id="flavor-image-1"
+                />
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/erina.svg"
+                    id="flavor-image-2"
+                />
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/oldspeedwagon.svg"
+                    id="flavor-image-3"
+                />
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/caesar.svg"
+                    id="flavor-image-4"
+                />
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/lisa.svg"
+                    id="flavor-image-5"
+                />
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/pillarman.svg"
+                    id="flavor-image-6"
+                />
+                <div id="video-container">
+                    <video id="video-player"></video>
+                    <div id="toast">pop up message here</div>
+                </div>
+                <button class="playlist-button" id="prev-button">
+                    &lt;&lt;
+                </button>
+                <span id="video-title">JOJO</span>
+                <button class="playlist-button" id="next-button">
+                    &gt;&gt;
+                </button>
+                <div class="xp">
+                    <div class="window" id="chat-window">
+                        <div id="chat-header" class="title-bar">
+                            <div class="title-bar-text">
+                                JoJo Instant Messenger (JJIM)
+                            </div>
+                            <div class="title-bar-controls">
+                                <button aria-label="Minimize"></button>
+                                <button aria-label="Maximize"></button>
+                            </div>
+                        </div>
+                        <div class="window-body">
+                            <div id="chat-login">
+                                <p>Choose your avatar:</p>
+                                <img
+                                    class="avatar-option"
+                                    src="/images/avatars/jojo1.jpg"
+                                />
+                                <img
+                                    class="avatar-option"
+                                    src="/images/avatars/dio.jpg"
+                                />
+                                <img
+                                    class="avatar-option"
+                                    src="/images/avatars/zeppeli1.jpg"
+                                />
+                                <img
+                                    class="avatar-option"
+                                    src="/images/avatars/erinayoung.jpg"
+                                />
+                                <p>Enter your name: <input type="text" /></p>
+                                <section
+                                    class="field-row"
+                                    style="
+                                        justify-content: flex-end;
+                                        margin-top: 5px;
+                                    "
+                                >
+                                    <button>OK</button>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-</body>
-
+    </body>
 </html>
