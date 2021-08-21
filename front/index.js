@@ -4,7 +4,7 @@ import "../fonts/fonts.css";
 import Plyr from "plyr";
 import "../node_modules/plyr/dist/plyr.css";
 import { io } from "socket.io-client";
-import initChat from "./chat.js";
+import initChat from "./chat.ts";
 
 let socket;
 
@@ -198,7 +198,7 @@ function initVideoPlayer() {
 
     renderPlaylistButtons();
 
-    initChat(io);
+    initChat(socket);
 }
 
 // remove the loading spinner and create the video player once all the images have shown up
