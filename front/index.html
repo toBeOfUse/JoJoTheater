@@ -133,30 +133,70 @@
                                 JoJo Instant Messenger (JJIM)
                             </div>
                             <div class="title-bar-controls">
-                                <button aria-label="Minimize"></button>
-                                <button aria-label="Maximize"></button>
+                                <button
+                                    id="chat-window-minimize"
+                                    aria-label="Minimize"
+                                ></button>
+                                <button
+                                    id="chat-window-maximize"
+                                    aria-label="Maximize"
+                                ></button>
                             </div>
                         </div>
-                        <div class="window-body">
+                        <div
+                            id="chat-window-body"
+                            class="window-body chat-minimized"
+                        >
                             <div id="chat-login">
                                 <p>Choose your avatar:</p>
-                                <img
-                                    class="avatar-option"
-                                    src="/images/avatars/jojo1.jpg"
-                                />
-                                <img
-                                    class="avatar-option"
-                                    src="/images/avatars/dio.jpg"
-                                />
-                                <img
-                                    class="avatar-option"
-                                    src="/images/avatars/zeppeli1.jpg"
-                                />
-                                <img
-                                    class="avatar-option"
-                                    src="/images/avatars/erinayoung.jpg"
-                                />
-                                <p>Enter your name: <input type="text" /></p>
+                                <div class="avatar-row">
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/jojo1.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/dio.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/zeppeli1.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/erinayoung.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/jojo2.jpg"
+                                    />
+                                </div>
+                                <div class="avatar-row">
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/zeppeli2.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/lisa.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/speedwagonold.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/steve.jpg"
+                                    />
+                                    <img
+                                        class="avatar-option"
+                                        src="/images/avatars/alex.jpg"
+                                    />
+                                </div>
+                                <p>
+                                    Enter your name:
+                                    <input type="text" id="chat-name-input" />
+                                </p>
                                 <section
                                     class="field-row"
                                     style="
@@ -164,7 +204,7 @@
                                         margin-top: 5px;
                                     "
                                 >
-                                    <button>OK</button>
+                                    <button id="user-info-submit">OK</button>
                                 </section>
                             </div>
                         </div>

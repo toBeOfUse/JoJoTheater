@@ -227,14 +227,26 @@ body {
     font-family: "Trebuchet MS";
 }
 
+.chat-minimized {
+    height: 0px;
+    margin: 0px !important;
+    overflow: hidden;
+}
+
+.avatar-row {
+    display: flex;
+    justify-content: center;
+}
+
 .avatar-option {
     display: inline;
     border-radius: 50%;
     width: 30px;
     height: 30px;
     border: 2px solid transparent;
+    margin: 0 3px;
 }
 
 .avatar-option.selected {
-    border: 2px solid black;
+    border: 2px solid $jojo-red;
 }

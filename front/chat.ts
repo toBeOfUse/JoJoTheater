@@ -1,5 +1,6 @@
 import $ from "jquery";
 import type { Socket } from "socket.io-client";
+import type { chatUserInfo } from "../types";
 
 // load xp.css as raw, put it in a style element, and then modify the rules so that
 // they only apply to elements within the .xp class
@@ -31,10 +32,38 @@ function selectAvatar(index: number) {
     $(options[index]).addClass("selected");
 }
 
-export default function initChat(io: Socket) {
+function getUserInfo(): chatUserInfo | undefined {
+    const avatar = $(".avatar-option.selected");
+    const name = ($("#chat-name-input").val() as string).trim();
+    if (!avatar.length || !avatar.attr("src") || !name) {
+        return undefined;
+    } else {
+        return {
+            name,
+            avatarURL: avatar.attr("src") as string,
+        };
+    }
+}
+
+export default function initChat(socket: Socket) {
     console.log("setting up chat");
 
     $(".avatar-option").each(function (i) {
         this.addEventListener("click", () => selectAvatar(i));
     });
+
+    $("#user-info-submit").on("click", () => {
+        let info;
+        if ((info = getUserInfo())) {
+            socket.emit("user_info_set", info);
+        }
+    });
+
+    $("#chat-window-minimize").on("click", () =>
+        $("#chat-window-body").addClass("chat-minimized")
+    );
+
+    $("#chat-window-maximize").on("click", () =>
+        $("#chat-window-body").removeClass("chat-minimized")
+    );
 }
