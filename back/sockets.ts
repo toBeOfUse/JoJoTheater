@@ -120,7 +120,7 @@ class Theater {
 
     addMember(member: AudienceMember) {
         this.audience.push(member);
-        member.on("state_change_request", (newState) => {
+        member.on("state_change_request", (newState: playerState) => {
             this.lastKnownState = newState;
             this.lastKnownStateTime = Date.now();
             this.audience

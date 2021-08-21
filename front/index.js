@@ -80,14 +80,15 @@ function initVideoPlayer() {
                     waitingForUserInteraction = true;
                 });
             } else {
-                this.pause();
                 this.ignoreNext.push("pause");
+                this.pause();
             }
         }
         if (Math.abs(state.currentTimeMs - this.currentTimeMs) > 100) {
             console.log("updating player current time to", state.currentTimeMs);
-            this.currentTimeMs = state.currentTimeMs;
             this.ignoreNext.push("seeked");
+            this.ignoreNext.push("playing");
+            this.currentTimeMs = state.currentTimeMs;
         }
         if (
             state.currentItem != currentPlaylistItem ||
@@ -131,6 +132,7 @@ function initVideoPlayer() {
                 socket.emit("state_change_request", player.getCurrentState());
             }
         } else {
+            console.log("ignoring 'playing' event");
             player.ignoreNext.splice(player.ignoreNext.indexOf("playing"), 1);
         }
     });
@@ -149,6 +151,7 @@ function initVideoPlayer() {
         if (!player.ignoreNext.includes("seeked")) {
             socket.emit("state_change_request", player.getCurrentState());
         } else {
+            console.log("ignoring 'seeking' event");
             player.ignoreNext.splice(player.ignoreNext.indexOf("seeked"), 1);
         }
     });
@@ -165,6 +168,35 @@ function initVideoPlayer() {
         renderPlaylistButtons();
     });
     socket.on("message", (message) => displayMessage(message));
+
+    // set up playlist interactivity
+
+    function renderPlaylistButtons() {
+        next.disabled = currentPlaylistItem == playlist.length - 1;
+        prev.disabled = currentPlaylistItem == 0;
+    }
+
+    next.addEventListener("click", () => {
+        if (currentPlaylistItem < playlist.length - 1) {
+            player.updateState({
+                ...player.getCurrentState(),
+                currentItem: currentPlaylistItem + 1,
+            });
+            socket.emit("state_change_request", player.getCurrentState());
+        }
+    });
+    prev.addEventListener("click", () => {
+        if (currentPlaylistItem > 0) {
+            player.updateState({
+                ...player.getCurrentState(),
+                currentItem: currentPlaylistItem - 1,
+            });
+            socket.emit("state_change_request", player.getCurrentState());
+        }
+    });
+
+    renderPlaylistButtons();
+
 }
 
 // remove the loading spinner and create the video player once all the images have shown up
@@ -193,25 +225,3 @@ for (const img of Array.from(document.querySelectorAll(".wait-for-load"))) {
         });
     }
 }
-
-// set up playlist interactivity
-
-function renderPlaylistButtons() {
-    next.disabled = currentPlaylistItem == playlist.length - 1;
-    prev.disabled = currentPlaylistItem == 0;
-}
-
-next.addEventListener("click", () => {
-    if (currentPlaylistItem < this.playlist.length - 1) {
-        currentPlaylistItem += 1;
-        socket.emit("state_change_request", player.getCurrentState());
-    }
-});
-prev.addEventListener("click", () => {
-    if (currentPlaylistItem > 0) {
-        currentPlaylistItem -= 1;
-        socket.emit("state_change_request", player.getCurrentState());
-    }
-});
-
-renderPlaylistButtons();
