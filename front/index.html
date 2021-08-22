@@ -148,7 +148,9 @@
                             class="window-body chat-minimized"
                         >
                             <div id="chat-login">
-                                <p>Choose your avatar:</p>
+                                <p class="prompt" id="avatar-prompt">
+                                    Choose your avatar:
+                                </p>
                                 <div class="avatar-row">
                                     <img
                                         class="avatar-option"
@@ -193,7 +195,7 @@
                                         src="/images/avatars/alex.jpg"
                                     />
                                 </div>
-                                <p>
+                                <p class="prompt" id="name-prompt">
                                     Enter your name:
                                     <input type="text" id="chat-name-input" />
                                 </p>
@@ -201,7 +203,7 @@
                                     class="field-row"
                                     style="
                                         justify-content: flex-end;
-                                        margin-top: 5px;
+                                        margin-top: 2px;
                                     "
                                 >
                                     <button id="user-info-submit">OK</button>

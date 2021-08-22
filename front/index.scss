@@ -11,6 +11,24 @@
     }
 }
 
+@keyframes flashRed {
+    0% {
+        color: black;
+    }
+    25% {
+        color: red;
+    }
+    50% {
+        color: black;
+    }
+    75% {
+        color: red;
+    }
+    100% {
+        color: black;
+    }
+}
+
 $manga-font: "Manga Temple", sans-serif;
 $jojo-red: #d42332ff;
 
@@ -217,10 +235,16 @@ body {
     box-sizing: initial;
 }
 
+.title-bar-text {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;;
+}
+
 #chat-window {
     position: fixed;
-    bottom: 0;
-    left: 0;
+    width: 300px;
 }
 
 .window-body {
@@ -249,4 +273,8 @@ body {
 
 .avatar-option.selected {
     border: 2px solid $jojo-red;
+}
+
+.validation-warning {
+    animation: 1s flashRed;
 }

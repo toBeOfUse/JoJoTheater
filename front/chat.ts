@@ -32,19 +32,6 @@ function selectAvatar(index: number) {
     $(options[index]).addClass("selected");
 }
 
-function getUserInfo(): chatUserInfo | undefined {
-    const avatar = $(".avatar-option.selected");
-    const name = ($("#chat-name-input").val() as string).trim();
-    if (!avatar.length || !avatar.attr("src") || !name) {
-        return undefined;
-    } else {
-        return {
-            name,
-            avatarURL: avatar.attr("src") as string,
-        };
-    }
-}
-
 export default function initChat(socket: Socket) {
     console.log("setting up chat");
 
@@ -53,17 +40,90 @@ export default function initChat(socket: Socket) {
     });
 
     $("#user-info-submit").on("click", () => {
-        let info;
-        if ((info = getUserInfo())) {
+        const avatar = $(".avatar-option.selected");
+        const name = $("#chat-name-input").val() as string;
+        if (!avatar.length || !avatar.attr("src")) {
+            $("#avatar-prompt").addClass("validation-warning");
+        } else if (!name || !name.trim()) {
+            console.log("name warning");
+            $("#name-prompt").addClass("validation-warning");
+        } else {
+            const info: chatUserInfo = {
+                name,
+                avatarURL: avatar.attr("src") as string,
+            };
             socket.emit("user_info_set", info);
         }
     });
 
-    $("#chat-window-minimize").on("click", () =>
-        $("#chat-window-body").addClass("chat-minimized")
-    );
+    $(".prompt").on("animationend", function () {
+        $(this).removeClass("validation-warning");
+    });
 
-    $("#chat-window-maximize").on("click", () =>
-        $("#chat-window-body").removeClass("chat-minimized")
-    );
+    const chatWindow = $("#chat-window");
+    const initialCWBox = chatWindow[0].getBoundingClientRect();
+    const initialCWLeft = initialCWBox.left;
+    const initialCWTop = window.innerHeight - initialCWBox.height;
+    chatWindow.css({ left: initialCWLeft, top: initialCWTop });
+
+    let cwLeft = initialCWLeft;
+    let cwTop = initialCWTop;
+
+    function moveChatWindow(x: number, y: number) {
+        cwLeft += x;
+        cwTop += y;
+        cwTop = Math.max(0, cwTop);
+        cwTop = Math.min(cwTop, window.innerHeight - 15);
+        cwLeft = Math.max(-initialCWBox.width + 15, cwLeft);
+        cwLeft = Math.min(cwLeft, window.innerWidth - 15);
+        chatWindow.css({ left: cwLeft, top: cwTop });
+    }
+
+    let minimized = true;
+
+    $("#chat-window-minimize").on("click", () => {
+        $("#chat-window-body").addClass("chat-minimized");
+        minimized = true;
+        chatWindow.css({ left: initialCWLeft, top: initialCWTop });
+    });
+
+    $("#chat-window-maximize").on("click", () => {
+        $("#chat-window-body").removeClass("chat-minimized");
+        minimized = false;
+        chatWindow.css({ left: cwLeft, top: cwTop });
+        const chatWindowRect = chatWindow[0].getBoundingClientRect();
+        if (chatWindowRect.bottom > window.innerHeight) {
+            moveChatWindow(0, -(chatWindowRect.bottom - window.innerHeight));
+        }
+    });
+
+    const chatWindowHeader = $("#chat-header");
+
+    chatWindowHeader.find("button").on("mousedown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    });
+
+    chatWindowHeader.on("mousedown", (mouseDownEvent) => {
+        mouseDownEvent.preventDefault();
+        mouseDownEvent.stopPropagation();
+        let lastScreenX = mouseDownEvent.screenX;
+        let lastScreenY = mouseDownEvent.screenY;
+        if (!minimized) {
+            const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
+                moveChatWindow(
+                    mouseMoveEvent.screenX - lastScreenX,
+                    mouseMoveEvent.screenY - lastScreenY
+                );
+                lastScreenX = mouseMoveEvent.screenX;
+                lastScreenY = mouseMoveEvent.screenY;
+            };
+            window.addEventListener("mousemove", handleMouseMove);
+            const cancelMouseMove = () => {
+                window.removeEventListener("mousemove", handleMouseMove);
+                window.removeEventListener("mouseup", cancelMouseMove);
+            };
+            window.addEventListener("mouseup", cancelMouseMove);
+        }
+    });
 }
