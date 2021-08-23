@@ -166,7 +166,29 @@ class Theater {
                 };
                 this.chatHistory.push(message);
                 this.emitAll("chat_message", message);
+                if (/\bhm+\b/.test(message.messageHTML)) {
+                    setTimeout(() => {
+                        const villagerMessage: ChatMessage = {
+                            messageHTML: "<em>hmmm...</em>",
+                            sender: {
+                                name: "Minecraft Villager",
+                                avatarURL: "/images/avatars/villager.jpg",
+                            },
+                            senderID: "fake-user-villager",
+                        };
+                        this.emitAll("chat_message", villagerMessage);
+                        this.chatHistory.push(villagerMessage);
+                    }, 500);
+                }
             }
+        });
+        this.chatHistory.slice(-20).forEach((m) => {
+            member.emit(
+                typeof m == "string" || m instanceof String
+                    ? "chat_announcement"
+                    : "chat_message",
+                m
+            );
         });
     }
 
