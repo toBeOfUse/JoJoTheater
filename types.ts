@@ -1,6 +1,14 @@
-interface chatUserInfo {
+interface ChatUserInfo {
     name: string;
     avatarURL: string;
 }
 
-export { chatUserInfo };
+type ChatAnnouncement = string;
+
+interface ChatMessage {
+    messageHTML: string;
+    sender: ChatUserInfo;
+    senderID: string;
+}
+
+export { ChatUserInfo, ChatMessage, ChatAnnouncement };

@@ -195,10 +195,23 @@
                                         src="/images/avatars/alex.jpg"
                                     />
                                 </div>
-                                <p class="prompt" id="name-prompt">
-                                    Enter your name:
-                                    <input type="text" id="chat-name-input" />
-                                </p>
+                                <section
+                                    class="field-row"
+                                    style="margin-top: 5px"
+                                >
+                                    <label
+                                        class="prompt"
+                                        id="name-prompt"
+                                        for="chat-name-input"
+                                    >
+                                        Enter your name:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="chat-name-input"
+                                        maxlength="30"
+                                    />
+                                </section>
                                 <section
                                     class="field-row"
                                     style="
@@ -207,6 +220,19 @@
                                     "
                                 >
                                     <button id="user-info-submit">OK</button>
+                                </section>
+                            </div>
+                            <div id="chat-body" style="display: none">
+                                <article
+                                    id="messages"
+                                    role="tabpanel"
+                                ></article>
+                                <section
+                                    class="field-row"
+                                    id="message-input-row"
+                                >
+                                    <input type="text" id="message-input" />
+                                    <button id="send-message">Send</button>
                                 </section>
                             </div>
                         </div>

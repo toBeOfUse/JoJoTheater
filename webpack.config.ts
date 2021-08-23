@@ -38,6 +38,9 @@ const config: webpack.Configuration = {
                 // { from: './videos/', to: './videos/' },
             ],
         }),
+        new webpack.WatchIgnorePlugin({
+            paths: [path.resolve(__dirname, "back")],
+        }),
     ],
 };
 

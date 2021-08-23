@@ -1,6 +1,6 @@
 import $ from "jquery";
 import type { Socket } from "socket.io-client";
-import type { chatUserInfo } from "../types";
+import type { ChatUserInfo, ChatAnnouncement, ChatMessage } from "../types";
 
 // load xp.css as raw, put it in a style element, and then modify the rules so that
 // they only apply to elements within the .xp class
@@ -35,24 +35,30 @@ function selectAvatar(index: number) {
 export default function initChat(socket: Socket) {
     console.log("setting up chat");
 
+    // setting up avatar input
     $(".avatar-option").each(function (i) {
         this.addEventListener("click", () => selectAvatar(i));
     });
 
+    // setting up login validation and submission
+    let receivingMessages = false;
     $("#user-info-submit").on("click", () => {
         const avatar = $(".avatar-option.selected");
         const name = $("#chat-name-input").val() as string;
         if (!avatar.length || !avatar.attr("src")) {
             $("#avatar-prompt").addClass("validation-warning");
-        } else if (!name || !name.trim()) {
+        } else if (!name || !name.trim() || name.trim().length > 30) {
             console.log("name warning");
             $("#name-prompt").addClass("validation-warning");
         } else {
-            const info: chatUserInfo = {
+            const info: ChatUserInfo = {
                 name,
                 avatarURL: avatar.attr("src") as string,
             };
             socket.emit("user_info_set", info);
+            $("#chat-login").css({ display: "none" });
+            $("#chat-body").css({ display: "" });
+            receivingMessages = true;
         }
     });
 
@@ -60,6 +66,48 @@ export default function initChat(socket: Socket) {
         $(this).removeClass("validation-warning");
     });
 
+    // set up sending and receiving chat messages and announcements and displaying
+    // them
+    const messageInput = $("#message-input");
+    const sendButton = $("#send-message");
+    sendButton.on("click", () => {
+        socket.emit("wrote_message", messageInput.val());
+        messageInput.val("");
+    });
+    messageInput.on("keydown", (event) => {
+        if (event.key == "Enter") {
+            sendButton.trigger("click");
+        }
+    });
+
+    const messages = $("#messages");
+    let lastSenderID = "";
+    socket.on("chat_announcement", (announcement: ChatAnnouncement) => {
+        if (receivingMessages) {
+            messages.append(
+                `<div class="message"><em>${announcement}</em></div>`
+            );
+            lastSenderID = "announcer";
+            messages.scrollTop(messages[0].scrollHeight as number);
+        }
+    });
+    socket.on("chat_message", (message: ChatMessage) => {
+        if (receivingMessages) {
+            if (lastSenderID != message.senderID) {
+                messages.append(`<div class="chat-user-label">
+                    <img class="in-chat-avatar" src="${message.sender.avatarURL}" />
+                    <span class="in-chat-username">${message.sender.name}</span>
+                </div>`);
+                lastSenderID = message.senderID;
+            }
+            messages.append(
+                `<div class="message">${message.messageHTML}</div>`
+            );
+            messages.scrollTop(messages[0].scrollHeight as number);
+        }
+    });
+
+    // set up dragging and maximizing/minimizing the chat window
     const chatWindow = $("#chat-window");
     const initialCWBox = chatWindow[0].getBoundingClientRect();
     const initialCWLeft = initialCWBox.left;
@@ -81,14 +129,16 @@ export default function initChat(socket: Socket) {
 
     let minimized = true;
 
+    const chatWindowBody = $("#chat-window-body");
+
     $("#chat-window-minimize").on("click", () => {
-        $("#chat-window-body").addClass("chat-minimized");
+        chatWindowBody.addClass("chat-minimized");
         minimized = true;
         chatWindow.css({ left: initialCWLeft, top: initialCWTop });
     });
 
     $("#chat-window-maximize").on("click", () => {
-        $("#chat-window-body").removeClass("chat-minimized");
+        chatWindowBody.removeClass("chat-minimized");
         minimized = false;
         chatWindow.css({ left: cwLeft, top: cwTop });
         const chatWindowRect = chatWindow[0].getBoundingClientRect();

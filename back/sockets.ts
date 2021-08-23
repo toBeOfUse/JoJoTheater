@@ -1,15 +1,22 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import { Server } from "http";
+import escapeHTML from "escape-html";
 import { Video, playlist as defaultPlaylist } from "./playlist";
+import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
 
 type ServerSentEvent =
     | "ping"
     | "id_set"
     | "playlist_set"
-    | "message"
+    | "chat_message"
+    | "chat_announcement"
     | "state_set";
 
-type ClientSentEvent = "state_change_request" | "state_update_request";
+type ClientSentEvent =
+    | "state_change_request"
+    | "state_update_request"
+    | "user_info_set"
+    | "wrote_message";
 
 interface playerState {
     playing: boolean;
@@ -22,6 +29,7 @@ class AudienceMember {
     name: string = "";
     id: string;
     lastRecordedLatency: number = -1;
+    chatInfo: ChatUserInfo | undefined = undefined;
     private static pingID = 0;
 
     constructor(socket: Socket) {
@@ -30,6 +38,16 @@ class AudienceMember {
         this.socket.onAny((eventName: string, ...args) => {
             if (!eventName.startsWith("pong")) {
                 console.log(eventName + " event", args);
+            }
+        });
+        this.socket.on("user_info_set", (info: ChatUserInfo) => {
+            info.name = info.name.trim();
+            if (
+                info.avatarURL.startsWith("/images/avatars/") &&
+                info.name.length < 30
+            ) {
+                info.name = escapeHTML(info.name);
+                this.chatInfo = info;
             }
         });
     }
@@ -65,6 +83,7 @@ class Theater {
         currentTimeMs: 0,
     };
     lastKnownStateTime: number = Date.now();
+    chatHistory: (ChatMessage | ChatAnnouncement)[] = [];
 
     get currentState(): playerState {
         return {
@@ -130,7 +149,27 @@ class Theater {
         member.on("state_update_request", () => {
             member.emit("state_set", this.currentState);
         });
+        member.on("user_info_set", () => {
+            if (member.chatInfo) {
+                this.emitAll(
+                    "chat_announcement",
+                    member.chatInfo.name + " joined the Chat."
+                );
+            }
+        });
+        member.on("wrote_message", (messageText: string) => {
+            if (member.chatInfo) {
+                const message: ChatMessage = {
+                    messageHTML: escapeHTML(messageText),
+                    sender: member.chatInfo,
+                    senderID: member.id,
+                };
+                this.chatHistory.push(message);
+                this.emitAll("chat_message", message);
+            }
+        });
     }
+
     removeMember(member: AudienceMember) {
         this.audience = this.audience.filter((a) => a.id != member.id);
     }

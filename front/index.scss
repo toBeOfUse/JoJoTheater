@@ -233,6 +233,7 @@ body {
 
 .xp * {
     box-sizing: initial;
+    scrollbar-color: #C8D6FB #FBFBF8;
 }
 
 .title-bar-text {
@@ -249,6 +250,7 @@ body {
 
 .window-body {
     font-family: "Trebuchet MS";
+    height: 160px;
 }
 
 .chat-minimized {
@@ -277,4 +279,53 @@ body {
 
 .validation-warning {
     animation: 1s flashRed;
+}
+
+.xp input[type=text] {
+    border: solid #7f9db9 1px;
+}
+
+#chat-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#messages {
+    height: 100%;
+    overflow-y: scroll;
+}
+
+#message-input-row {
+    display: flex;
+}
+
+#message-input {
+    width: 100%;
+}
+
+.message {
+    margin: 5px 0;
+}
+
+.message:nth-of-type(2n) {
+    background-color: lightgray;
+}
+
+.chat-user-label {
+    display: flex;
+    align-items: center;
+}
+
+.in-chat-avatar {
+    display: inline;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.in-chat-username {
+    font-weight: bold;
+    font-size: 1.5em;
 }
