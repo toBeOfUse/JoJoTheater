@@ -35,14 +35,21 @@ function selectAvatar(index: number) {
 export default function initChat(socket: Socket) {
     console.log("setting up chat");
 
+    const loginSubmitButton = $("#user-info-submit");
+
     // setting up avatar input
     $(".avatar-option").each(function (i) {
         this.addEventListener("click", () => selectAvatar(i));
     });
+    $(".avatar-option").on("dblclick", () =>
+        loginSubmitButton.trigger("click")
+    );
 
     // setting up login validation and submission
-    let receivingMessages = false;
-    $("#user-info-submit").on("click", () => {
+    $("#chat-name-input").on("keydown", (event) => {
+        if (event.key == "Enter") loginSubmitButton.trigger("click");
+    });
+    loginSubmitButton.on("click", () => {
         const avatar = $(".avatar-option.selected");
         const name = $("#chat-name-input").val() as string;
         if (!avatar.length || !avatar.attr("src")) {
@@ -58,7 +65,6 @@ export default function initChat(socket: Socket) {
             socket.emit("user_info_set", info);
             $("#chat-login").css({ display: "none" });
             $("#chat-body").css({ display: "" });
-            receivingMessages = true;
         }
     });
 
@@ -68,6 +74,9 @@ export default function initChat(socket: Socket) {
 
     // set up sending and receiving chat messages and announcements and displaying
     // them
+    function scrollMessagesToBottom() {
+        messages.scrollTop(messages[0].scrollHeight as number);
+    }
     const messageInput = $("#message-input");
     const sendButton = $("#send-message");
     sendButton.on("click", () => {
@@ -83,28 +92,25 @@ export default function initChat(socket: Socket) {
     const messages = $("#messages");
     let lastSenderID = "";
     socket.on("chat_announcement", (announcement: ChatAnnouncement) => {
-        if (receivingMessages) {
-            messages.append(
-                `<div class="message"><em>${announcement}</em></div>`
-            );
-            lastSenderID = "announcer";
-            messages.scrollTop(messages[0].scrollHeight as number);
-        }
+        messages.append(`<div class="announcement">${announcement}</div>`);
+        lastSenderID = "announcer";
+        scrollMessagesToBottom();
     });
     socket.on("chat_message", (message: ChatMessage) => {
-        if (receivingMessages) {
-            if (lastSenderID != message.senderID) {
-                messages.append(`<div class="chat-user-label">
+        if (lastSenderID != message.senderID) {
+            messages.append(`<div class="chat-section">
                     <img class="in-chat-avatar" src="${message.sender.avatarURL}" />
-                    <span class="in-chat-username">${message.sender.name}</span>
+                    <div class="chat-section-text">
+                        <span class="in-chat-username">${message.sender.name}</span>
+                    </div>
                 </div>`);
-                lastSenderID = message.senderID;
-            }
-            messages.append(
-                `<div class="message">${message.messageHTML}</div>`
-            );
-            messages.scrollTop(messages[0].scrollHeight as number);
+            lastSenderID = message.senderID;
         }
+        messages
+            .find(".chat-section-text")
+            .last()
+            .append(`<div class="message">${message.messageHTML}</div>`);
+        scrollMessagesToBottom();
     });
 
     // set up dragging and maximizing/minimizing the chat window
@@ -174,6 +180,30 @@ export default function initChat(socket: Socket) {
                 window.removeEventListener("mouseup", cancelMouseMove);
             };
             window.addEventListener("mouseup", cancelMouseMove);
+        }
+    });
+
+    // risky full screen stuff
+    const chatContainer = $("#chat-container");
+    document.addEventListener("fullscreenchange", () => {
+        if (
+            document.fullscreenElement &&
+            document.fullscreenElement instanceof HTMLElement &&
+            !minimized
+        ) {
+            chatContainer.detach().appendTo($(document.fullscreenElement));
+            scrollMessagesToBottom();
+        } else {
+            if (chatContainer.parent().attr("id") != "container-container") {
+                chatContainer.detach().appendTo($("#container-container"));
+                scrollMessagesToBottom();
+            }
+        }
+    });
+    $("#chat-window-minimize").on("click", () => {
+        if (chatContainer.parent().attr("id") != "container-container") {
+            chatContainer.detach().appendTo($("#container-container"));
+            scrollMessagesToBottom();
         }
     });
 }
