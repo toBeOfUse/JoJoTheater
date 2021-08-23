@@ -3,6 +3,7 @@ import { Server } from "http";
 import escapeHTML from "escape-html";
 import { Video, playlist as defaultPlaylist } from "./playlist";
 import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
+import fetch from "node-fetch";
 
 type ServerSentEvent =
     | "ping"
@@ -105,6 +106,16 @@ class Theater {
             console.log(
                 "new client added: " + this.audience.length + " total connected"
             );
+            const remoteIP = socket.handshake.headers["X-Real-IP"];
+            if (remoteIP) {
+                fetch(`https://ipinfo.io/${remoteIP}/geo`)
+                    .then((res) => res.json())
+                    .then((json) =>
+                        console.log(
+                            `new client appears to be from ${json.city}, ${json.region}, ${json.country}`
+                        )
+                    );
+            }
             socket.on("disconnect", () => {
                 this.removeMember(newMember);
                 console.log(
