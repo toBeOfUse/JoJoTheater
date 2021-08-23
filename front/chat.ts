@@ -92,7 +92,9 @@ export default function initChat(socket: Socket) {
     const messages = $("#messages");
     let lastSenderID = "";
     socket.on("chat_announcement", (announcement: ChatAnnouncement) => {
-        messages.append(`<div class="announcement">${announcement}</div>`);
+        messages.append(
+            `<div class="chat-section"><div class="announcement">${announcement}</div></div>`
+        );
         lastSenderID = "announcer";
         scrollMessagesToBottom();
     });

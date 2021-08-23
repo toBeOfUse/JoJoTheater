@@ -261,9 +261,18 @@ body {
     overflow: hidden;
 }
 
+#chat-login {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-evenly;
+    height: 100%;
+}
+
 .avatar-row {
     display: flex;
     justify-content: center;
+    width: 100%;
 }
 
 .avatar-option {
@@ -298,7 +307,8 @@ body {
 #messages {
     height: 100%;
     overflow-y: scroll;
-    padding: 14px 7px;
+    padding: 7px;
+    overflow-wrap: break-word;
 }
 
 #message-input-row {
@@ -318,10 +328,6 @@ body {
     width: 100%;
 }
 
-.message:nth-of-type(2n) {
-    background-color: lightgray;
-}
-
 .announcement {
     font-style: italic;
     margin: 5px 0;
@@ -330,10 +336,16 @@ body {
 .chat-section {
     display: flex;
     align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.chat-section:last-of-type {
+    margin-bottom: 0;
 }
 
 .chat-section-text {
-    width: 100%;
+    width: calc(100% - 35px);
+    overflow-x: hidden;
 }
 
 .in-chat-avatar {

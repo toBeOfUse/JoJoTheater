@@ -148,9 +148,9 @@
                             class="window-body chat-minimized"
                         >
                             <div id="chat-login">
-                                <p class="prompt" id="avatar-prompt">
+                                <span class="prompt" id="avatar-prompt">
                                     Choose your avatar:
-                                </p>
+                                </span>
                                 <div class="avatar-row">
                                     <img
                                         class="avatar-option"
@@ -197,12 +197,13 @@
                                 </div>
                                 <section
                                     class="field-row"
-                                    style="margin-top: 5px"
+                                    style="margin-top: 5px; width: 100%"
                                 >
                                     <label
                                         class="prompt"
                                         id="name-prompt"
                                         for="chat-name-input"
+                                        style="flex-shrink: 0"
                                     >
                                         Enter your name:
                                     </label>
@@ -210,6 +211,7 @@
                                         type="text"
                                         id="chat-name-input"
                                         maxlength="30"
+                                        style="width: 100%"
                                     />
                                 </section>
                                 <section
@@ -217,6 +219,7 @@
                                     style="
                                         justify-content: flex-end;
                                         margin-top: 2px;
+                                        width: 100%;
                                     "
                                 >
                                     <button id="user-info-submit">OK</button>
