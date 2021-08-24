@@ -1,5 +1,5 @@
 import webpackConfig from "../webpack.config";
-import webpack from 'webpack';
+import webpack from "webpack";
 const webpacker = webpack(webpackConfig);
 webpacker.watch(
     {
@@ -23,9 +23,13 @@ webpacker.watch(
 
 import connect from "connect";
 import serveStatic from "serve-static";
-const server = connect()
-    .use(serveStatic("./dist/"))
-    .listen(8080, () => console.log("Server running on 8080..."));
+const compression = require("compression"); // if this is an "import" then typescript gets mad :(
+const connectServer = connect();
+connectServer.use(compression());
+connectServer.use(serveStatic("./dist/"));
+const httpServer = connectServer.listen(8080, () =>
+    console.log("Server running on 8080...")
+);
 
 import init from "./sockets";
-init(server);
+init(httpServer);
