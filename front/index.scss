@@ -251,7 +251,7 @@ body {
 }
 
 .window-body {
-    font-family: "Trebuchet MS";
+    font-family: "Lora", serif;
     height: 160px;
 }
 
@@ -259,6 +259,10 @@ body {
     height: 0px;
     margin: 0px !important;
     overflow: hidden;
+}
+
+.chat-minimized + div.status-bar {
+    display: none;
 }
 
 #chat-login {
@@ -324,7 +328,7 @@ body {
 }
 
 .message {
-    margin: 5px 0;
+    margin: 3px 0;
     width: 100%;
 }
 
@@ -336,7 +340,7 @@ body {
 .chat-section {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 8px;
+    margin-bottom: 3px;
 }
 
 .chat-section:last-of-type {

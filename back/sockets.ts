@@ -164,7 +164,7 @@ class Theater {
             if (member.chatInfo) {
                 this.emitAll(
                     "chat_announcement",
-                    member.chatInfo.name + " joined the Chat."
+                    `<strong>${member.chatInfo.name}</strong> joined the Chat.`
                 );
             }
         });
