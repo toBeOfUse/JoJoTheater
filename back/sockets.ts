@@ -106,9 +106,9 @@ class Theater {
             console.log(
                 "new client added: " + this.audience.length + " total connected"
             );
-            const remoteIP = socket.handshake.headers["X-Real-IP"];
+            const remoteIP = socket.handshake.headers["x-real-ip"] as string;
             if (remoteIP) {
-                fetch(`https://ipinfo.io/${remoteIP}/geo`)
+                fetch(`https://ipinfo.io/${remoteIP.split(":")[0]}/geo`)
                     .then((res) => res.json())
                     .then((json) =>
                         console.log(
