@@ -119,20 +119,23 @@ export default function initChat(socket: Socket) {
     const chatWindow = $("#chat-window");
     const initialCWBox = chatWindow[0].getBoundingClientRect();
     const initialCWLeft = initialCWBox.left;
-    const initialCWTop = window.innerHeight - initialCWBox.height;
-    chatWindow.css({ left: initialCWLeft, top: initialCWTop });
+    const initialCWBottom = 0;
+    chatWindow.css({ left: initialCWLeft, bottom: initialCWBottom });
 
     let cwLeft = initialCWLeft;
-    let cwTop = initialCWTop;
+    let cwBottom = initialCWBottom;
 
     function moveChatWindow(x: number, y: number) {
         cwLeft += x;
-        cwTop += y;
-        cwTop = Math.max(0, cwTop);
-        cwTop = Math.min(cwTop, window.innerHeight - 15);
+        cwBottom -= y;
+        cwBottom = Math.max(cwBottom, -(chatWindow.height() as number) + 15);
+        cwBottom = Math.min(
+            cwBottom,
+            window.innerHeight - (chatWindow.height() as number)
+        );
         cwLeft = Math.max(-initialCWBox.width + 15, cwLeft);
         cwLeft = Math.min(cwLeft, window.innerWidth - 15);
-        chatWindow.css({ left: cwLeft, top: cwTop });
+        chatWindow.css({ left: cwLeft, bottom: cwBottom });
     }
 
     let minimized = true;
@@ -142,13 +145,13 @@ export default function initChat(socket: Socket) {
     $("#chat-window-minimize").on("click", () => {
         chatWindowBody.addClass("chat-minimized");
         minimized = true;
-        chatWindow.css({ left: initialCWLeft, top: initialCWTop });
+        chatWindow.css({ left: initialCWLeft, bottom: initialCWBottom });
     });
 
     $("#chat-window-maximize").on("click", () => {
         chatWindowBody.removeClass("chat-minimized");
         minimized = false;
-        chatWindow.css({ left: cwLeft, top: cwTop });
+        chatWindow.css({ left: cwLeft, bottom: cwBottom });
         const chatWindowRect = chatWindow[0].getBoundingClientRect();
         if (chatWindowRect.bottom > window.innerHeight) {
             moveChatWindow(0, -(chatWindowRect.bottom - window.innerHeight));
