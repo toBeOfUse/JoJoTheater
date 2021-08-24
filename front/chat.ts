@@ -138,6 +138,13 @@ export default function initChat(socket: Socket) {
         chatWindow.css({ left: cwLeft, bottom: cwBottom });
     }
 
+    function keepChatWindowOnScreen() {
+        // simple way of enforcing the min/max bounds
+        moveChatWindow(0, 0);
+    }
+
+    window.addEventListener("resize", () => keepChatWindowOnScreen());
+
     let minimized = true;
 
     const chatWindowBody = $("#chat-window-body");
