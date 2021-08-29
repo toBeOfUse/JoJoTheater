@@ -21,15 +21,32 @@ webpacker.watch(
     }
 );
 
-import connect from "connect";
-import serveStatic from "serve-static";
-const compression = require("compression"); // if this is an "import" then typescript gets mad :(
-const connectServer = connect();
-connectServer.use(compression());
-connectServer.use(serveStatic("./dist/"));
-const httpServer = connectServer.listen(8080, () =>
-    console.log("Server running on 8080...")
-);
+import path from "path";
+import http from "http";
+import express from "express";
+import compression from "compression";
+import handlebars from "express-handlebars";
+const renderer = handlebars.create({
+    extname: "hbs",
+    defaultLayout: "",
+    helpers: {
+        round(n: number): string {
+            return n.toFixed(2);
+        },
+        msToSeconds(n: number): string {
+            return (n / 1000).toFixed(2);
+        },
+    },
+});
+const app = express();
+app.use(compression());
+app.use(express.static("dist"));
+app.engine("hbs", renderer.engine);
+app.set("view engine", "hbs");
+app.set("views", path.resolve(process.cwd(), "front/views/"));
 
+const server = http.createServer(app);
 import init from "./sockets";
-init(httpServer);
+init(server, app);
+
+server.listen(8080, () => console.log("app running on 8080..."));

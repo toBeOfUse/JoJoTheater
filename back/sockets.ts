@@ -1,9 +1,10 @@
 import { Server as SocketServer, Socket } from "socket.io";
-import { Server } from "http";
+import type { Express } from "express";
 import escapeHTML from "escape-html";
 import { Video, playlist as defaultPlaylist } from "./playlist";
 import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
 import fetch from "node-fetch";
+import { Server } from "http";
 
 type ServerSentEvent =
     | "ping"
@@ -19,19 +20,63 @@ type ClientSentEvent =
     | "user_info_set"
     | "wrote_message";
 
-interface playerState {
+interface PlayerState {
     playing: boolean;
     currentTimeMs: number;
     currentItem: number;
 }
 
+interface ConnectionStatus {
+    chatName: string;
+    uptimeMs: number;
+    latestPing: number;
+    avgPing: number;
+    pingStdDev: number;
+    location: string;
+}
+
 class AudienceMember {
     private socket: Socket;
-    name: string = "";
+    location: string = "";
     id: string;
-    lastRecordedLatency: number = -1;
+    lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
+    connected: Date = new Date();
     private static pingID = 0;
+
+    get lastRecordedLatency(): number {
+        return this.lastLatencies[this.lastLatencies.length - 1];
+    }
+
+    get meanLatency(): number {
+        return (
+            this.lastLatencies.reduce((acc, v) => acc + v, 0) /
+            this.lastLatencies.length
+        );
+    }
+
+    get latencyStdDev(): number {
+        const mean = this.meanLatency;
+        let variance = 0;
+        this.lastLatencies.forEach((l) => (variance += (l - mean) ** 2));
+        variance /= this.lastLatencies.length;
+        return Math.sqrt(variance);
+    }
+
+    get uptimeMs(): number {
+        return Date.now() - this.connected.getTime();
+    }
+
+    get connectionInfo(): ConnectionStatus {
+        return {
+            chatName: this.chatInfo?.name || "",
+            uptimeMs: this.uptimeMs,
+            latestPing: this.lastRecordedLatency,
+            avgPing: this.meanLatency,
+            pingStdDev: this.latencyStdDev,
+            location: this.location,
+        };
+    }
 
     constructor(socket: Socket) {
         this.socket = socket;
@@ -41,6 +86,7 @@ class AudienceMember {
                 console.log(eventName + " event", args);
             }
         });
+        setInterval(() => this.updateLatency(), 20000);
         this.socket.on("user_info_set", (info: ChatUserInfo) => {
             info.name = info.name.trim();
             if (
@@ -51,6 +97,17 @@ class AudienceMember {
                 this.chatInfo = info;
             }
         });
+        const remoteIP = socket.handshake.headers["x-real-ip"] as string;
+        if (remoteIP) {
+            fetch(`https://ipinfo.io/${remoteIP.split(":")[0]}/geo`)
+                .then((res) => res.json())
+                .then((json) => {
+                    this.location = `${json.city}, ${json.region}, ${json.country}`;
+                    console.log(
+                        `new client appears to be from ${this.location}`
+                    );
+                });
+        }
     }
 
     updateLatency(): Promise<number> {
@@ -59,10 +116,14 @@ class AudienceMember {
             const pingTime = Date.now();
             this.socket.once("pong_" + AudienceMember.pingID, () => {
                 const pongTime = Date.now();
-                this.lastRecordedLatency = pongTime - pingTime;
+                this.lastLatencies.push(pongTime - pingTime);
+                if (this.lastLatencies.length > 100) {
+                    this.lastLatencies = this.lastLatencies.slice(-100);
+                }
                 resolve(pingTime);
             });
             AudienceMember.pingID++;
+            AudienceMember.pingID %= 10000;
         });
     }
 
@@ -78,7 +139,7 @@ class AudienceMember {
 class Theater {
     audience: AudienceMember[] = [];
     playlist: Video[] = defaultPlaylist;
-    lastKnownState: playerState = {
+    lastKnownState: PlayerState = {
         playing: false,
         currentItem: 0,
         currentTimeMs: 0,
@@ -86,7 +147,7 @@ class Theater {
     lastKnownStateTime: number = Date.now();
     chatHistory: (ChatMessage | ChatAnnouncement)[] = [];
 
-    get currentState(): playerState {
+    get currentState(): PlayerState {
         return {
             ...this.lastKnownState,
             currentTimeMs: this.lastKnownState.playing
@@ -106,16 +167,6 @@ class Theater {
             console.log(
                 "new client added: " + this.audience.length + " total connected"
             );
-            const remoteIP = socket.handshake.headers["x-real-ip"] as string;
-            if (remoteIP) {
-                fetch(`https://ipinfo.io/${remoteIP.split(":")[0]}/geo`)
-                    .then((res) => res.json())
-                    .then((json) =>
-                        console.log(
-                            `new client appears to be from ${json.city}, ${json.region}, ${json.country}`
-                        )
-                    );
-            }
             socket.on("disconnect", () => {
                 this.removeMember(newMember);
                 console.log(
@@ -129,19 +180,6 @@ class Theater {
                 this.lastKnownStateTime = Date.now();
             }
         });
-        this.measureLatency();
-        setInterval(() => this.measureLatency(), 20000);
-    }
-
-    async measureLatency() {
-        if (!this.audience.length) {
-            return;
-        }
-        for (const member of this.audience) {
-            await member.updateLatency();
-        }
-        console.log("measured latencies in ms: ");
-        console.log(this.audience.map((a) => a.lastRecordedLatency).join(", "));
     }
 
     emitAll(event: ServerSentEvent, ...args: any[]) {
@@ -150,7 +188,7 @@ class Theater {
 
     addMember(member: AudienceMember) {
         this.audience.push(member);
-        member.on("state_change_request", (newState: playerState) => {
+        member.on("state_change_request", (newState: PlayerState) => {
             this.lastKnownState = newState;
             this.lastKnownStateTime = Date.now();
             this.audience
@@ -162,6 +200,7 @@ class Theater {
         });
         member.on("user_info_set", () => {
             if (member.chatInfo) {
+                // whether to save these in chatHistory or not. decisions, decisions
                 this.emitAll(
                     "chat_announcement",
                     `<strong>${member.chatInfo.name}</strong> joined the Chat.`
@@ -208,7 +247,12 @@ class Theater {
     }
 }
 
-export default function init(server: Server) {
+export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    new Theater(io);
+    const theater = new Theater(io);
+    app.get("/stats", (_, res) => {
+        res.render("connections", {
+            connections: theater.audience.map((a) => a.connectionInfo),
+        });
+    });
 }
