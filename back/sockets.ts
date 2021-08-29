@@ -86,6 +86,7 @@ class AudienceMember {
                 console.log(eventName + " event", args);
             }
         });
+        this.updateLatency();
         setInterval(() => this.updateLatency(), 20000);
         this.socket.on("user_info_set", (info: ChatUserInfo) => {
             info.name = info.name.trim();
