@@ -32,6 +32,7 @@ interface ConnectionStatus {
     latestPing: number;
     avgPing: number;
     pingStdDev: number;
+    pingHistogram: [number[], string[]];
     location: string;
 }
 
@@ -63,6 +64,27 @@ class AudienceMember {
         return Math.sqrt(variance);
     }
 
+    get latencyHistogram(): [number[], string[]] {
+        if (this.lastLatencies.length < 2) {
+            return [[], []];
+        }
+        const numIntervals = 8;
+        const min = Math.min(...this.lastLatencies);
+        const max = Math.max(...this.lastLatencies);
+        const range = max - min + 1;
+        const intervalSize = range / numIntervals;
+        const labels: string[] = [];
+        for (let i = 0; i < numIntervals; i++) {
+            labels.push((min + i * intervalSize).toFixed(0) + "ms");
+        }
+        const result: number[] = Array(numIntervals).fill(0);
+        for (const ping of this.lastLatencies) {
+            const bucket = Math.floor((ping - min) / intervalSize);
+            result[bucket] += 1;
+        }
+        return [result, labels];
+    }
+
     get uptimeMs(): number {
         return Date.now() - this.connected.getTime();
     }
@@ -74,6 +96,7 @@ class AudienceMember {
             latestPing: this.lastRecordedLatency,
             avgPing: this.meanLatency,
             pingStdDev: this.latencyStdDev,
+            pingHistogram: this.latencyHistogram,
             location: this.location,
         };
     }

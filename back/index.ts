@@ -36,6 +36,9 @@ const renderer = handlebars.create({
         msToSeconds(n: number): string {
             return (n / 1000).toFixed(2);
         },
+        stringify(o: object): string {
+            return JSON.stringify(o);
+        },
     },
 });
 const app = express();
