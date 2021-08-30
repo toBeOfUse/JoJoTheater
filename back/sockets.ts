@@ -1,10 +1,12 @@
 import { Server as SocketServer, Socket } from "socket.io";
-import type { Express } from "express";
-import escapeHTML from "escape-html";
-import { Video, playlist as defaultPlaylist } from "./playlist";
-import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
 import fetch from "node-fetch";
 import { Server } from "http";
+import type { Express } from "express";
+import escapeHTML from "escape-html";
+
+import { Video, playlist as defaultPlaylist } from "./playlist";
+import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
+import saveMessage from "./chatdb";
 
 type ServerSentEvent =
     | "ping"
@@ -18,7 +20,8 @@ type ClientSentEvent =
     | "state_change_request"
     | "state_update_request"
     | "user_info_set"
-    | "wrote_message";
+    | "wrote_message"
+    | "disconnect";
 
 interface PlayerState {
     playing: boolean;
@@ -31,7 +34,6 @@ interface ConnectionStatus {
     uptimeMs: number;
     latestPing: number;
     avgPing: number;
-    pingStdDev: number;
     pingHistogram: [number[], string[]];
     location: string;
 }
@@ -45,6 +47,10 @@ class AudienceMember {
     connected: Date = new Date();
     private static pingID = 0;
 
+    // managed by the Theater
+    announcement: string | undefined = undefined;
+    hasSentMessage = false;
+
     get lastRecordedLatency(): number {
         return this.lastLatencies[this.lastLatencies.length - 1];
     }
@@ -54,14 +60,6 @@ class AudienceMember {
             this.lastLatencies.reduce((acc, v) => acc + v, 0) /
             this.lastLatencies.length
         );
-    }
-
-    get latencyStdDev(): number {
-        const mean = this.meanLatency;
-        let variance = 0;
-        this.lastLatencies.forEach((l) => (variance += (l - mean) ** 2));
-        variance /= this.lastLatencies.length;
-        return Math.sqrt(variance);
     }
 
     get latencyHistogram(): [number[], string[]] {
@@ -95,7 +93,6 @@ class AudienceMember {
             uptimeMs: this.uptimeMs,
             latestPing: this.lastRecordedLatency,
             avgPing: this.meanLatency,
-            pingStdDev: this.latencyStdDev,
             pingHistogram: this.latencyHistogram,
             location: this.location,
         };
@@ -118,7 +115,7 @@ class AudienceMember {
                 info.name.length < 30
             ) {
                 info.name = escapeHTML(info.name);
-                this.chatInfo = info;
+                this.chatInfo = { ...info, id: this.id };
             }
         });
         const remoteIP = socket.handshake.headers["x-real-ip"] as string;
@@ -191,14 +188,6 @@ class Theater {
             console.log(
                 "new client added: " + this.audience.length + " total connected"
             );
-            socket.on("disconnect", () => {
-                this.removeMember(newMember);
-                console.log(
-                    "client removed: " +
-                        this.audience.length +
-                        " total connected"
-                );
-            });
             if (this.audience.length === 0) {
                 this.lastKnownState = { ...this.currentState, playing: false };
                 this.lastKnownStateTime = Date.now();
@@ -208,6 +197,16 @@ class Theater {
 
     emitAll(event: ServerSentEvent, ...args: any[]) {
         this.audience.forEach((a) => a.emit(event, ...args));
+    }
+
+    sendToChat(message: ChatMessage | ChatAnnouncement) {
+        this.chatHistory.push(message);
+        saveMessage(message);
+        if (typeof message == "string" || message instanceof String) {
+            this.emitAll("chat_announcement", message);
+        } else {
+            this.emitAll("chat_message", message);
+        }
     }
 
     addMember(member: AudienceMember) {
@@ -224,34 +223,30 @@ class Theater {
         });
         member.on("user_info_set", () => {
             if (member.chatInfo) {
-                // whether to save these in chatHistory or not. decisions, decisions
-                this.emitAll(
-                    "chat_announcement",
-                    `<strong>${member.chatInfo.name}</strong> joined the Chat.`
-                );
+                const announcement = `<strong>${member.chatInfo.name}</strong> joined the Chat.`;
+                this.sendToChat(announcement);
+                member.announcement = announcement;
             }
         });
         member.on("wrote_message", (messageText: string) => {
             if (member.chatInfo) {
+                member.hasSentMessage = true;
                 const message: ChatMessage = {
                     messageHTML: escapeHTML(messageText),
                     sender: member.chatInfo,
-                    senderID: member.id,
                 };
-                this.chatHistory.push(message);
-                this.emitAll("chat_message", message);
+                this.sendToChat(message);
                 if (/\bhm+\b/.test(message.messageHTML)) {
                     setTimeout(() => {
                         const villagerMessage: ChatMessage = {
                             messageHTML: "<em>hmmm...</em>",
                             sender: {
+                                id: "fake-villager-user",
                                 name: "Minecraft Villager",
                                 avatarURL: "/images/avatars/villager.jpg",
                             },
-                            senderID: "fake-user-villager",
                         };
-                        this.emitAll("chat_message", villagerMessage);
-                        this.chatHistory.push(villagerMessage);
+                        this.sendToChat(villagerMessage);
                     }, 500);
                 }
             }
@@ -262,6 +257,19 @@ class Theater {
                     ? "chat_announcement"
                     : "chat_message",
                 m
+            );
+        });
+        member.on("disconnect", () => {
+            this.removeMember(member);
+            // remove the announcement of the member joining from the chat
+            // history if they didn't send a message
+            if (member.announcement && !member.hasSentMessage) {
+                this.chatHistory = this.chatHistory.filter(
+                    (v) => v != member.announcement
+                );
+            }
+            console.log(
+                "client removed: " + this.audience.length + " total connected"
             );
         });
     }

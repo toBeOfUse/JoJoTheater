@@ -58,7 +58,7 @@ export default function initChat(socket: Socket) {
             console.log("name warning");
             $("#name-prompt").addClass("validation-warning");
         } else {
-            const info: ChatUserInfo = {
+            const info = {
                 name,
                 avatarURL: avatar.attr("src") as string,
             };
@@ -99,14 +99,14 @@ export default function initChat(socket: Socket) {
         scrollMessagesToBottom();
     });
     socket.on("chat_message", (message: ChatMessage) => {
-        if (lastSenderID != message.senderID) {
+        if (lastSenderID != message.sender.id) {
             messages.append(`<div class="chat-section">
                     <img class="in-chat-avatar" src="${message.sender.avatarURL}" />
                     <div class="chat-section-text">
                         <span class="in-chat-username">${message.sender.name}</span>
                     </div>
                 </div>`);
-            lastSenderID = message.senderID;
+            lastSenderID = message.sender.id;
         }
         messages
             .find(".chat-section-text")
