@@ -20,7 +20,6 @@
                     <th scope="col">Name in chat</th>
                     <th scope="col">Latest ping</th>
                     <th scope="col">Average ping</th>
-                    <th scope="col">Ping std. dev.</th>
                     <th scope="col">Ping distribution</th>
                     <th scope="col">Approx. location</th>
                 </tr>
@@ -34,8 +33,7 @@
                         </td>
                         <td>{{this.latestPing}} ms</td>
                         <td>{{round this.avgPing}} ms</td>
-                        <td>{{round this.pingStdDev}} ms</td>
-                        <td><canvas width="140" height="100" id="chart{{@index}}"></canvas></td>
+                        <td><canvas width="160" height="100" id="chart{{@index}}"></canvas></td>
                         <td>{{this.location}}</td>
                     </tr>
                 {{/each}}
