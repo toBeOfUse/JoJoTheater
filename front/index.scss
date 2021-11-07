@@ -97,10 +97,10 @@ body {
     transition: opacity 1s ease-in-out;
 }
 
-#button-container {
+#title-container {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
     margin-top: 5px;
 }
 
@@ -116,10 +116,7 @@ body {
     max-width: 90%;
     animation-delay: 0.5s;
     margin-bottom: 20px;
-    margin-top: -50px;
-    // background-color: #ffffff99;
-    // border-radius: 10px;
-    // box-shadow: 0px 0px 10px 20px #ffffff99;
+    margin-top: 10px;
 }
 
 @mixin below-video-style {
@@ -138,19 +135,48 @@ body {
     @include below-video-style;
 }
 
-.playlist-button {
-    width: 60px;
-    cursor: pointer;
-    @media (max-width: 500px) {
-        width: 40px;
+#playlist-container {
+    text-align: left;
+    margin: 30px auto 50px auto;
+    font-family: $ms-font;
+    width: 60%;
+    @media (max-width: 600px) {
+        width: 90%;
     }
-    @include below-video-style;
 }
 
-.playlist-button:disabled {
-    color: gray;
-    text-shadow: unset;
-    cursor: default;
+.playlist-item {
+    background-color: white;
+    margin: 5px 0px;
+    padding: 5px 5px;
+    border: 1px solid black;
+    border-radius: 3px;
+    &.active {
+        font-style: italic;
+        color: gray;
+    }
+    &.not-active {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+}
+
+#playlist-header {
+    padding: 10px 1px;
+    margin: 0 auto;
+    background-image: url("../assets/images/fun-square.svg");
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center;
+    width: 150px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.playlist-icon {
+    height: 1em;
+    margin: 0 5px;
 }
 
 .xp,

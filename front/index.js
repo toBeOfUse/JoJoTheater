@@ -9,12 +9,8 @@ import initChat from "./chat.ts";
 let socket;
 
 let playlist = [];
-let currentPlaylistItem = 0;
 
 let player = undefined;
-
-const next = document.querySelector("#next-button");
-const prev = document.querySelector("#prev-button");
 
 let popupTimer = undefined;
 function displayMessage(message) {
@@ -38,7 +34,7 @@ function initVideoPlayer() {
     });
 
     player = new Plyr("#video-player", {
-        title: "JOJO",
+        title: "MitchBot Player",
         controls: [
             "play",
             "progress",
@@ -53,6 +49,7 @@ function initVideoPlayer() {
     });
 
     player.lastPlaylist = playlist;
+    player.currentItem = 0;
 
     Object.defineProperty(player, "currentTimeMs", {
         get() {
@@ -92,18 +89,17 @@ function initVideoPlayer() {
             this.currentTimeMs = state.currentTimeMs;
         }
         if (
-            state.currentItem != currentPlaylistItem ||
+            state.currentItem != this.currentItem ||
             playlist != player.lastPlaylist
         ) {
             player.lastPlaylist = playlist;
-            currentPlaylistItem = state.currentItem;
+            this.currentItem = state.currentItem;
             const newSource = {
                 type: "video",
-                title: playlist[currentPlaylistItem].title,
-                sources: [playlist[currentPlaylistItem]],
+                title: playlist[this.currentItem].title,
+                sources: [playlist[this.currentItem]],
             };
             player.source = newSource;
-            renderPlaylistButtons();
             document.querySelector("#video-title").innerHTML = newSource.title;
         }
     };
@@ -112,7 +108,7 @@ function initVideoPlayer() {
         return {
             playing: this.playing,
             currentTimeMs: this.currentTimeMs,
-            currentItem: currentPlaylistItem,
+            currentItem: this.currentItem,
         };
     };
 
@@ -161,42 +157,62 @@ function initVideoPlayer() {
         console.log("server sent state_set event");
         console.log(newState);
         player.updateState(newState);
-        renderPlaylistButtons();
+        renderPlaylist();
     });
     socket.on("playlist_set", (newPlaylist) => {
         playlist = newPlaylist;
         player.updateState(player.getCurrentState()); // shrug
-        renderPlaylistButtons();
+        renderPlaylist();
     });
     socket.on("message", (message) => displayMessage(message));
 
     // set up playlist interactivity
-
-    function renderPlaylistButtons() {
-        next.disabled = currentPlaylistItem == playlist.length - 1;
-        prev.disabled = currentPlaylistItem == 0;
+    let playlistShown = false;
+    document.querySelector("#playlist-header").addEventListener("click", () => {
+        playlistShown = !playlistShown;
+        renderPlaylist();
+    });
+    function renderPlaylist() {
+        const cont = document.querySelector("#playlist-container");
+        for (const el of cont.querySelectorAll(".playlist-item")) {
+            el.remove();
+        }
+        const display = playlistShown ? "block" : "none";
+        for (let i = 0; i < playlist.length; i++) {
+            const active = i == player.currentItem ? "active" : "not-active";
+            const item = document.createElement("div");
+            item.setAttribute("class", "playlist-item " + active);
+            const icon = document.createElement("img");
+            if (!playlist[i].provider) {
+                icon.src = "images/video-file.svg";
+            } else if (playlist[i].provider == "youtube") {
+                icon.src = "images/youtube.svg";
+            } else if (playlist[i].provider == "vimeo") {
+                icon.src = "images/vimeo.svg";
+            }
+            icon.setAttribute("class", "playlist-icon");
+            item.appendChild(icon);
+            const text = document.createTextNode(playlist[i].title);
+            item.appendChild(text);
+            item.style.display = display;
+            if (active == "not-active") {
+                item.addEventListener("click", () => {
+                    player.updateState({
+                        playing: false,
+                        currentTimeMs: 0,
+                        currentItem: i,
+                    });
+                    socket.emit(
+                        "state_change_request",
+                        player.getCurrentState()
+                    );
+                });
+            }
+            cont.appendChild(item);
+        }
     }
 
-    next.addEventListener("click", () => {
-        if (currentPlaylistItem < playlist.length - 1) {
-            player.updateState({
-                ...player.getCurrentState(),
-                currentItem: currentPlaylistItem + 1,
-            });
-            socket.emit("state_change_request", player.getCurrentState());
-        }
-    });
-    prev.addEventListener("click", () => {
-        if (currentPlaylistItem > 0) {
-            player.updateState({
-                ...player.getCurrentState(),
-                currentItem: currentPlaylistItem - 1,
-            });
-            socket.emit("state_change_request", player.getCurrentState());
-        }
-    });
-
-    renderPlaylistButtons();
+    renderPlaylist();
 
     initChat(socket);
 }
