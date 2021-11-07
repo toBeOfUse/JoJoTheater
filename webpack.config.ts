@@ -4,8 +4,7 @@ import CopyWebpackPlugin from "copy-webpack-plugin";
 import webpack from "webpack";
 
 const config: webpack.Configuration = {
-    mode: (process.env.NODE_ENV === "production")
-		? "production" : "development",
+    mode: process.env.NODE_ENV === "production" ? "production" : "development",
     entry: "./front/index.js",
     output: {
         filename: "main.[contenthash].js",

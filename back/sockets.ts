@@ -6,7 +6,6 @@ import escapeHTML from "escape-html";
 
 import { Video, playlist as defaultPlaylist } from "./playlist";
 import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
-import saveMessage from "./chatdb";
 
 type ServerSentEvent =
     | "ping"
@@ -201,7 +200,6 @@ class Theater {
 
     sendToChat(message: ChatMessage | ChatAnnouncement) {
         this.chatHistory.push(message);
-        saveMessage(message);
         if (typeof message == "string" || message instanceof String) {
             this.emitAll("chat_announcement", message);
         } else {
