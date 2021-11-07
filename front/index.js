@@ -48,7 +48,9 @@ function initVideoPlayer() {
         disableContextMenu: false,
     });
 
+    // used for identity comparisons to detect playlist changes
     player.lastPlaylist = playlist;
+
     player.currentItem = 0;
 
     Object.defineProperty(player, "currentTimeMs", {
@@ -60,32 +62,22 @@ function initVideoPlayer() {
         },
     });
 
-    let waitingForUserInteraction = false;
-    let firstPlay = true;
-    player.ignoreNext = [];
+    player.ableToPlay = true;
     player.updateState = function (state) {
         if (state.playing != this.playing) {
             if (state.playing) {
-                this.ignoreNext.push("playing");
                 this.play().catch(() => {
                     displayMessage(
                         "autoplay is blocked; press play to sync up with the server"
                     );
-                    this.ignoreNext.splice(
-                        this.ignoreNext.indexOf("playing"),
-                        1
-                    );
-                    waitingForUserInteraction = true;
+                    player.ableToPlay = false;
                 });
             } else {
-                this.ignoreNext.push("pause");
                 this.pause();
             }
         }
         if (Math.abs(state.currentTimeMs - this.currentTimeMs) > 100) {
             console.log("updating player current time to", state.currentTimeMs);
-            this.ignoreNext.push("seeked");
-            this.ignoreNext.push("playing");
             this.currentTimeMs = state.currentTimeMs;
         }
         if (
@@ -114,43 +106,22 @@ function initVideoPlayer() {
 
     player.on("playing", () => {
         console.log("local player emitted 'playing' event");
-        if (firstPlay) {
-            firstPlay = false;
-            // we need an extra state update the first time the player starts playing
-            // bc sometimes setting the current time in the initial
-            // player.updateState() doesn't work bc it's not ready yet. apparently
+        if (!player.ableToPlay) {
+            player.ableToPlay = true;
             socket.emit("state_update_request");
-        }
-        if (!player.ignoreNext.includes("playing")) {
-            if (waitingForUserInteraction) {
-                waitingForUserInteraction = false;
-                socket.emit("state_update_request");
-            } else {
-                socket.emit("state_change_request", player.getCurrentState());
-            }
         } else {
-            console.log("ignoring 'playing' event");
-            player.ignoreNext.splice(player.ignoreNext.indexOf("playing"), 1);
+            socket.emit("state_change_request", player.getCurrentState());
         }
     });
 
     player.on("pause", () => {
         console.log("local player emitted 'pause' event");
-        if (!player.ignoreNext.includes("pause")) {
-            socket.emit("state_change_request", player.getCurrentState());
-        } else {
-            player.ignoreNext.splice(player.ignoreNext.indexOf("pause"), 1);
-        }
+        socket.emit("state_change_request", player.getCurrentState());
     });
 
     player.on("seeked", () => {
         console.log("local player emitted 'seeked' event");
-        if (!player.ignoreNext.includes("seeked")) {
-            socket.emit("state_change_request", player.getCurrentState());
-        } else {
-            console.log("ignoring 'seeking' event");
-            player.ignoreNext.splice(player.ignoreNext.indexOf("seeked"), 1);
-        }
+        socket.emit("state_change_request", player.getCurrentState());
     });
 
     socket.on("state_set", (newState) => {
@@ -178,6 +149,8 @@ function initVideoPlayer() {
             el.remove();
         }
         const display = playlistShown ? "block" : "none";
+        const header = document.querySelector("#playlist-header");
+        header.innerHTML = playlistShown ? "Playlist ▾" : "Playlist ▸";
         for (let i = 0; i < playlist.length; i++) {
             const active = i == player.currentItem ? "active" : "not-active";
             const item = document.createElement("div");

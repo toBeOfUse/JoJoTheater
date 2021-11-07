@@ -102,7 +102,8 @@ class AudienceMember {
         this.id = socket.id;
         this.socket.onAny((eventName: string, ...args) => {
             if (!eventName.startsWith("pong")) {
-                console.log(eventName + " event", args);
+                console.log(eventName + " event from " + this.id);
+                console.log(args);
             }
         });
         this.updateLatency();
@@ -164,7 +165,7 @@ class Theater {
         currentItem: 0,
         currentTimeMs: 0,
     };
-    lastKnownStateTime: number = Date.now();
+    lastKnownStateTimestamp: number = Date.now();
     chatHistory: (ChatMessage | ChatAnnouncement)[] = [];
 
     get currentState(): PlayerState {
@@ -172,7 +173,7 @@ class Theater {
             ...this.lastKnownState,
             currentTimeMs: this.lastKnownState.playing
                 ? this.lastKnownState.currentTimeMs +
-                  (Date.now() - this.lastKnownStateTime)
+                  (Date.now() - this.lastKnownStateTimestamp)
                 : this.lastKnownState.currentTimeMs,
         };
     }
@@ -183,14 +184,19 @@ class Theater {
             newMember.emit("id_set", socket.id);
             newMember.emit("playlist_set", this.playlist);
             newMember.emit("state_set", this.currentState);
-            this.addMember(newMember);
+            this.initializeMember(newMember);
             console.log(
                 "new client added: " + this.audience.length + " total connected"
             );
-            if (this.audience.length === 0) {
-                this.lastKnownState = { ...this.currentState, playing: false };
-                this.lastKnownStateTime = Date.now();
-            }
+            newMember.on("disconnect", () => {
+                if (this.audience.length === 0) {
+                    this.lastKnownState = {
+                        ...this.currentState,
+                        playing: false,
+                    };
+                    this.lastKnownStateTimestamp = Date.now();
+                }
+            });
         });
     }
 
@@ -207,18 +213,32 @@ class Theater {
         }
     }
 
-    addMember(member: AudienceMember) {
+    initializeMember(member: AudienceMember) {
         this.audience.push(member);
+
         member.on("state_change_request", (newState: PlayerState) => {
+            // ignore redundant requests from clients who in fact just had their
+            // state changed to the last known state
+            if (
+                newState.playing === this.lastKnownState.playing &&
+                newState.currentItem === this.lastKnownState.currentItem &&
+                Math.abs(
+                    this.lastKnownState.currentTimeMs - newState.currentTimeMs
+                ) < 1000
+            ) {
+                return;
+            }
             this.lastKnownState = newState;
-            this.lastKnownStateTime = Date.now();
+            this.lastKnownStateTimestamp = Date.now();
             this.audience
                 .filter((a) => a.id != member.id)
                 .forEach((a) => a.emit("state_set", newState));
         });
+
         member.on("state_update_request", () => {
             member.emit("state_set", this.currentState);
         });
+
         member.on("user_info_set", () => {
             if (member.chatInfo) {
                 const announcement = `<strong>${member.chatInfo.name}</strong> joined the Chat.`;
@@ -226,6 +246,7 @@ class Theater {
                 member.announcement = announcement;
             }
         });
+
         member.on("wrote_message", (messageText: string) => {
             if (member.chatInfo) {
                 member.hasSentMessage = true;
@@ -249,6 +270,7 @@ class Theater {
                 }
             }
         });
+
         this.chatHistory.slice(-20).forEach((m) => {
             member.emit(
                 typeof m == "string" || m instanceof String
@@ -257,6 +279,7 @@ class Theater {
                 m
             );
         });
+
         member.on("disconnect", () => {
             this.removeMember(member);
             // remove the announcement of the member joining from the chat
