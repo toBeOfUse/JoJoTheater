@@ -29,11 +29,11 @@
     }
 }
 
-$manga-font: "Manga Temple", sans-serif;
-$jojo-red: #d42332ff;
+$ms-font: "Trebuchet MS", sans-serif;
+$mitchbot-blue: #3e7ee4ff;
 
 :root {
-    --plyr-font-family: #{meta.inspect($manga-font)};  /* whyyyy */
+    --plyr-font-family: #{meta.inspect($ms-font)}; /* whyyyy */
     --plyr-font-size-base: 25px;
     @media (max-width: 500px) {
         --plyr-control-icon-size: 8px;
@@ -53,26 +53,24 @@ html {
 }
 
 body {
-    background-color: black;
+    background-image: radial-gradient(#212121 20%, transparent 20%);
+    background-color: white;
+    background-position: 0 0, 25px 25px;
+    background-size: 10px 10px;
     display: flex;
     align-items: center;
     flex: 1;
 }
 
 #container-container {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
+    width: 75%;
+    text-align: right;
 }
 
 #video-container {
-    position: absolute;
-    left: 25%;
-    top: 25%;
-    width: 50%;
-    height: 50%;
-    border: 3px solid $jojo-red;
-    background-color: $jojo-red;
+    width: 100%;
+    border: 3px solid $mitchbot-blue;
+    background-color: $mitchbot-blue;
     overflow: hidden;
 }
 
@@ -85,7 +83,7 @@ body {
     position: absolute;
     left: 25%;
     width: 50%;
-    top: 15%;
+    bottom: 20%;
     background-color: gray;
     color: white;
     text-align: center;
@@ -96,8 +94,11 @@ body {
     transition: opacity 1s ease-in-out;
 }
 
-#frame-image {
-    width: 100%;
+#button-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 5px;
 }
 
 .flavor-image {
@@ -107,84 +108,22 @@ body {
     animation-fill-mode: forwards;
 }
 
-#flavor-image-1 {
-    position: absolute;
-    left: 0%;
-    top: 5%;
-    height: 95%;
-}
-
-#flavor-image-2 {
-    position: absolute;
-    left: 26.625%;
-    top: 15%;
-    width: 7.125%;
+#flavor-image-logo {
+    height: 150px;
+    max-width: 90%;
     animation-delay: 0.5s;
-}
-
-#flavor-image-3 {
-    position: absolute;
-    left: 30%;
-    top: 15%;
-    width: 11.6%;
-    animation-delay: 1s;
-}
-
-#flavor-image-4 {
-    position: absolute;
-    left: 60%;
-    top: 15%;
-    width: 7%;
-    animation-delay: 1.5s;
-}
-
-#flavor-image-5 {
-    position: absolute;
-    left: 65%;
-    top: 15%;
-    width: 10%;
-    animation-delay: 2s;
-}
-
-#flavor-image-6 {
-    position: absolute;
-    left: 71%;
-    top: 0%;
-    height: 100%;
-    animation-delay: 2.5s;
-}
-
-@mixin progress-bar {
-    appearance: none;
-    background-image: url("/images/face.png");
-    width: 30px;
-    height: 30px;
-    background-size: contain;
-    background-position: center center;
-    background-repeat: no-repeat;
-    cursor: pointer;
-    @media (max-width: 500px) {
-        width: 9px;
-        height: 9px;
-        transform: translate(0px, 0px);
-    }
-}
-
-#video-container .plyr__progress input[type="range"]::-webkit-slider-thumb {
-    @include progress-bar;
-    transform: translate(-7.5px, -7.5px);
-}
-
-#video-container .plyr__progress input[type="range"]::-moz-range-thumb {
-    @include progress-bar;
-    cursor: pointer;
+    margin-bottom: 20px;
+    margin-top: -50px;
+    background-color: #ffffff99;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 20px #ffffff99;
 }
 
 @mixin below-video-style {
-    background-color: $jojo-red;
+    background-color: $mitchbot-blue;
     border-radius: 3px;
     border: 2px solid black;
-    font-family: $manga-font;
+    font-family: $ms-font;
     color: white;
     text-shadow: black 1px 1px;
     text-align: center;
@@ -196,10 +135,6 @@ body {
 
 #video-title {
     width: 200px;
-    position: absolute;
-    top: 75%;
-    left: 50%;
-    transform: translate(-50%, 0);
     @media (max-width: 500px) {
         width: 80px;
     }
@@ -208,8 +143,6 @@ body {
 
 .playlist-button {
     width: 60px;
-    position: absolute;
-    top: 75%;
     cursor: pointer;
     @media (max-width: 500px) {
         width: 20px;
@@ -223,17 +156,10 @@ body {
     cursor: default;
 }
 
-#prev-button {
-    left: 25%;
-}
-
-#next-button {
-    right: 25%;
-}
-
-.xp, .xp * {
+.xp,
+.xp * {
     box-sizing: initial !important;
-    scrollbar-color: #C8D6FB #FBFBF8;
+    scrollbar-color: #c8d6fb #fbfbf8;
     z-index: 100;
     line-height: 1;
 }
@@ -242,17 +168,19 @@ body {
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
-    user-select: none;;
+    user-select: none;
 }
 
 #chat-window {
     position: fixed;
     width: 300px;
+    left: 0;
 }
 
 .window-body {
     font-family: "Lora", serif;
     height: 160px;
+    text-align: left;
 }
 
 .chat-minimized {
@@ -290,14 +218,14 @@ body {
 }
 
 .avatar-option.selected {
-    border: 2px solid $jojo-red;
+    border: 2px solid $mitchbot-blue;
 }
 
 .validation-warning {
     animation: 1s flashRed;
 }
 
-.xp input[type=text] {
+.xp input[type="text"] {
     border: solid #7f9db9 1px;
     padding: 0 5px;
 }
