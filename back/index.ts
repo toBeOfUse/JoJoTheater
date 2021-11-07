@@ -1,3 +1,11 @@
+import path from "path";
+import http from "http";
+import express from "express";
+import compression from "compression";
+import handlebars from "express-handlebars";
+
+import init from "./sockets";
+
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
 const webpacker = webpack(webpackConfig);
@@ -21,11 +29,6 @@ webpacker.watch(
     }
 );
 
-import path from "path";
-import http from "http";
-import express from "express";
-import compression from "compression";
-import handlebars from "express-handlebars";
 const renderer = handlebars.create({
     extname: "hbs",
     defaultLayout: "",
@@ -44,12 +47,12 @@ const renderer = handlebars.create({
 const app = express();
 app.use(compression());
 app.use(express.static("dist"));
+app.use(express.static("assets"));
 app.engine("hbs", renderer.engine);
 app.set("view engine", "hbs");
 app.set("views", path.resolve(process.cwd(), "front/views/"));
 
 const server = http.createServer(app);
-import init from "./sockets";
 init(server, app);
 
 server.listen(8080, () => console.log("app running on 8080..."));

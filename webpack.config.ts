@@ -32,14 +32,11 @@ const config: webpack.Configuration = {
         new HtmlWebpackPlugin({
             template: "./front/index.html",
         }),
-        new CopyWebpackPlugin({
-            patterns: [
-                { from: "./images/", to: "./images/" },
-                // { from: './videos/', to: './videos/' },
-            ],
-        }),
         new webpack.WatchIgnorePlugin({
-            paths: [path.resolve(__dirname, "back")],
+            paths: [
+                path.resolve(__dirname, "back"),
+                path.resolve(__dirname, "assets"),
+            ],
         }),
     ],
 };
