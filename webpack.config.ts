@@ -33,10 +33,7 @@ const config: webpack.Configuration = {
             template: "./front/index.html",
         }),
         new webpack.WatchIgnorePlugin({
-            paths: [
-                path.resolve(__dirname, "back"),
-                path.resolve(__dirname, "assets"),
-            ],
+            paths: [path.resolve(__dirname, "back")],
         }),
     ],
 };

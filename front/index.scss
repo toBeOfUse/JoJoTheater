@@ -31,6 +31,7 @@
 
 $ms-font: "Trebuchet MS", sans-serif;
 $mitchbot-blue: #3e7ee4ff;
+$bg-blue: #caf8f8;
 
 :root {
     --plyr-font-family: #{meta.inspect($ms-font)}; /* whyyyy */
@@ -101,7 +102,7 @@ body {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    margin-top: 5px;
+    margin: 10px 0;
 }
 
 .flavor-image {
@@ -119,25 +120,22 @@ body {
     margin-top: 10px;
 }
 
-@mixin below-video-style {
-    background-color: $mitchbot-blue;
-    border-radius: 3px;
-    border: 2px solid black;
+#video-title {
+    background-color: $bg-blue;
+    border-radius: 10px;
+    border: 2px solid $mitchbot-blue;
     font-family: $ms-font;
-    color: white;
-    text-shadow: black 1px 1px;
+    color: $mitchbot-blue;
     text-align: center;
     padding: 1px;
-}
-
-#video-title {
-    width: 40%;
-    @include below-video-style;
+    font-size: 2em;
+    padding: 5px 10px;
+    font-weight: bold;
 }
 
 #playlist-container {
     text-align: left;
-    margin: 30px auto 50px auto;
+    margin: 10px auto 50px auto;
     font-family: $ms-font;
     width: 60%;
     @media (max-width: 600px) {
@@ -162,7 +160,7 @@ body {
 }
 
 #playlist-header {
-    padding: 10px 1px;
+    padding: 10px 20px;
     margin: 0 auto;
     background-image: url("../assets/images/fun-square.svg");
     background-repeat: no-repeat;
@@ -171,7 +169,7 @@ body {
     width: 150px;
     text-align: center;
     cursor: pointer;
-    text-decoration: underline;
+    color: $mitchbot-blue;
 }
 
 .playlist-icon {
