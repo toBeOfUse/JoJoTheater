@@ -1,8 +1,9 @@
 interface Video {
     src: string;
-    type: string;
-    size: number;
+    type?: string;
+    size?: number;
     title: string;
+    provider?: string;
 }
 
 const playlist: Video[] = [
@@ -11,6 +12,11 @@ const playlist: Video[] = [
         title: "Catra Doesn't Like Adora",
         type: "video/mp4",
         size: 720,
+    },
+    {
+        src: "sYyu5vbwvbA",
+        provider: "youtube",
+        title: "Moves",
     },
 ];
 
