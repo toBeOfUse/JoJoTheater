@@ -202,6 +202,7 @@ function initVideoPlayer() {
                         currentTimeMs: 0,
                         currentItem: i,
                     });
+                    renderPlaylist();
                     socket.emit(
                         "state_change_request",
                         player.getCurrentState()
