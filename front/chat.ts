@@ -1,6 +1,7 @@
 import $ from "jquery";
 import type { Socket } from "socket.io-client";
 import type { ChatUserInfo, ChatAnnouncement, ChatMessage } from "../types";
+import "./spinner.css";
 
 // load xp.css as raw, put it in a style element, and then modify the rules so that
 // they only apply to elements within the .xp class
