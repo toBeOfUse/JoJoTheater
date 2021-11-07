@@ -68,7 +68,7 @@ body {
     @media (max-width: 500px) {
         width: 95%;
     }
-    text-align: right;
+    text-align: center;
 }
 
 #video-container {
@@ -118,6 +118,7 @@ body {
     animation-delay: 0.5s;
     margin-bottom: 20px;
     margin-top: 10px;
+    margin-left: 20%;
 }
 
 #video-title {
