@@ -26,7 +26,7 @@ function displayMessage(message) {
     }, 4000);
 }
 
-function initVideoPlayer() {
+async function initVideoPlayer() {
     socket = io();
     socket.on("id_set", (e) => console.log("client has id", e));
     socket.on("ping", (pingID) => {
@@ -42,11 +42,22 @@ function initVideoPlayer() {
             "mute",
             "volume",
             "fullscreen",
+            "captions",
         ],
         invertTime: false,
         ratio: "16:9",
         disableContextMenu: false,
+        captions: { active: true, language: "auto" },
+        youtube: { noCookie: true },
     });
+
+    const playerReady = new Promise((resolve, reject) => {
+        player.on("ready", () => {
+            resolve();
+        });
+    });
+
+    await playerReady;
 
     // used for identity comparisons to detect playlist changes
     player.lastPlaylist = playlist;
@@ -76,7 +87,7 @@ function initVideoPlayer() {
                 this.pause();
             }
         }
-        if (Math.abs(state.currentTimeMs - this.currentTimeMs) > 100) {
+        if (Math.abs(state.currentTimeMs - this.currentTimeMs) > 500) {
             console.log("updating player current time to", state.currentTimeMs);
             this.currentTimeMs = state.currentTimeMs;
         }
@@ -91,6 +102,13 @@ function initVideoPlayer() {
                 title: playlist[this.currentItem].title,
                 sources: [playlist[this.currentItem]],
             };
+            if (playlist[this.currentItem].captions) {
+                player.config.captions.active = true;
+                player.config.youtube.cc_load_policy = 1;
+            } else {
+                player.config.captions.active = false;
+                player.config.youtube.cc_load_policy = 0;
+            }
             player.source = newSource;
             document.querySelector("#video-title").innerHTML = newSource.title;
         }
