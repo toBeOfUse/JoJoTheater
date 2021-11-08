@@ -57,7 +57,13 @@ async function getPlaylist(): Promise<Video[]> {
 }
 
 async function addToPlaylist(v: Video) {
-    await playlistDB.table<Video>("playlist").insert(v);
+    const existingCount = Number(
+        (await playlistDB.table("playlist").count({ count: "*" }))[0].count
+    );
+    console.log("playlist has " + existingCount + " videos; adding one more");
+    if (existingCount < 100) {
+        await playlistDB.table<Video>("playlist").insert(v);
+    }
 }
 
 export { getPlaylist, addToPlaylist };
