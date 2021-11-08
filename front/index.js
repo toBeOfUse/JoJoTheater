@@ -59,7 +59,7 @@ async function initVideoPlayer() {
 
     await playerReady;
 
-    // used for identity comparisons to detect playlist changes
+    // used for comparisons to detect current item source and title changes
     player.lastItem = null;
 
     player.currentItem = 0;
@@ -92,25 +92,29 @@ async function initVideoPlayer() {
             this.currentTimeMs = state.currentTimeMs;
         }
         this.currentItem = state.currentItem;
-        if (playlist[this.currentItem].title != player.lastItem.title) {
-            document.querySelector("#video-title").innerHTML =
-                playlist[this.currentItem].title;
-        }
-        if (playlist[this.currentItem].src != player.lastItem.src) {
-            player.lastItem = playlist[this.currentItem];
-            const newSource = {
-                type: "video",
-                title: playlist[this.currentItem].title,
-                sources: [playlist[this.currentItem]],
-            };
-            if (playlist[this.currentItem].captions) {
-                player.config.captions.active = true;
-                player.config.youtube.cc_load_policy = 1;
-            } else {
-                player.config.captions.active = false;
-                player.config.youtube.cc_load_policy = 0;
+        if (playlist?.length) {
+            if (playlist[this.currentItem].title != player.lastItem?.title) {
+                document.querySelector("#video-title").innerHTML =
+                    playlist[this.currentItem].title;
             }
-            player.source = newSource;
+            if (playlist[this.currentItem].src != player.lastItem?.src) {
+                player.lastItem = playlist[this.currentItem];
+                const newSource = {
+                    type: "video",
+                    title: playlist[this.currentItem].title,
+                    sources: [playlist[this.currentItem]],
+                };
+                console.log("setting video source:");
+                console.log(newSource);
+                if (playlist[this.currentItem].captions) {
+                    player.config.captions.active = true;
+                    player.config.youtube.cc_load_policy = 1;
+                } else {
+                    player.config.captions.active = false;
+                    player.config.youtube.cc_load_policy = 0;
+                }
+                player.source = newSource;
+            }
         }
     };
 
@@ -150,6 +154,15 @@ async function initVideoPlayer() {
     });
     socket.on("playlist_set", (newPlaylist) => {
         playlist = newPlaylist;
+        for (const video of playlist) {
+            // keep plyr from getting confused about what kind of video this is
+            if (video.provider) {
+                delete video.type;
+                delete video.size;
+            } else {
+                delete video.provider;
+            }
+        }
         player.updateState(player.getCurrentState()); // shrug
         renderPlaylist();
     });

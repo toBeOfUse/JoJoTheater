@@ -1,9 +1,9 @@
 interface Video {
     src: string;
-    type?: string;
-    size?: number;
+    type?: string; // only for local files
+    size?: number; // only for local files
     title: string;
-    provider?: string;
+    provider?: string; // only for youtube/vimeo
     captions: boolean;
 }
 

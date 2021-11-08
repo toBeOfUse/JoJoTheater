@@ -4,7 +4,7 @@ import { Server } from "http";
 import type { Express } from "express";
 import escapeHTML from "escape-html";
 
-import { Video, playlist as defaultPlaylist } from "./playlist";
+import { getPlaylist } from "./db";
 import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
 
 type ServerSentEvent =
@@ -159,7 +159,6 @@ class AudienceMember {
 
 class Theater {
     audience: AudienceMember[] = [];
-    playlist: Video[] = defaultPlaylist;
     lastKnownState: PlayerState = {
         playing: false,
         currentItem: 0,
@@ -182,7 +181,10 @@ class Theater {
         io.on("connection", (socket: Socket) => {
             const newMember = new AudienceMember(socket);
             newMember.emit("id_set", socket.id);
-            newMember.emit("playlist_set", this.playlist);
+            getPlaylist().then((playlist) => {
+                newMember.emit("playlist_set", playlist);
+            });
+
             newMember.emit("state_set", this.currentState);
             this.initializeMember(newMember);
             console.log(
@@ -237,6 +239,9 @@ class Theater {
 
         member.on("state_update_request", () => {
             member.emit("state_set", this.currentState);
+            getPlaylist().then((playlist) => {
+                member.emit("playlist_set", playlist);
+            });
         });
 
         member.on("user_info_set", () => {
