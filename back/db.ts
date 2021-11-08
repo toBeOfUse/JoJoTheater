@@ -1,6 +1,6 @@
 import knex from "knex";
 
-import { Video, playlist as initial_playlist } from "./playlist";
+import { Video, playlist as initialPlaylist, localPlaylist } from "./playlist";
 
 const playlistDB = knex({
     client: "sqlite3",
@@ -22,11 +22,27 @@ async function buildDB() {
             table.string("type"); // only for local files
             table.integer("size"); // only for local files
         });
-        for (const video of initial_playlist) {
+        for (const video of initialPlaylist) {
             await playlistDB.table<Video>("playlist").insert(video);
         }
     } else {
         console.log("found table 'playlist'");
+    }
+    // ensure local videos are in the table no matter what, since this is the only
+    // place they can be added
+    for (const video of localPlaylist) {
+        if (
+            !Number(
+                (
+                    await playlistDB
+                        .table("playlist")
+                        .count({ count: "*" })
+                        .where({ src: video.src })
+                )[0].count
+            )
+        ) {
+            await playlistDB.table<Video>("playlist").insert(video);
+        }
     }
 }
 

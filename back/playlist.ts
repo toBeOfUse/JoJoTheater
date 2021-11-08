@@ -39,6 +39,15 @@ const playlist: Video[] = [
         captions: true,
     },
     {
+        src: "https://vimeo.com/32845443",
+        title: "Girl Walk // All Day: Chapter 2",
+        provider: "vimeo",
+        captions: false,
+    },
+];
+
+const localPlaylist: Video[] = [
+    {
         src: "/videos/vampiresvbronx.mp4",
         title: "Vampires Vs. the Bronx (2020)",
         type: "video/mp4",
@@ -47,4 +56,4 @@ const playlist: Video[] = [
     },
 ];
 
-export { Video, playlist };
+export { Video, playlist, localPlaylist };
