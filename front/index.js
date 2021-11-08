@@ -123,6 +123,7 @@ async function initVideoPlayer() {
             playing: this.playing,
             currentTimeMs: this.currentTimeMs,
             currentItem: this.currentItem,
+            seek: false, // default value - manually corrected in the "seeked" handler
         };
     };
 
@@ -143,7 +144,10 @@ async function initVideoPlayer() {
 
     player.on("seeked", () => {
         console.log("local player emitted 'seeked' event");
-        socket.emit("state_change_request", player.getCurrentState());
+        socket.emit("state_change_request", {
+            ...player.getCurrentState(),
+            seek: true,
+        });
     });
 
     socket.on("state_set", (newState) => {
@@ -227,11 +231,22 @@ async function initVideoPlayer() {
         addButton.innerHTML = "+";
         addButton.style.marginLeft = "auto";
         addButton.addEventListener("click", () => {
-            socket.emit("add_video", urlInput.value);
+            socket.once("add_video_failed", () => {
+                addButton.disabled = false;
+                urlInput.disabled = false;
+                urlInput.value = "";
+                urlInput.placeholder = "That didn't work :( try again?";
+            });
             addButton.disabled = true;
             urlInput.disabled = true;
+            socket.emit("add_video", urlInput.value);
         });
         item.appendChild(addButton);
+        urlInput.addEventListener("keypress", function (e) {
+            if (e.key === "Enter") {
+                addButton.click();
+            }
+        });
         cont.appendChild(item);
     }
 

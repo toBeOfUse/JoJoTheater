@@ -1,6 +1,7 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
+import URL from "url";
 import type { Express } from "express";
 import escapeHTML from "escape-html";
 
@@ -13,6 +14,7 @@ type ServerSentEvent =
     | "playlist_set"
     | "chat_message"
     | "chat_announcement"
+    | "add_video_failed"
     | "state_set";
 
 type ClientSentEvent =
@@ -27,6 +29,7 @@ interface PlayerState {
     playing: boolean;
     currentTimeMs: number;
     currentItem: number;
+    seek: boolean;
 }
 
 interface ConnectionStatus {
@@ -164,6 +167,7 @@ class Theater {
         playing: false,
         currentItem: 0,
         currentTimeMs: 0,
+        seek: false,
     };
     lastKnownStateTimestamp: number = Date.now();
     chatHistory: (ChatMessage | ChatAnnouncement)[] = [];
@@ -231,6 +235,20 @@ class Theater {
             ) {
                 return;
             }
+            if (
+                newState.currentItem == this.currentState.currentItem &&
+                Math.abs(
+                    newState.currentTimeMs - this.currentState.currentTimeMs
+                ) > 1000 &&
+                !newState.seek
+            ) {
+                // if the client is trying to change the time by a lot and they're
+                // not explicitly seeking or changing the playlist item, they're
+                // probably just lagging and giving an old currentTimeMs value and we
+                // need to ignore and correct them
+                newState.currentTimeMs = this.currentState.currentTimeMs;
+                member.emit("state_set", newState);
+            }
             this.lastKnownState = newState;
             this.lastKnownStateTimestamp = Date.now();
             this.audience
@@ -246,25 +264,37 @@ class Theater {
         });
 
         member.on("add_video", async (url: string) => {
-            // put in try-catch with error notification?
-            url = url.toLowerCase();
-            let provider, videoDataURL;
-            if (url.includes("youtube")) {
-                provider = "youtube";
-                videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
-            } else {
-                provider = "vimeo";
-                videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
+            try {
+                new URL.URL(url); // will throw an error if url is invalid
+                url = url.toLowerCase();
+                if (
+                    !url.includes("youtube.com") &&
+                    !url.includes("vimeo.com")
+                ) {
+                    throw new Error("url was not a vimeo or youtube url");
+                }
+                let provider, videoDataURL;
+                if (url.includes("youtube")) {
+                    provider = "youtube";
+                    videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
+                } else {
+                    provider = "vimeo";
+                    videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
+                }
+                const videoData = await (await fetch(videoDataURL)).json();
+                const title = videoData.title;
+                await addToPlaylist({
+                    provider,
+                    src: url,
+                    title,
+                    captions: true,
+                });
+                this.emitAll("playlist_set", await getPlaylist());
+            } catch (e) {
+                console.log("could not get video from url", url);
+                console.log(e);
+                member.emit("add_video_failed");
             }
-            const videoData = await (await fetch(videoDataURL)).json();
-            const title = videoData.title;
-            await addToPlaylist({
-                provider,
-                src: url,
-                title,
-                captions: true,
-            });
-            this.emitAll("playlist_set", await getPlaylist());
         });
 
         member.on("user_info_set", () => {
