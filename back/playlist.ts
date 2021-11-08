@@ -38,13 +38,13 @@ const playlist: Video[] = [
         title: "《双镜 Couple of Mirrors》EP05: The Scene of the Third Crime",
         captions: true,
     },
-    // {
-    //     src: "/videos/vampiresvbronx.mp4",
-    //     title: "Vampires Vs. the Bronx (2020)",
-    //     type: "video/mp4",
-    //     size: 1080,
-    //     captions: false,
-    // },
+    {
+        src: "/videos/vampiresvbronx.mp4",
+        title: "Vampires Vs. the Bronx (2020)",
+        type: "video/mp4",
+        size: 1080,
+        captions: false,
+    },
 ];
 
 export { Video, playlist };
