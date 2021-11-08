@@ -266,15 +266,14 @@ class Theater {
         member.on("add_video", async (url: string) => {
             try {
                 new URL.URL(url); // will throw an error if url is invalid
-                url = url.toLowerCase();
                 if (
-                    !url.includes("youtube.com") &&
-                    !url.includes("vimeo.com")
+                    !url.toLowerCase().includes("youtube.com") &&
+                    !url.toLowerCase().includes("vimeo.com")
                 ) {
                     throw new Error("url was not a vimeo or youtube url");
                 }
                 let provider, videoDataURL;
-                if (url.includes("youtube")) {
+                if (url.toLowerCase().includes("youtube")) {
                     provider = "youtube";
                     videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
                 } else {

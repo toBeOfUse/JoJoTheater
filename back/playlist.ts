@@ -49,7 +49,7 @@ const playlist: Video[] = [
 const localPlaylist: Video[] = [
     {
         src: "/videos/vampiresvbronx.mp4",
-        title: "Vampires Vs. the Bronx (2020)",
+        title: "Vampires vs. the Bronx (2020)",
         type: "video/mp4",
         size: 1080,
         captions: false,
