@@ -256,9 +256,7 @@ class Theater {
             }
             if (
                 newState.currentItem == this.currentState.currentItem &&
-                Math.abs(
-                    newState.currentTimeMs - this.currentState.currentTimeMs
-                ) > 1000 &&
+                newState.playing == this.currentState.playing &&
                 !newState.seek
             ) {
                 // if the client is trying to change the time by a lot and they're
@@ -272,6 +270,8 @@ class Theater {
             }
             this.lastKnownState = newState;
             this.lastKnownStateTimestamp = Date.now();
+            logger.debug("emitting accepted player state:");
+            logger.debug(JSON.stringify(newState));
             this.audience
                 .filter((a) => a.id != member.id)
                 .forEach((a) => a.emit("state_set", newState));
@@ -363,11 +363,11 @@ class Theater {
 
         member.on("disconnect", () => {
             this.removeMember(member);
-            logger.debug(
-                "removing the joining of the user who just " +
-                    "left without sending messages from history"
-            );
             if (member.announcement && !member.hasSentMessage) {
+                logger.debug(
+                    "removing the joining of the user who just " +
+                        "left without sending messages from history"
+                );
                 this.chatHistory = this.chatHistory.filter(
                     (v) => v != member.announcement
                 );

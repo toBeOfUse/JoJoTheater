@@ -77,12 +77,16 @@ async function initVideoPlayer() {
     player.updateState = function (state) {
         if (state.playing != this.playing) {
             if (state.playing) {
-                this.play().catch(() => {
-                    displayMessage(
-                        "autoplay is blocked; press play to sync up with the server"
-                    );
-                    player.ableToPlay = false;
-                });
+                const playCall = this.play();
+                if (playCall) {
+                    // if playCall is a promise
+                    playCall.catch(() => {
+                        displayMessage(
+                            "autoplay is blocked; press play to sync up with the server"
+                        );
+                        player.ableToPlay = false;
+                    });
+                }
             } else {
                 this.pause();
             }
@@ -123,7 +127,7 @@ async function initVideoPlayer() {
             playing: this.playing,
             currentTimeMs: this.currentTimeMs,
             currentItem: this.currentItem,
-            seek: false, // default value - manually corrected in the "seeked" handler
+            seek: this.seeking,
         };
     };
 
@@ -144,6 +148,7 @@ async function initVideoPlayer() {
 
     player.on("seeked", () => {
         console.log("local player emitted 'seeked' event");
+        console.log("current time is", player.currentTimeMs);
         socket.emit("state_change_request", {
             ...player.getCurrentState(),
             seek: true,
