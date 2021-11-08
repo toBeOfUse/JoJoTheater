@@ -60,7 +60,7 @@ async function initVideoPlayer() {
     await playerReady;
 
     // used for identity comparisons to detect playlist changes
-    player.lastPlaylist = playlist;
+    player.lastItem = null;
 
     player.currentItem = 0;
 
@@ -91,12 +91,13 @@ async function initVideoPlayer() {
             console.log("updating player current time to", state.currentTimeMs);
             this.currentTimeMs = state.currentTimeMs;
         }
-        if (
-            state.currentItem != this.currentItem ||
-            playlist != player.lastPlaylist
-        ) {
-            player.lastPlaylist = playlist;
-            this.currentItem = state.currentItem;
+        this.currentItem = state.currentItem;
+        if (playlist[this.currentItem].title != player.lastItem.title) {
+            document.querySelector("#video-title").innerHTML =
+                playlist[this.currentItem].title;
+        }
+        if (playlist[this.currentItem].src != player.lastItem.src) {
+            player.lastItem = playlist[this.currentItem];
             const newSource = {
                 type: "video",
                 title: playlist[this.currentItem].title,
@@ -110,7 +111,6 @@ async function initVideoPlayer() {
                 player.config.youtube.cc_load_policy = 0;
             }
             player.source = newSource;
-            document.querySelector("#video-title").innerHTML = newSource.title;
         }
     };
 
