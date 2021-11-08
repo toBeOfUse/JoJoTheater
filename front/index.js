@@ -215,6 +215,24 @@ async function initVideoPlayer() {
             }
             cont.appendChild(item);
         }
+        // add new item field
+        const item = document.createElement("div");
+        item.style.display = playlistShown ? "flex" : "none";
+        item.setAttribute("class", "playlist-item playlist-input");
+        const urlInput = document.createElement("input");
+        urlInput.setAttribute("type", "text");
+        urlInput.setAttribute("placeholder", "Youtube or Vimeo URL...");
+        item.appendChild(urlInput);
+        const addButton = document.createElement("button");
+        addButton.innerHTML = "+";
+        addButton.style.marginLeft = "auto";
+        addButton.addEventListener("click", () => {
+            socket.emit("add_video", urlInput.value);
+            addButton.disabled = true;
+            urlInput.disabled = true;
+        });
+        item.appendChild(addButton);
+        cont.appendChild(item);
     }
 
     renderPlaylist();

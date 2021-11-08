@@ -40,4 +40,8 @@ async function getPlaylist(): Promise<Video[]> {
         .orderBy("id");
 }
 
-export { getPlaylist };
+async function addToPlaylist(v: Video) {
+    await playlistDB.table<Video>("playlist").insert(v);
+}
+
+export { getPlaylist, addToPlaylist };

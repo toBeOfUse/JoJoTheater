@@ -4,7 +4,7 @@ import { Server } from "http";
 import type { Express } from "express";
 import escapeHTML from "escape-html";
 
-import { getPlaylist } from "./db";
+import { getPlaylist, addToPlaylist } from "./db";
 import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
 
 type ServerSentEvent =
@@ -18,6 +18,7 @@ type ServerSentEvent =
 type ClientSentEvent =
     | "state_change_request"
     | "state_update_request"
+    | "add_video"
     | "user_info_set"
     | "wrote_message"
     | "disconnect";
@@ -242,6 +243,28 @@ class Theater {
             getPlaylist().then((playlist) => {
                 member.emit("playlist_set", playlist);
             });
+        });
+
+        member.on("add_video", async (url: string) => {
+            // put in try-catch with error notification?
+            url = url.toLowerCase();
+            let provider, videoDataURL;
+            if (url.includes("youtube")) {
+                provider = "youtube";
+                videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
+            } else {
+                provider = "vimeo";
+                videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
+            }
+            const videoData = await (await fetch(videoDataURL)).json();
+            const title = videoData.title;
+            await addToPlaylist({
+                provider,
+                src: url,
+                title,
+                captions: true,
+            });
+            this.emitAll("playlist_set", await getPlaylist());
         });
 
         member.on("user_info_set", () => {
