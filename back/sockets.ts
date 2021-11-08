@@ -7,6 +7,7 @@ import escapeHTML from "escape-html";
 
 import { getPlaylist, addToPlaylist } from "./db";
 import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
+import logger from "./logger";
 
 type ServerSentEvent =
     | "ping"
@@ -104,10 +105,9 @@ class AudienceMember {
     constructor(socket: Socket) {
         this.socket = socket;
         this.id = socket.id;
-        this.socket.onAny((eventName: string, ...args) => {
+        this.socket.onAny((eventName: string) => {
             if (!eventName.startsWith("pong")) {
-                console.log(eventName + " event from " + this.id);
-                console.log(args);
+                logger.debug(eventName + " event from id " + this.id);
             }
         });
         this.updateLatency();
@@ -120,6 +120,13 @@ class AudienceMember {
             ) {
                 info.name = escapeHTML(info.name);
                 this.chatInfo = { ...info, id: this.id };
+                logger.debug(
+                    "audience member successfully set their chat info to:"
+                );
+                logger.debug(JSON.stringify(info));
+            } else {
+                logger.debug("chat info rejected:");
+                logger.debug(JSON.stringify(info).substring(0, 1000));
             }
         });
         const remoteIP = socket.handshake.headers["x-real-ip"] as string;
@@ -128,7 +135,7 @@ class AudienceMember {
                 .then((res) => res.json())
                 .then((json) => {
                     this.location = `${json.city}, ${json.region}, ${json.country}`;
-                    console.log(
+                    logger.info(
                         `new client appears to be from ${this.location}`
                     );
                 });
@@ -192,11 +199,17 @@ class Theater {
 
             newMember.emit("state_set", this.currentState);
             this.initializeMember(newMember);
-            console.log(
+            logger.info(
                 "new client added: " + this.audience.length + " total connected"
             );
             newMember.on("disconnect", () => {
+                logger.info(
+                    "client disconnected: " +
+                        this.audience.length +
+                        " remaining"
+                );
                 if (this.audience.length === 0) {
+                    logger.debug("pausing video as no one is left to watch");
                     this.lastKnownState = {
                         ...this.currentState,
                         playing: false,
@@ -214,8 +227,12 @@ class Theater {
     sendToChat(message: ChatMessage | ChatAnnouncement) {
         this.chatHistory.push(message);
         if (typeof message == "string" || message instanceof String) {
+            logger.debug("emitting chat annoucement:");
+            logger.debug(message);
             this.emitAll("chat_announcement", message);
         } else {
+            logger.debug("emitting chat message:");
+            logger.debug(JSON.stringify(message));
             this.emitAll("chat_message", message);
         }
     }
@@ -233,6 +250,8 @@ class Theater {
                     this.lastKnownState.currentTimeMs - newState.currentTimeMs
                 ) < 1000
             ) {
+                logger.debug("ignoring redundant state change request:");
+                logger.debug(JSON.stringify(newState));
                 return;
             }
             if (
@@ -246,6 +265,8 @@ class Theater {
                 // not explicitly seeking or changing the playlist item, they're
                 // probably just lagging and giving an old currentTimeMs value and we
                 // need to ignore and correct them
+                logger.debug("rebutting laggy-seeming state change request:");
+                logger.debug(JSON.stringify(newState));
                 newState.currentTimeMs = this.currentState.currentTimeMs;
                 member.emit("state_set", newState);
             }
@@ -264,6 +285,9 @@ class Theater {
         });
 
         member.on("add_video", async (url: string) => {
+            logger.debug(
+                "attempting to add video with url " + url + " to playlist"
+            );
             try {
                 new URL.URL(url); // will throw an error if url is invalid
                 if (
@@ -290,8 +314,8 @@ class Theater {
                 });
                 this.emitAll("playlist_set", await getPlaylist());
             } catch (e) {
-                console.log("could not get video from url", url);
-                console.log(e);
+                logger.warn("could not get video from url " + url);
+                logger.warn(e);
                 member.emit("add_video_failed");
             }
         });
@@ -339,16 +363,15 @@ class Theater {
 
         member.on("disconnect", () => {
             this.removeMember(member);
-            // remove the announcement of the member joining from the chat
-            // history if they didn't send a message
+            logger.debug(
+                "removing the joining of the user who just " +
+                    "left without sending messages from history"
+            );
             if (member.announcement && !member.hasSentMessage) {
                 this.chatHistory = this.chatHistory.filter(
                     (v) => v != member.announcement
                 );
             }
-            console.log(
-                "client removed: " + this.audience.length + " total connected"
-            );
         });
     }
 
@@ -361,6 +384,7 @@ export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const theater = new Theater(io);
     app.get("/stats", (_, res) => {
+        logger.debug("rendering stats page");
         res.render("connections", {
             connections: theater.audience.map((a) => a.connectionInfo),
         });

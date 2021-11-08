@@ -5,17 +5,19 @@ import compression from "compression";
 import handlebars from "express-handlebars";
 
 import init from "./sockets";
+import logger from "./logger";
 
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
 const webpacker = webpack(webpackConfig);
+logger.info("starting webpack in mode " + webpackConfig.mode);
 webpacker.watch(
     {
         aggregateTimeout: 300,
     },
     (err, stats) => {
         if (err || stats?.hasErrors()) {
-            console.log("webpack error");
+            logger.warn("webpack error");
             if (err) {
                 console.error(err.stack || err);
             }
@@ -55,4 +57,4 @@ app.set("views", path.resolve(process.cwd(), "front/views/"));
 const server = http.createServer(app);
 init(server, app);
 
-server.listen(8080, () => console.log("app running on 8080..."));
+server.listen(8080, () => logger.info("app running on 8080..."));

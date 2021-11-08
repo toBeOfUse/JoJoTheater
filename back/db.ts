@@ -1,6 +1,7 @@
 import knex from "knex";
 
 import { Video, playlist as initialPlaylist, localPlaylist } from "./playlist";
+import logger from "./logger";
 
 const playlistDB = knex({
     client: "sqlite3",
@@ -12,7 +13,7 @@ const playlistDB = knex({
 async function buildDB() {
     const tableExists = await playlistDB.schema.hasTable("playlist");
     if (!tableExists) {
-        console.log("creating table 'playlist'");
+        logger.debug("creating and populating table 'playlist'");
         await playlistDB.schema.createTable("playlist", (table) => {
             table.increments();
             table.string("src").notNullable();
@@ -26,7 +27,7 @@ async function buildDB() {
             await playlistDB.table<Video>("playlist").insert(video);
         }
     } else {
-        console.log("found table 'playlist'");
+        logger.debug("found table 'playlist'");
     }
     // ensure local videos are in the table no matter what, since this is the only
     // place they can be added
@@ -60,7 +61,7 @@ async function addToPlaylist(v: Video) {
     const existingCount = Number(
         (await playlistDB.table("playlist").count({ count: "*" }))[0].count
     );
-    console.log("playlist has " + existingCount + " videos; adding one more");
+    logger.debug("playlist has " + existingCount + " videos; adding one more");
     if (existingCount < 100) {
         await playlistDB.table<Video>("playlist").insert(v);
     }
