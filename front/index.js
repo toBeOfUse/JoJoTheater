@@ -188,7 +188,7 @@ async function initVideoPlayer() {
         for (const el of cont.querySelectorAll(".playlist-item")) {
             el.remove();
         }
-        const display = playlistShown ? "block" : "none";
+        const display = playlistShown ? "" : "none";
         const header = document.querySelector("#playlist-header");
         header.innerHTML = playlistShown ? "Playlist ▾" : "Playlist ▸";
         for (let i = 0; i < playlist.length; i++) {
@@ -226,11 +226,11 @@ async function initVideoPlayer() {
         }
         // add new item field
         const item = document.createElement("div");
-        item.style.display = playlistShown ? "flex" : "none";
+        item.style.display = display;
         item.setAttribute("class", "playlist-item playlist-input");
         const urlInput = document.createElement("input");
-        urlInput.setAttribute("type", "text");
-        urlInput.setAttribute("placeholder", "Youtube or Vimeo URL...");
+        urlInput.type = "text";
+        urlInput.placeholder = "Type a Youtube or Vimeo URL...";
         item.appendChild(urlInput);
         const addButton = document.createElement("button");
         addButton.innerHTML = "+";

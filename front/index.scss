@@ -160,6 +160,9 @@ body {
     &.not-active {
         cursor: pointer;
     }
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 }
 
 #playlist-header {
@@ -181,9 +184,7 @@ body {
 }
 
 .playlist-input {
-    flex-direction: row;
     & input[type="text"] {
-        border: 1px solid gray;
         margin-right: 3px;
         width: 100%;
     }
