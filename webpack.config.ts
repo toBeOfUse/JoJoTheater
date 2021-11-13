@@ -5,7 +5,7 @@ import webpack from "webpack";
 
 const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === "production" ? "production" : "development",
-    entry: "./front/index.js",
+    entry: "./front/index.ts",
     output: {
         filename: "main.[contenthash].js",
         path: path.resolve(__dirname, "dist"),
