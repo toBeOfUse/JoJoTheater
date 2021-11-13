@@ -1,8 +1,8 @@
 import knex from "knex";
 
-import { Video, playlist as initialPlaylist, localPlaylist } from "./playlist";
+import { playlist as initialPlaylist, localPlaylist } from "./playlist";
 import logger from "./logger";
-import { ChatMessage } from "../types";
+import { ChatMessage, Video } from "../types";
 
 const playlistDB = knex({
     client: "sqlite3",
