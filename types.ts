@@ -1,14 +1,10 @@
-interface ChatUserInfo {
-    id: string;
-    name: string;
-    avatarURL: string;
-}
-
-type ChatAnnouncement = string;
-
 interface ChatMessage {
+    isAnnouncement: boolean;
     messageHTML: string;
-    sender: ChatUserInfo;
+    // the below are missing or null for announcements
+    senderID?: string;
+    senderName?: string;
+    senderAvatarURL?: string;
 }
 
-export { ChatUserInfo, ChatMessage, ChatAnnouncement };
+export { ChatMessage };

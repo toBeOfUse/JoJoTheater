@@ -2,6 +2,7 @@ import knex from "knex";
 
 import { Video, playlist as initialPlaylist, localPlaylist } from "./playlist";
 import logger from "./logger";
+import { ChatMessage } from "../types";
 
 const playlistDB = knex({
     client: "sqlite3",
@@ -10,9 +11,9 @@ const playlistDB = knex({
     },
 });
 
-async function buildDB() {
-    const tableExists = await playlistDB.schema.hasTable("playlist");
-    if (!tableExists) {
+async function buildPlaylistDB() {
+    const playlistTableExists = await playlistDB.schema.hasTable("playlist");
+    if (!playlistTableExists) {
         logger.debug("creating and populating table 'playlist'");
         await playlistDB.schema.createTable("playlist", (table) => {
             table.increments();
@@ -47,10 +48,10 @@ async function buildDB() {
     }
 }
 
-const dbBuilt = buildDB();
+const playlistDBBuilt = buildPlaylistDB();
 
 async function getPlaylist(): Promise<Video[]> {
-    await dbBuilt;
+    await playlistDBBuilt;
     return await playlistDB
         .select(["src", "title", "captions", "type", "provider", "size"])
         .from<Video>("playlist")
@@ -58,6 +59,7 @@ async function getPlaylist(): Promise<Video[]> {
 }
 
 async function addToPlaylist(v: Video) {
+    await playlistDBBuilt;
     const existingCount = Number(
         (await playlistDB.table("playlist").count({ count: "*" }))[0].count
     );
@@ -67,4 +69,58 @@ async function addToPlaylist(v: Video) {
     }
 }
 
-export { getPlaylist, addToPlaylist };
+const messageDB = knex({
+    client: "sqlite3",
+    connection: {
+        filename: "./back/messages.db",
+    },
+});
+
+async function buildMessagesDB() {
+    const messagesTableExists = await messageDB.schema.hasTable("messages");
+    if (!messagesTableExists) {
+        logger.debug("creating table 'messages'");
+        await messageDB.schema.createTable("messages", (table) => {
+            table.increments();
+            table.timestamp("createdAt").notNullable();
+
+            table.boolean("isAnnouncement").notNullable();
+            table.string("messageHTML").notNullable();
+
+            // the following are null if announcement is false:
+            table.string("senderID");
+            table.string("senderName");
+            table.string("senderAvatarURL");
+        });
+    } else {
+        logger.debug("found table 'messages'");
+    }
+}
+
+const messagesDBBuilt = buildMessagesDB();
+
+async function addMessage(m: ChatMessage) {
+    await messagesDBBuilt;
+    await messageDB
+        .table<ChatMessage & { createdAt: Date }>("messages")
+        .insert({ ...m, createdAt: new Date() });
+}
+
+async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
+    await messagesDBBuilt;
+    return (
+        await messageDB
+            .table<ChatMessage>("messages")
+            .select([
+                "isAnnouncement",
+                "messageHTML",
+                "senderID",
+                "senderName",
+                "senderAvatarURL",
+            ])
+            .orderBy("createdAt", "desc")
+            .limit(howMany)
+    ).reverse();
+}
+
+export { getPlaylist, addToPlaylist, getRecentMessages, addMessage };

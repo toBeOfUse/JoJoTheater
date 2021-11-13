@@ -1,6 +1,6 @@
 import $ from "jquery";
 import type { Socket } from "socket.io-client";
-import type { ChatUserInfo, ChatAnnouncement, ChatMessage } from "../types";
+import type { ChatMessage } from "../types";
 import "./spinner.css";
 
 // load xp.css as raw, put it in a style element, and then modify the rules so that
@@ -92,7 +92,7 @@ export default function initChat(socket: Socket) {
 
     const messages = $("#messages");
     let lastSenderID = "";
-    socket.on("chat_announcement", (announcement: ChatAnnouncement) => {
+    socket.on("chat_announcement", (announcement: string) => {
         messages.append(
             `<div class="chat-section"><div class="announcement">${announcement}</div></div>`
         );
@@ -100,14 +100,14 @@ export default function initChat(socket: Socket) {
         scrollMessagesToBottom();
     });
     socket.on("chat_message", (message: ChatMessage) => {
-        if (lastSenderID != message.sender.id) {
+        if (lastSenderID != message.senderID) {
             messages.append(`<div class="chat-section">
-                    <img class="in-chat-avatar" src="${message.sender.avatarURL}" />
+                    <img class="in-chat-avatar" src="${message.senderAvatarURL}" />
                     <div class="chat-section-text">
-                        <span class="in-chat-username">${message.sender.name}</span>
+                        <span class="in-chat-username">${message.senderName}</span>
                     </div>
                 </div>`);
-            lastSenderID = message.sender.id;
+            lastSenderID = message.senderID as string;
         }
         messages
             .find(".chat-section-text")

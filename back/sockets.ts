@@ -5,8 +5,13 @@ import URL from "url";
 import type { Express } from "express";
 import escapeHTML from "escape-html";
 
-import { getPlaylist, addToPlaylist } from "./db";
-import { ChatUserInfo, ChatMessage, ChatAnnouncement } from "../types";
+import {
+    getPlaylist,
+    addToPlaylist,
+    getRecentMessages,
+    addMessage,
+} from "./db";
+import { ChatMessage } from "../types";
 import logger from "./logger";
 
 type ServerSentEvent =
@@ -42,6 +47,12 @@ interface ConnectionStatus {
     location: string;
 }
 
+interface ChatUserInfo {
+    id: string;
+    name: string;
+    avatarURL: string;
+}
+
 class AudienceMember {
     private socket: Socket;
     location: string = "";
@@ -52,7 +63,7 @@ class AudienceMember {
     private static pingID = 0;
 
     // managed by the Theater
-    announcement: string | undefined = undefined;
+    announcement: ChatMessage | undefined = undefined;
     hasSentMessage = false;
 
     get lastRecordedLatency(): number {
@@ -177,7 +188,6 @@ class Theater {
         seek: false,
     };
     lastKnownStateTimestamp: number = Date.now();
-    chatHistory: (ChatMessage | ChatAnnouncement)[] = [];
 
     get currentState(): PlayerState {
         return {
@@ -224,12 +234,12 @@ class Theater {
         this.audience.forEach((a) => a.emit(event, ...args));
     }
 
-    sendToChat(message: ChatMessage | ChatAnnouncement) {
-        this.chatHistory.push(message);
-        if (typeof message == "string" || message instanceof String) {
+    sendToChat(message: ChatMessage) {
+        addMessage(message);
+        if (message.isAnnouncement) {
             logger.debug("emitting chat annoucement:");
-            logger.debug(message);
-            this.emitAll("chat_announcement", message);
+            logger.debug(JSON.stringify(message));
+            this.emitAll("chat_announcement", message.messageHTML);
         } else {
             logger.debug("emitting chat message:");
             logger.debug(JSON.stringify(message));
@@ -322,7 +332,10 @@ class Theater {
 
         member.on("user_info_set", () => {
             if (member.chatInfo) {
-                const announcement = `<strong>${member.chatInfo.name}</strong> joined the Chat.`;
+                const announcement = {
+                    isAnnouncement: true,
+                    messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
+                };
                 this.sendToChat(announcement);
                 member.announcement = announcement;
             }
@@ -332,19 +345,21 @@ class Theater {
             if (member.chatInfo) {
                 member.hasSentMessage = true;
                 const message: ChatMessage = {
+                    isAnnouncement: false,
                     messageHTML: escapeHTML(messageText),
-                    sender: member.chatInfo,
+                    senderID: member.chatInfo.id,
+                    senderName: member.chatInfo.name,
+                    senderAvatarURL: member.chatInfo.avatarURL,
                 };
                 this.sendToChat(message);
                 if (/\bhm+\b/.test(message.messageHTML)) {
                     setTimeout(() => {
                         const villagerMessage: ChatMessage = {
+                            isAnnouncement: false,
                             messageHTML: "<em>hmmm...</em>",
-                            sender: {
-                                id: "fake-villager-user",
-                                name: "Minecraft Villager",
-                                avatarURL: "/images/avatars/villager.jpg",
-                            },
+                            senderID: "fake-villager-user",
+                            senderName: "Minecraft Villager",
+                            senderAvatarURL: "/images/avatars/villager.jpg",
                         };
                         this.sendToChat(villagerMessage);
                     }, 500);
@@ -352,26 +367,17 @@ class Theater {
             }
         });
 
-        this.chatHistory.slice(-20).forEach((m) => {
-            member.emit(
-                typeof m == "string" || m instanceof String
-                    ? "chat_announcement"
-                    : "chat_message",
-                m
-            );
-        });
+        getRecentMessages().then((messages) =>
+            messages.forEach((m) => {
+                member.emit(
+                    m.isAnnouncement ? "chat_announcement" : "chat_message",
+                    m.isAnnouncement ? m.messageHTML : m
+                );
+            })
+        );
 
         member.on("disconnect", () => {
             this.removeMember(member);
-            if (member.announcement && !member.hasSentMessage) {
-                logger.debug(
-                    "removing the joining of the user who just " +
-                        "left without sending messages from history"
-                );
-                this.chatHistory = this.chatHistory.filter(
-                    (v) => v != member.announcement
-                );
-            }
         });
     }
 
