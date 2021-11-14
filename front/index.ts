@@ -2,7 +2,7 @@ import "normalize.css";
 import "./scss/index.scss";
 import "../fonts/fonts.css";
 import { io } from "socket.io-client";
-import { Video } from "../types";
+import { Video, VideoState } from "../types";
 import initChat from "./chat";
 import initVideo from "./video";
 
@@ -15,7 +15,7 @@ socket.on("ping", (pingID) => {
 const player = initVideo(socket);
 
 socket.on("playlist_set", (newPlaylist: Video[]) => {
-    player.playlist = newPlaylist;
+    player.setPlaylist(newPlaylist);
     renderPlaylist();
 });
 
@@ -24,7 +24,7 @@ document.querySelector("#playlist-header")?.addEventListener("click", () => {
     renderPlaylist();
 });
 function renderPlaylist() {
-    const playlist = player.playlist;
+    const playlist = player.getPlaylist();
     const cont = document.querySelector("#playlist-container");
 
     if (!cont) {
@@ -61,13 +61,12 @@ function renderPlaylist() {
         item.style.display = display;
         if (active == "not-active") {
             item.addEventListener("click", () => {
-                // player.updateState({
-                //     playing: false,
-                //     currentTimeMs: 0,
-                //     currentItem: i,
-                // });
-                renderPlaylist();
-                // socket.emit("state_change_request", player.getCurrentState());
+                const newState: VideoState = {
+                    playing: false,
+                    currentTimeMs: 0,
+                    currentVideoIndex: i,
+                };
+                socket.emit("state_change_request", newState);
             });
         }
 
@@ -80,17 +79,17 @@ function renderPlaylist() {
     const urlInput = document.createElement("input");
     urlInput.type = "text";
     urlInput.placeholder = "Type a Youtube or Vimeo URL...";
+    socket.on("add_video_failed", () => {
+        addButton.disabled = false;
+        urlInput.disabled = false;
+        urlInput.value = "";
+        urlInput.placeholder = "That didn't work :( try again?";
+    });
     item.appendChild(urlInput);
     const addButton = document.createElement("button");
     addButton.innerHTML = "+";
     addButton.style.marginLeft = "auto";
     addButton.addEventListener("click", () => {
-        socket.once("add_video_failed", () => {
-            addButton.disabled = false;
-            urlInput.disabled = false;
-            urlInput.value = "";
-            urlInput.placeholder = "That didn't work :( try again?";
-        });
         addButton.disabled = true;
         urlInput.disabled = true;
         socket.emit("add_video", urlInput.value);
