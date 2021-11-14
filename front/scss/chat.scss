@@ -1,0 +1,138 @@
+@use "vars";
+
+.xp,
+.xp * {
+    box-sizing: initial !important;
+    scrollbar-color: #c8d6fb #fbfbf8;
+    z-index: 100;
+    line-height: 1;
+}
+
+.title-bar-text {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#chat-window {
+    position: fixed;
+    width: 300px;
+    left: 0;
+}
+
+.window-body {
+    font-family: "Lora", serif;
+    height: 160px;
+    text-align: left;
+}
+
+.chat-minimized {
+    height: 0px;
+    margin: 0px !important;
+    overflow: hidden;
+}
+
+.chat-minimized + div.status-bar {
+    display: none;
+}
+
+#chat-login {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-evenly;
+    height: 100%;
+}
+
+.avatar-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.avatar-option {
+    display: inline;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border: 2px solid transparent;
+    margin: 0 3px;
+    cursor: pointer;
+}
+
+.avatar-option.selected {
+    border: 2px solid vars.$mitchbot-blue;
+}
+
+.validation-warning {
+    animation: 1s flashRed;
+}
+
+.xp input[type="text"] {
+    border: solid #7f9db9 1px;
+    padding: 0 5px;
+}
+
+#chat-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#messages {
+    height: 100%;
+    overflow-y: scroll;
+    padding: 7px;
+    overflow-wrap: break-word;
+}
+
+#message-input-row {
+    display: flex;
+}
+
+#message-input {
+    width: 100%;
+}
+
+#send-message {
+    min-width: initial;
+}
+
+.message {
+    margin: 3px 0;
+    width: 100%;
+}
+
+.announcement {
+    font-style: italic;
+    margin: 5px 0;
+}
+
+.chat-section {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 3px;
+}
+
+.chat-section:last-of-type {
+    margin-bottom: 0;
+}
+
+.chat-section-text {
+    width: calc(100% - 35px);
+    overflow-x: hidden;
+}
+
+.in-chat-avatar {
+    display: inline;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.in-chat-username {
+    font-weight: bold;
+    font-size: 1.3em;
+}

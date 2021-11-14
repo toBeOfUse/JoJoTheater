@@ -1,0 +1,68 @@
+@use "vars";
+
+#video-container {
+    width: 100%;
+    height: 0;
+    padding-top: 56.25%;
+    border: 3px solid vars.$mitchbot-blue;
+    background-color: vars.$mitchbot-blue;
+    overflow: hidden;
+    position: relative;
+}
+
+#toast {
+    position: absolute;
+    left: 25%;
+    width: 50%;
+    bottom: 40%;
+    background-color: gray;
+    color: white;
+    text-align: center;
+    font-family: sans-serif;
+    border-radius: 10px;
+    padding: 10px 10px;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+video#player {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#controls-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    & #bottom-row {
+        height: 30px;
+        display: flex;
+        align-items: center;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        & * {
+            margin: 0 5px;
+        }
+        & button,
+        & button:active,
+        & button:hover,
+        & button:focus {
+            background: none;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            box-shadow: none;
+        }
+    }
+}
+
+#seek {
+    width: 100%;
+}
