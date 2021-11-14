@@ -1,31 +1,16 @@
 import "normalize.css";
-import "./index.scss";
+import "./scss/index.scss";
 import "../fonts/fonts.css";
 import { io } from "socket.io-client";
 import { Video } from "../types";
 import initChat from "./chat";
 import initVideo from "./video";
 
-let popupTimer: NodeJS.Timeout | undefined = undefined;
-function displayMessage(message: string) {
-    const popup = document.querySelector("#toast") as HTMLDivElement;
-    popup.innerHTML = message;
-    popup.style.opacity = "1";
-    if (popupTimer !== undefined) {
-        clearTimeout(popupTimer);
-    }
-    popupTimer = setTimeout(() => {
-        popup.style.opacity = "0";
-        popupTimer = undefined;
-    }, 4000);
-}
-
 const socket = io();
 socket.on("id_set", (e) => console.log("client has id", e));
 socket.on("ping", (pingID) => {
     socket.emit("pong_" + pingID);
 });
-socket.on("message", (message) => displayMessage(message));
 
 const player = initVideo(socket);
 
@@ -57,7 +42,8 @@ function renderPlaylist() {
         header.innerHTML = player.playlistShown ? "Playlist ▾" : "Playlist ▸";
     }
     for (let i = 0; i < playlist.length; i++) {
-        const active = i == player.currentVideoIndex ? "active" : "not-active";
+        const active =
+            i == player.state.currentVideoIndex ? "active" : "not-active";
         const item = document.createElement("div");
         item.setAttribute("class", "playlist-item " + active);
         const icon = document.createElement("img");

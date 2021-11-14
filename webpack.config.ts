@@ -11,6 +11,9 @@ const config: webpack.Configuration = {
         path: path.resolve(__dirname, "dist"),
         publicPath: "./",
     },
+    resolve: {
+        extensions: [".ts", ".js", ".json"],
+    },
     module: {
         rules: [
             {
