@@ -15,5 +15,10 @@ interface Video {
     provider?: string; // only for youtube/vimeo
     captions: boolean;
 }
+interface VideoState {
+    playing: boolean;
+    currentVideoIndex: number;
+    currentTimeMs: number;
+}
 
-export { ChatMessage, Video };
+export { ChatMessage, Video, VideoState };

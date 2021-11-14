@@ -11,7 +11,7 @@ import {
     getRecentMessages,
     addMessage,
 } from "./db";
-import { ChatMessage } from "../types";
+import { ChatMessage, VideoState as PlayerState } from "../types";
 import logger from "./logger";
 
 type ServerSentEvent =
@@ -30,13 +30,6 @@ type ClientSentEvent =
     | "user_info_set"
     | "wrote_message"
     | "disconnect";
-
-interface PlayerState {
-    playing: boolean;
-    currentTimeMs: number;
-    currentItem: number;
-    seek: boolean;
-}
 
 interface ConnectionStatus {
     chatName: string;
@@ -183,9 +176,8 @@ class Theater {
     audience: AudienceMember[] = [];
     lastKnownState: PlayerState = {
         playing: false,
-        currentItem: 0,
+        currentVideoIndex: 0,
         currentTimeMs: 0,
-        seek: false,
     };
     lastKnownStateTimestamp: number = Date.now();
 
@@ -251,40 +243,11 @@ class Theater {
         this.audience.push(member);
 
         member.on("state_change_request", (newState: PlayerState) => {
-            // ignore redundant requests from clients who in fact just had their
-            // state changed to the last known state
-            if (
-                newState.playing === this.lastKnownState.playing &&
-                newState.currentItem === this.lastKnownState.currentItem &&
-                Math.abs(
-                    this.lastKnownState.currentTimeMs - newState.currentTimeMs
-                ) < 1000
-            ) {
-                logger.debug("ignoring redundant state change request:");
-                logger.debug(JSON.stringify(newState));
-                return;
-            }
-            if (
-                newState.currentItem == this.currentState.currentItem &&
-                newState.playing == this.currentState.playing &&
-                !newState.seek
-            ) {
-                // if the client is trying to change the time by a lot and they're
-                // not explicitly seeking or changing the playlist item, they're
-                // probably just lagging and giving an old currentTimeMs value and we
-                // need to ignore and correct them
-                logger.debug("rebutting laggy-seeming state change request:");
-                logger.debug(JSON.stringify(newState));
-                newState.currentTimeMs = this.currentState.currentTimeMs;
-                member.emit("state_set", newState);
-            }
             this.lastKnownState = newState;
             this.lastKnownStateTimestamp = Date.now();
             logger.debug("emitting accepted player state:");
             logger.debug(JSON.stringify(newState));
-            this.audience
-                .filter((a) => a.id != member.id)
-                .forEach((a) => a.emit("state_set", newState));
+            this.audience.forEach((a) => a.emit("state_set", newState));
         });
 
         member.on("state_update_request", () => {
