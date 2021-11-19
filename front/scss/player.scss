@@ -5,6 +5,9 @@
     height: 0;
     padding-top: 56.25%;
     border: 3px solid vars.$mitchbot-blue;
+    &.fullscreen {
+        border: none;
+    }
     background-color: vars.$mitchbot-blue;
     overflow: hidden;
     position: relative;

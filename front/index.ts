@@ -116,8 +116,6 @@ function renderPlaylist() {
     });
 
     cont.appendChild(item);
-
-    throw new Error("test error");
 }
 
 renderPlaylist();

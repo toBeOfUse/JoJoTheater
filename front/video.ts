@@ -1,4 +1,5 @@
 import { Socket } from "socket.io-client";
+import fscreen from "fscreen";
 import { Video, VideoState } from "../types";
 
 function secondsToHMS(seconds: number) {
@@ -95,7 +96,7 @@ class HTML5VideoController extends VideoController {
             this.videoElement.src = currentSource.src;
             this.prevSrc = currentSource.src;
         }
-        console.log("setting video current time to");
+        console.log("setting video current time to", v.currentTimeMs / 1000);
         this.videoElement.currentTime = v.currentTimeMs / 1000;
         if (v.playing && this.videoElement.paused) {
             DOMControls.playPauseImage.src = "/images/pause.svg";
@@ -306,6 +307,26 @@ function initializePlayerInterface(io: Socket, player: Player) {
     DOMControls.seek.addEventListener("input", performSeek);
     DOMControls.seek.addEventListener("mouseup", endSeek);
     DOMControls.seek.addEventListener("touchend", endSeek);
+    let currentlyFullscreen = false;
+    const videoCont = document.querySelector("#video-container");
+    fscreen.addEventListener("fullscreenchange", () => {
+        if (fscreen.fullscreenElement) {
+            currentlyFullscreen = true;
+            DOMControls.fullscreenImage.src = "/images/exitfullscreen.svg";
+            videoCont?.classList.add("fullscreen");
+        } else {
+            currentlyFullscreen = false;
+            DOMControls.fullscreenImage.src = "/images/enterfullscreen.svg";
+            videoCont?.classList.remove("fullscreen");
+        }
+    });
+    DOMControls.fullscreen.addEventListener("click", () => {
+        if (videoCont && !currentlyFullscreen) {
+            fscreen.requestFullscreen(videoCont);
+        } else if (currentlyFullscreen) {
+            fscreen.exitFullscreen();
+        }
+    });
 }
 
 /**

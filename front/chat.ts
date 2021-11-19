@@ -134,7 +134,7 @@ export default function initChat(socket: Socket) {
             cwBottom,
             window.innerHeight - (chatWindow.height() as number)
         );
-        cwLeft = Math.max(-initialCWBox.width + 15, cwLeft);
+        cwLeft = Math.max(-initialCWBox.width, cwLeft);
         cwLeft = Math.min(cwLeft, window.innerWidth - 15);
         chatWindow.css({ left: cwLeft, bottom: cwBottom });
     }
