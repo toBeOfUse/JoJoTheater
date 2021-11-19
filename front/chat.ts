@@ -19,7 +19,7 @@ if (xpStyle.sheet) {
     // the best way to load the fonts is still to let the sass-loader import them though
     for (let i = xpStyle.sheet.cssRules.length - 1; i >= 0; i--) {
         if (xpStyle.sheet.cssRules[i] instanceof CSSFontFaceRule) {
-            xpStyle.sheet.removeRule(i);
+            xpStyle.sheet.deleteRule(i);
         }
     }
 } else {
