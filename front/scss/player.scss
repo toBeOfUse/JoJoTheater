@@ -25,12 +25,20 @@
     transition: opacity 1s ease-in-out;
 }
 
-video#player {
+@mixin playerElement {
     position: absolute;
     top: 0;
     left: 0;
     height: 100%;
     width: 100%;
+}
+
+video#player {
+    @include playerElement;
+}
+
+#youtube-embed-location {
+    @include playerElement;
 }
 
 #controls-overlay {

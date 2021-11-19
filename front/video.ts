@@ -9,6 +9,8 @@ function secondsToHMS(seconds: number) {
     }
 }
 
+let userIsSeeking = false;
+
 let popupTimer: NodeJS.Timeout | undefined = undefined;
 function displayMessage(message: string) {
     const popup = document.querySelector("#toast") as HTMLDivElement;
@@ -114,6 +116,131 @@ class HTML5VideoController extends VideoController {
     }
 }
 
+const youtubeAPIReady = new Promise<void>((resolve, reject) => {
+    (<any>window).onYouTubeIframeAPIReady = () => {
+        console.log("youtube api ready");
+        resolve();
+    };
+    // from https://developers.google.com/youtube/iframe_api_reference
+    let tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    let firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+});
+
+class YoutubeVideoController extends VideoController {
+    videoElement: HTMLDivElement;
+    YTPlayer: YT.Player | null = null;
+    YTPlayerReady: Promise<void> | null = null;
+    prevSrc: string = "";
+    timeUpdate: NodeJS.Timeout | undefined;
+
+    constructor() {
+        super();
+        this.videoElement = document.createElement("div");
+        this.videoElement.id = "youtube-embed-location";
+        const container = document.querySelector("#video-container");
+        if (!container) {
+            console.error("could not select video container");
+        } else {
+            container.prepend(this.videoElement);
+        }
+    }
+
+    get currentTimeMs(): number {
+        if (!this.YTPlayer) {
+            return 0;
+        } else {
+            return this.YTPlayer.getCurrentTime() * 1000;
+        }
+    }
+
+    get durationMs(): number {
+        if (!this.YTPlayer) {
+            return 0;
+        } else {
+            return this.YTPlayer.getDuration() * 1000;
+        }
+    }
+
+    async setState(playlist: Video[], v: VideoState) {
+        await youtubeAPIReady;
+        const currentSource = playlist[v.currentVideoIndex];
+        if (currentSource.src != this.prevSrc) {
+            this.prevSrc = currentSource.src;
+            if (!this.YTPlayer) {
+                console.log("creating new YT.Player");
+                this.YTPlayerReady = new Promise((resolve) => {
+                    this.YTPlayer = new YT.Player("youtube-embed-location", {
+                        height: "100%",
+                        width: "100%",
+                        videoId: currentSource.src,
+                        playerVars: {
+                            playsinline: 1,
+                            cc_load_policy: currentSource.captions ? 1 : 0,
+                            controls: 0,
+                            enablejsapi: 1,
+                            modestbranding: 1,
+                            rel: 0,
+                            autoplay: 0,
+                        },
+                        events: {
+                            onReady: () => {
+                                resolve();
+                            },
+                        },
+                    });
+                    this.timeUpdate = setInterval(async () => {
+                        await this.YTPlayerReady;
+                        if (this.YTPlayer) {
+                            DOMControls.timeDisplay.innerHTML = secondsToHMS(
+                                this.YTPlayer.getDuration()
+                            );
+                            if (!userIsSeeking) {
+                                DOMControls.seek.value = String(
+                                    (this.YTPlayer.getCurrentTime() /
+                                        this.YTPlayer.getDuration()) *
+                                        100
+                                );
+                            }
+                        }
+                    }, 500);
+                });
+            } else {
+                console.log("changing source for YT.Player");
+                await this.YTPlayerReady;
+                this.YTPlayer?.loadVideoById(currentSource.src);
+            }
+        }
+        await this.YTPlayerReady;
+        this.YTPlayer?.seekTo(v.currentTimeMs / 1000, true);
+        if (
+            v.playing &&
+            this.YTPlayer?.getPlayerState() != YT.PlayerState.PLAYING
+        ) {
+            this.YTPlayer?.playVideo();
+            DOMControls.playPauseImage.src = "/images/pause.svg";
+        } else if (
+            !v.playing &&
+            this.YTPlayer?.getPlayerState() == YT.PlayerState.PLAYING
+        ) {
+            this.YTPlayer.pauseVideo();
+            DOMControls.playPauseImage.src = "/images/play.svg";
+        }
+    }
+    remove() {
+        if (this.YTPlayer) {
+            this.YTPlayer.destroy();
+        }
+        if (this.videoElement) {
+            this.videoElement.remove();
+        }
+        if (this.timeUpdate) {
+            clearInterval(this.timeUpdate);
+        }
+    }
+}
+
 /**
  * Function that creates listeners for events that occur on the DOMControls elements
  * to send the appropriate messages back to the server to request changes in the
@@ -131,7 +258,6 @@ function initializePlayerInterface(io: Socket, player: Player) {
             playing: !player.state.playing,
         });
     });
-    let userIsSeeking = false;
     // store whether the player was playing, pre-seek and restore in endSeek?
     const beginSeek = () => {
         userIsSeeking = true;
@@ -208,8 +334,17 @@ class Player {
             if (this.controller) {
                 this.controller.remove();
             }
+            console.log("creating new HTML5VideoController");
             this.controller = new HTML5VideoController();
-            this.controller.setState(this.playlist, this.state);
+        } else if (
+            this.playlist[this.state.currentVideoIndex].provider == "youtube" &&
+            !(this.controller instanceof YoutubeVideoController)
+        ) {
+            if (this.controller) {
+                this.controller.remove();
+            }
+            console.log("creating new YoutubeVideoController");
+            this.controller = new YoutubeVideoController();
         }
     }
 }
