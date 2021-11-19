@@ -21,18 +21,21 @@ const player = initVideo(socket);
 socket.on("playlist_set", (newPlaylist: Video[]) => {
     player.setPlaylist(newPlaylist);
     renderPlaylist();
+    renderTitle();
 });
 
 socket.on("state_set", () => {
     renderPlaylist();
+    renderTitle();
+});
+
+function renderTitle() {
     let title;
     let currentVideo = player.getPlaylist()[player.state.currentVideoIndex];
     if (currentVideo && (title = document.querySelector("#video-title"))) {
-        title.innerHTML =
-            player.getPlaylist()[player.state.currentVideoIndex].title;
+        title.innerHTML = currentVideo.title;
     }
-});
-
+}
 document.querySelector("#playlist-header")?.addEventListener("click", () => {
     player.playlistShown = !player.playlistShown;
     renderPlaylist();
