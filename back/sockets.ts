@@ -11,7 +11,12 @@ import {
     getRecentMessages,
     addMessage,
 } from "./db";
-import { ChatMessage, VideoState as PlayerState } from "../types";
+import {
+    ChatMessage,
+    VideoState as PlayerState,
+    StateChangeRequest,
+    StateElements,
+} from "../types";
 import logger from "./logger";
 
 type ServerSentEvent =
@@ -246,12 +251,25 @@ class Theater {
     initializeMember(member: AudienceMember) {
         this.audience.push(member);
 
-        member.on("state_change_request", (newState: PlayerState) => {
-            this.lastKnownState = newState;
+        member.on("state_change_request", (newState: StateChangeRequest) => {
+            if (newState.whichElement == StateElements.playing) {
+                this.lastKnownState.playing = newState.newValue as boolean;
+            } else if (newState.whichElement == StateElements.time) {
+                this.lastKnownState.currentTimeMs = newState.newValue as number;
+            } else if (newState.whichElement == StateElements.index) {
+                this.lastKnownState.currentVideoIndex =
+                    newState.newValue as number;
+            }
+            if (newState.whichElement != StateElements.time) {
+                this.lastKnownState.currentTimeMs =
+                    this.currentState.currentTimeMs;
+            }
             this.lastKnownStateTimestamp = Date.now();
             logger.debug("emitting accepted player state:");
-            logger.debug(JSON.stringify(newState));
-            this.audience.forEach((a) => a.emit("state_set", newState));
+            logger.debug(JSON.stringify(this.lastKnownState));
+            this.audience.forEach((a) =>
+                a.emit("state_set", this.lastKnownState)
+            );
         });
 
         member.on("state_update_request", () => {

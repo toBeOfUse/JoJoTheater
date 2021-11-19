@@ -2,7 +2,7 @@ import "normalize.css";
 import "./scss/index.scss";
 import "../fonts/fonts.css";
 import { io } from "socket.io-client";
-import { Video, VideoState } from "../types";
+import { Video, VideoState, StateChangeRequest, StateElements } from "../types";
 import initChat from "./chat";
 import initVideo from "./video";
 
@@ -78,10 +78,9 @@ function renderPlaylist() {
         item.style.display = display;
         if (active == "not-active") {
             item.addEventListener("click", () => {
-                const newState: VideoState = {
-                    playing: false,
-                    currentTimeMs: 0,
-                    currentVideoIndex: i,
+                const newState: StateChangeRequest = {
+                    whichElement: StateElements.index,
+                    newValue: i,
                 };
                 socket.emit("state_change_request", newState);
             });

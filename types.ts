@@ -21,4 +21,15 @@ interface VideoState {
     currentTimeMs: number;
 }
 
-export { ChatMessage, Video, VideoState };
+enum StateElements {
+    playing,
+    index,
+    time,
+}
+
+interface StateChangeRequest {
+    whichElement: StateElements;
+    newValue: boolean | number;
+}
+
+export { ChatMessage, Video, VideoState, StateElements, StateChangeRequest };

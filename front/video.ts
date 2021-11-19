@@ -1,6 +1,6 @@
 import { Socket } from "socket.io-client";
 import fscreen from "fscreen";
-import { Video, VideoState } from "../types";
+import { Video, VideoState, StateChangeRequest, StateElements } from "../types";
 
 function secondsToHMS(seconds: number) {
     if (seconds < 3600) {
@@ -62,6 +62,8 @@ abstract class VideoController {
     abstract setState(playlist: Video[], v: VideoState): void;
     abstract remove(): void;
 }
+
+// TODO: request state from server after buffering?
 
 class HTML5VideoController extends VideoController {
     videoElement: HTMLVideoElement;
@@ -212,6 +214,10 @@ class YoutubeVideoController extends VideoController {
                             },
                         },
                     });
+                    this.YTPlayerReady?.then(() => {
+                        // try to prevent autoplay when player is first created
+                        this.YTPlayer?.pauseVideo();
+                    });
                     this.timeUpdate = setInterval(async () => {
                         await this.YTPlayerReady;
                         if (this.YTPlayer) {
@@ -278,31 +284,31 @@ class YoutubeVideoController extends VideoController {
 function initializePlayerInterface(io: Socket, player: Player) {
     io.on("message", (message: string) => displayMessage(message));
     DOMControls.playPause.addEventListener("click", () => {
-        io.emit("state_change_request", {
-            ...player.state,
-            currentTimeMs: player.updatedCurrentTimeMs,
-            playing: !player.state.playing,
-        });
+        const changeRequest: StateChangeRequest = {
+            whichElement: StateElements.playing,
+            newValue: !player.state.playing,
+        };
+        io.emit("state_change_request", changeRequest);
     });
     // store whether the player was playing, pre-seek and restore in endSeek?
     const beginSeek = () => {
         userIsSeeking = true;
-        io.emit("state_change_request", {
-            ...player.state,
-            currentTimeMs: player.updatedCurrentTimeMs,
-            playing: false,
-        });
+        const changeRequest: StateChangeRequest = {
+            whichElement: StateElements.playing,
+            newValue: false,
+        };
+        io.emit("state_change_request", changeRequest);
     };
     const performSeek = () => {
         if (userIsSeeking && player.controller) {
             const newTimeMs =
                 (Number(DOMControls.seek.value) / 100) *
                 player.controller?.durationMs;
-            io.emit("state_change_request", {
-                ...player.state,
-                currentTimeMs: newTimeMs,
-                playing: false,
-            });
+            const changeRequest: StateChangeRequest = {
+                whichElement: StateElements.time,
+                newValue: newTimeMs,
+            };
+            io.emit("state_change_request", changeRequest);
         }
     };
     const endSeek = () => {
