@@ -269,19 +269,29 @@ class Theater {
                 ) {
                     throw new Error("url was not a vimeo or youtube url");
                 }
-                let provider, videoDataURL;
+                let provider, videoDataURL, videoID;
                 if (url.toLowerCase().includes("youtube")) {
                     provider = "youtube";
                     videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
+                    // from https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url
+                    const videoIDMatch = url.match(
+                        /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/
+                    );
+                    if (videoIDMatch && videoIDMatch[1]) {
+                        videoID = videoIDMatch[1];
+                    } else {
+                        throw new Error("could not get video id from " + url);
+                    }
                 } else {
                     provider = "vimeo";
                     videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
+                    videoID = url; // TODO: find out whether an id is necessary
                 }
                 const videoData = await (await fetch(videoDataURL)).json();
                 const title = videoData.title;
                 await addToPlaylist({
                     provider,
-                    src: url,
+                    src: videoID,
                     title,
                     captions: true,
                 });
