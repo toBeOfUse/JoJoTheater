@@ -253,16 +253,16 @@ class Theater {
 
         member.on("state_change_request", (newState: StateChangeRequest) => {
             if (newState.whichElement == StateElements.playing) {
+                this.lastKnownState.currentTimeMs =
+                    this.currentState.currentTimeMs;
                 this.lastKnownState.playing = newState.newValue as boolean;
             } else if (newState.whichElement == StateElements.time) {
+                this.currentState.playing = false;
                 this.lastKnownState.currentTimeMs = newState.newValue as number;
             } else if (newState.whichElement == StateElements.index) {
                 this.lastKnownState.currentVideoIndex =
                     newState.newValue as number;
-            }
-            if (newState.whichElement != StateElements.time) {
-                this.lastKnownState.currentTimeMs =
-                    this.currentState.currentTimeMs;
+                this.lastKnownState.currentTimeMs = 0;
             }
             this.lastKnownStateTimestamp = Date.now();
             logger.debug("emitting accepted player state:");
