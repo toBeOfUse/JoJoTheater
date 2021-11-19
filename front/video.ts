@@ -41,6 +41,12 @@ const DOMControls = {
     fullscreenImage: document.querySelector(
         "#fullscreen-image"
     ) as HTMLImageElement,
+    videoContainer: document.querySelector(
+        "#video-container"
+    ) as HTMLDivElement,
+    controlsContainer: document.querySelector(
+        "#controls-overlay"
+    ) as HTMLDivElement,
 };
 
 /**
@@ -307,22 +313,31 @@ function initializePlayerInterface(io: Socket, player: Player) {
     DOMControls.seek.addEventListener("input", performSeek);
     DOMControls.seek.addEventListener("mouseup", endSeek);
     DOMControls.seek.addEventListener("touchend", endSeek);
+    let runningFadeoutTimer: NodeJS.Timeout | undefined = undefined;
+    DOMControls.videoContainer.addEventListener("mousemove", () => {
+        if (runningFadeoutTimer) {
+            clearTimeout(runningFadeoutTimer);
+        }
+        DOMControls.controlsContainer.classList.remove("fadedOut");
+        runningFadeoutTimer = setTimeout(() => {
+            DOMControls.controlsContainer.classList.add("fadedOut");
+        }, 3000);
+    });
     let currentlyFullscreen = false;
-    const videoCont = document.querySelector("#video-container");
     fscreen.addEventListener("fullscreenchange", () => {
         if (fscreen.fullscreenElement) {
             currentlyFullscreen = true;
             DOMControls.fullscreenImage.src = "/images/exitfullscreen.svg";
-            videoCont?.classList.add("fullscreen");
+            DOMControls.videoContainer.classList.add("fullscreen");
         } else {
             currentlyFullscreen = false;
             DOMControls.fullscreenImage.src = "/images/enterfullscreen.svg";
-            videoCont?.classList.remove("fullscreen");
+            DOMControls.videoContainer.classList.remove("fullscreen");
         }
     });
     DOMControls.fullscreen.addEventListener("click", () => {
-        if (videoCont && !currentlyFullscreen) {
-            fscreen.requestFullscreen(videoCont);
+        if (!currentlyFullscreen) {
+            fscreen.requestFullscreen(DOMControls.videoContainer);
         } else if (currentlyFullscreen) {
             fscreen.exitFullscreen();
         }

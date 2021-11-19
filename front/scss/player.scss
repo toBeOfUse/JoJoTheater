@@ -78,6 +78,15 @@ video#player {
             }
         }
     }
+    opacity: 1;
+    &.fadedOut {
+        transition-duration: 1s;
+        opacity: 0;
+    }
+    &:not(.fadedOut) {
+        transition-duration: 0.25s;
+    }
+    transition-property: opacity;
 }
 
 #seek {
