@@ -19,6 +19,10 @@ socket.on("playlist_set", (newPlaylist: Video[]) => {
     renderPlaylist();
 });
 
+socket.on("state_set", () => {
+    renderPlaylist();
+});
+
 document.querySelector("#playlist-header")?.addEventListener("click", () => {
     player.playlistShown = !player.playlistShown;
     renderPlaylist();
