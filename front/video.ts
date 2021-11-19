@@ -188,6 +188,21 @@ class YoutubeVideoController extends VideoController {
                             onReady: () => {
                                 resolve();
                             },
+                            onStateChange: (event) => {
+                                const ytstate = {
+                                    "-1": "unstarted",
+                                    0: "ended",
+                                    1: "playing",
+                                    2: "paused",
+                                    3: "buffering",
+                                    5: "video cued",
+                                };
+                                console.log(
+                                    "YT player state change to " +
+                                        ytstate[event.data]
+                                );
+                                console.log(event);
+                            },
                         },
                     });
                     this.timeUpdate = setInterval(async () => {
@@ -209,11 +224,15 @@ class YoutubeVideoController extends VideoController {
             } else {
                 console.log("changing source for YT.Player");
                 await this.YTPlayerReady;
-                this.YTPlayer?.loadVideoById(currentSource.src);
+                this.YTPlayer?.cueVideoById(currentSource.src);
             }
         }
         await this.YTPlayerReady;
         this.YTPlayer?.seekTo(v.currentTimeMs / 1000, true);
+        if (this.YTPlayer?.getPlayerState() == 0) {
+            // if playback has ended
+            this.YTPlayer.pauseVideo();
+        }
         if (
             v.playing &&
             this.YTPlayer?.getPlayerState() != YT.PlayerState.PLAYING
