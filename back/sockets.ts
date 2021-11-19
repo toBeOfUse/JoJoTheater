@@ -29,7 +29,8 @@ type ClientSentEvent =
     | "add_video"
     | "user_info_set"
     | "wrote_message"
-    | "disconnect";
+    | "disconnect"
+    | "error_report";
 
 interface ConnectionStatus {
     chatName: string;
@@ -132,6 +133,9 @@ class AudienceMember {
                 logger.debug("chat info rejected:");
                 logger.debug(JSON.stringify(info).substring(0, 1000));
             }
+        });
+        socket.on("error_report", (error_desc: string) => {
+            logger.error(`client side error from ${this.id}: ${error_desc}`);
         });
         const remoteIP = socket.handshake.headers["x-real-ip"] as string;
         if (remoteIP) {

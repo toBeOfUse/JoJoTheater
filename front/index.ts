@@ -12,6 +12,10 @@ socket.on("ping", (pingID) => {
     socket.emit("pong_" + pingID);
 });
 
+window.onerror = (event) => {
+    socket.emit("error_report", event.toString() + " - " + new Error().stack);
+};
+
 const player = initVideo(socket);
 
 socket.on("playlist_set", (newPlaylist: Video[]) => {
@@ -112,6 +116,8 @@ function renderPlaylist() {
     });
 
     cont.appendChild(item);
+
+    throw new Error("test error");
 }
 
 renderPlaylist();
