@@ -32,7 +32,7 @@ const playlist: Video[] = [
         captions: true,
     },
     {
-        src: "https://vimeo.com/32845443",
+        src: "32845443",
         title: "Girl Walk // All Day: Chapter 2",
         provider: "vimeo",
         captions: false,
@@ -45,6 +45,34 @@ const localPlaylist: Video[] = [
         title: "Vampires vs. the Bronx (2020)",
         type: "video/mp4",
         size: 1080,
+        captions: false,
+    },
+    {
+        src: "/videos/vampiresvbronx.mp4",
+        title: "Vampires vs. the Bronx (2020)",
+        type: "video/mp4",
+        size: 1080,
+        captions: false,
+    },
+    {
+        src: "/videos/motherhonksherhorn.mp4",
+        title: "Taskmaster S07E08: Mother honks her horn.",
+        type: "video/mp4",
+        size: 720,
+        captions: false,
+    },
+    {
+        src: "/videos/thependulumdrawstheeye.mp4",
+        title: "Taskmaster S07E09: The pendulum draws the eye.",
+        type: "video/mp4",
+        size: 720,
+        captions: false,
+    },
+    {
+        src: "/videos/icanhearitgooping.mp4",
+        title: "Taskmaster S07E10: I can hear it gooping.",
+        type: "video/mp4",
+        size: 720,
         captions: false,
     },
 ];
