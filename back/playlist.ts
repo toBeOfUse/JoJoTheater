@@ -75,6 +75,20 @@ const localPlaylist: Video[] = [
         size: 720,
         captions: false,
     },
+	{
+        src: "/videos/tutue1.mp4",
+        title: "Princess Tutu S01E01: The Duck and the Prince",
+        type: "video/mp4",
+        size: 720,
+        captions: false,
+    },
+	{
+        src: "/videos/tutue2.mp4",
+        title: "Princess Tutu S01E02: Pieces of the Heart",
+        type: "video/mp4",
+        size: 720,
+        captions: false,
+    },
 ];
 
 export { Video, playlist, localPlaylist };
