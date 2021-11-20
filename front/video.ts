@@ -56,6 +56,10 @@ const DOMControls = {
  * aforementioned different elements for different video sources.
  */
 abstract class VideoController {
+    requestState: () => void;
+    constructor(requestState: () => void) {
+        this.requestState = requestState;
+    }
     abstract videoElement: HTMLElement;
     abstract get currentTimeMs(): number;
     abstract get durationMs(): number;
@@ -74,8 +78,8 @@ class HTML5VideoController extends VideoController {
     get durationMs(): number {
         return this.videoElement?.duration * 1000 || 0;
     }
-    constructor() {
-        super();
+    constructor(requestState: () => void) {
+        super(requestState);
         const video = document.createElement("video");
         video.src = "";
         video.id = "player";
@@ -95,6 +99,12 @@ class HTML5VideoController extends VideoController {
                 (video.currentTime / video.duration) * 100
             );
         });
+        this.videoElement.addEventListener("playing", () => {
+            // this event is "Fired when playback is ready to start after having been
+            // paused or delayed due to lack of data" (MDN); after buffering, we need
+            // to request state to try to catch up to the server
+            this.requestState();
+        });
     }
 
     setState(playlist: Video[], v: VideoState) {
@@ -105,7 +115,12 @@ class HTML5VideoController extends VideoController {
             this.prevSrc = currentSource.src;
         }
         console.log("setting video current time to", v.currentTimeMs / 1000);
-        this.videoElement.currentTime = v.currentTimeMs / 1000;
+        if (
+            Math.abs(this.videoElement.currentTime * 1000 - v.currentTimeMs) >
+            1000
+        ) {
+            this.videoElement.currentTime = v.currentTimeMs / 1000;
+        }
         if (v.playing && this.videoElement.paused) {
             DOMControls.playPauseImage.src = "/images/pause.svg";
             try {
@@ -145,8 +160,8 @@ class YoutubeVideoController extends VideoController {
     timeUpdate: NodeJS.Timeout | undefined;
     haveBeenToldToPlay = false;
 
-    constructor() {
-        super();
+    constructor(requestState: () => void) {
+        super(requestState);
         this.videoElement = document.createElement("div");
         this.videoElement.id = "youtube-embed-location";
         const container = document.querySelector("#video-container");
@@ -218,12 +233,9 @@ class YoutubeVideoController extends VideoController {
                                         ytstate[event.data]
                                 );
                                 console.log(event);
-                                if (
-                                    event.data == 1 &&
-                                    !this.haveBeenToldToPlay
-                                ) {
-                                    // try to prevent autoplay when player is first created
-                                    this.YTPlayer?.pauseVideo();
+                                if (event.data == 1) {
+                                    // try to
+                                    this.requestState();
                                 }
                             },
                         },
@@ -251,7 +263,9 @@ class YoutubeVideoController extends VideoController {
             }
         }
         await this.YTPlayerReady;
-        this.YTPlayer?.seekTo(v.currentTimeMs / 1000, true);
+        if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
+            this.YTPlayer?.seekTo(v.currentTimeMs / 1000, true);
+        }
         if (this.YTPlayer?.getPlayerState() == 0) {
             // if playback has ended
             this.YTPlayer.pauseVideo();
@@ -375,6 +389,7 @@ class Player {
         currentTimeMs: 0,
     };
     controller: VideoController | null = null;
+    requestState: () => void;
     get updatedCurrentTimeMs(): number {
         return this.controller?.currentTimeMs || 0;
     }
@@ -386,6 +401,7 @@ class Player {
             }
             this.controller?.setState(this.playlist, this.state);
         });
+        this.requestState = () => io.emit("state_update_request");
     }
     setPlaylist(newPlaylist: Video[]) {
         this.playlist = newPlaylist;
@@ -406,7 +422,7 @@ class Player {
                 this.controller.remove();
             }
             console.log("creating new HTML5VideoController");
-            this.controller = new HTML5VideoController();
+            this.controller = new HTML5VideoController(this.requestState);
         } else if (
             this.playlist[this.state.currentVideoIndex].provider == "youtube" &&
             !(this.controller instanceof YoutubeVideoController)
@@ -415,7 +431,7 @@ class Player {
                 this.controller.remove();
             }
             console.log("creating new YoutubeVideoController");
-            this.controller = new YoutubeVideoController();
+            this.controller = new YoutubeVideoController(this.requestState);
         }
     }
 }
