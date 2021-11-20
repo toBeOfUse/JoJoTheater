@@ -143,6 +143,7 @@ class YoutubeVideoController extends VideoController {
     YTPlayerReady: Promise<void> | null = null;
     prevSrc: string = "";
     timeUpdate: NodeJS.Timeout | undefined;
+    haveBeenToldToPlay = false;
 
     constructor() {
         super();
@@ -173,6 +174,12 @@ class YoutubeVideoController extends VideoController {
     }
 
     async setState(playlist: Video[], v: VideoState) {
+        if (v.playing) {
+            this.haveBeenToldToPlay = true;
+            console.log(
+                "YoutubeVideoController has been officially told to play"
+            );
+        }
         await youtubeAPIReady;
         const currentSource = playlist[v.currentVideoIndex];
         if (currentSource.src != this.prevSrc) {
@@ -211,12 +218,15 @@ class YoutubeVideoController extends VideoController {
                                         ytstate[event.data]
                                 );
                                 console.log(event);
+                                if (
+                                    event.data == 1 &&
+                                    !this.haveBeenToldToPlay
+                                ) {
+                                    // try to prevent autoplay when player is first created
+                                    this.YTPlayer?.pauseVideo();
+                                }
                             },
                         },
-                    });
-                    this.YTPlayerReady?.then(() => {
-                        // try to prevent autoplay when player is first created
-                        this.YTPlayer?.pauseVideo();
                     });
                     this.timeUpdate = setInterval(async () => {
                         await this.YTPlayerReady;
