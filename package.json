@@ -1,7 +1,7 @@
 {
-  "name": "jojo-player",
-  "version": "0.4.0",
-  "description": "plays jojo",
+  "name": "mitchbot-streams",
+  "version": "0.5.0",
+  "description": "watch videos in sync with your fellow mitchbot enterprises customers.",
   "author": "toBeOfUse <mitchjacov@gmail.com>",
   "license": "MIT",
   "private": false,
