@@ -2,7 +2,7 @@ import "normalize.css";
 import "./scss/index.scss";
 import "../fonts/fonts.css";
 import { io } from "socket.io-client";
-import { Video, VideoState, StateChangeRequest, StateElements } from "../types";
+import { Video, StateChangeRequest, StateElements } from "../types";
 import initChat from "./chat";
 import initVideo from "./video";
 

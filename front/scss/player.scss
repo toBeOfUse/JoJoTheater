@@ -44,6 +44,10 @@ video#player {
     @include playerElement;
 }
 
+#vimeo-embed-location {
+    @include playerElement;
+}
+
 #controls-overlay {
     position: absolute;
     top: 0;

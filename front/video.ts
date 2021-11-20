@@ -1,5 +1,6 @@
 import { Socket } from "socket.io-client";
 import fscreen from "fscreen";
+import VimeoPlayer from "@vimeo/player";
 import { Video, VideoState, StateChangeRequest, StateElements } from "../types";
 
 function secondsToHMS(seconds: number) {
@@ -57,17 +58,21 @@ const DOMControls = {
  */
 abstract class VideoController {
     requestState: () => void;
+    /**
+     * @param requestState () => void: The video controller might need to request an updated
+     * current video state (ideally from the server) if it thinks it's out-of-date
+     * due to buffering or similar. As a result of calling this function, state
+     * information should be passed to setState.
+     */
     constructor(requestState: () => void) {
         this.requestState = requestState;
     }
     abstract videoElement: HTMLElement;
-    abstract get currentTimeMs(): number;
+    // abstract get currentTimeMs(): number;
     abstract get durationMs(): number;
     abstract setState(playlist: Video[], v: VideoState): void;
     abstract remove(): void;
 }
-
-// TODO: request state from server after buffering?
 
 class HTML5VideoController extends VideoController {
     videoElement: HTMLVideoElement;
@@ -120,6 +125,9 @@ class HTML5VideoController extends VideoController {
             1000
         ) {
             this.videoElement.currentTime = v.currentTimeMs / 1000;
+            DOMControls.seek.value = String(
+                (v.currentTimeMs / this.durationMs) * 100
+            );
         }
         if (v.playing && this.videoElement.paused) {
             DOMControls.playPauseImage.src = "/images/pause.svg";
@@ -158,7 +166,6 @@ class YoutubeVideoController extends VideoController {
     YTPlayerReady: Promise<void> | null = null;
     prevSrc: string = "";
     timeUpdate: NodeJS.Timeout | undefined;
-    haveBeenToldToPlay = false;
 
     constructor(requestState: () => void) {
         super(requestState);
@@ -189,12 +196,6 @@ class YoutubeVideoController extends VideoController {
     }
 
     async setState(playlist: Video[], v: VideoState) {
-        if (v.playing) {
-            this.haveBeenToldToPlay = true;
-            console.log(
-                "YoutubeVideoController has been officially told to play"
-            );
-        }
         await youtubeAPIReady;
         const currentSource = playlist[v.currentVideoIndex];
         if (currentSource.src != this.prevSrc) {
@@ -234,7 +235,8 @@ class YoutubeVideoController extends VideoController {
                                 );
                                 console.log(event);
                                 if (event.data == 1) {
-                                    // try to
+                                    // try to prevent player falling behind when it
+                                    // starts playing especially after buffering
                                     this.requestState();
                                 }
                             },
@@ -266,10 +268,6 @@ class YoutubeVideoController extends VideoController {
         if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
             this.YTPlayer?.seekTo(v.currentTimeMs / 1000, true);
         }
-        if (this.YTPlayer?.getPlayerState() == 0) {
-            // if playback has ended
-            this.YTPlayer.pauseVideo();
-        }
         if (
             v.playing &&
             this.YTPlayer?.getPlayerState() != YT.PlayerState.PLAYING
@@ -293,6 +291,82 @@ class YoutubeVideoController extends VideoController {
         }
         if (this.timeUpdate) {
             clearInterval(this.timeUpdate);
+        }
+    }
+}
+
+class VimeoVideoController extends VideoController {
+    videoElement: HTMLDivElement;
+    vimeoPlayer: VimeoPlayer | null = null;
+    prevSrc: string = "";
+    cachedDurationMs: number = 0;
+
+    constructor(requestState: () => void) {
+        super(requestState);
+        this.videoElement = document.createElement("div");
+        this.videoElement.id = "vimeo-embed-location";
+        const container = document.querySelector("#video-container");
+        if (!container) {
+            console.error("could not select video container");
+        } else {
+            container.prepend(this.videoElement);
+        }
+    }
+
+    get durationMs(): number {
+        return this.cachedDurationMs;
+    }
+
+    async setState(playlist: Video[], v: VideoState) {
+        const currentSource = playlist[v.currentVideoIndex];
+        if (currentSource.src != this.prevSrc) {
+            this.prevSrc = currentSource.src;
+            if (!this.vimeoPlayer) {
+                this.vimeoPlayer = new VimeoPlayer("vimeo-embed-location", {
+                    id: Number(currentSource.src),
+                    controls: false,
+                    responsive: true,
+                });
+                DOMControls.seek.value = "0";
+                DOMControls.timeDisplay.innerHTML = secondsToHMS(0);
+                this.vimeoPlayer.on("durationchange", async (e) => {
+                    this.cachedDurationMs = e.duration * 1000;
+                    DOMControls.timeDisplay.innerHTML = secondsToHMS(
+                        e.duration
+                    );
+                });
+                this.vimeoPlayer.on("timeupdate", (e) => {
+                    DOMControls.seek.value = String(
+                        (e.seconds / e.duration) * 100
+                    );
+                });
+                this.vimeoPlayer.on("playing", () => this.requestState());
+            } else {
+                this.vimeoPlayer.loadVideo(Number(currentSource.src));
+            }
+        }
+        if (this.vimeoPlayer) {
+            const isPaused = await this.vimeoPlayer.getPaused();
+            if (v.playing && isPaused) {
+                await this.vimeoPlayer.play();
+                DOMControls.playPauseImage.src = "/images/pause.svg";
+            } else if (!v.playing && !isPaused) {
+                await this.vimeoPlayer.pause();
+                DOMControls.playPauseImage.src = "/images/play.svg";
+            }
+            const playerCurrentTime = await this.vimeoPlayer.getCurrentTime();
+            if (Math.abs(playerCurrentTime * 1000 - v.currentTimeMs) > 1000) {
+                this.vimeoPlayer.setCurrentTime(v.currentTimeMs / 1000);
+            }
+        }
+    }
+
+    remove() {
+        if (this.vimeoPlayer) {
+            this.vimeoPlayer.destroy();
+        }
+        if (this.videoElement) {
+            this.videoElement.remove();
         }
     }
 }
@@ -390,9 +464,6 @@ class Player {
     };
     controller: VideoController | null = null;
     requestState: () => void;
-    get updatedCurrentTimeMs(): number {
-        return this.controller?.currentTimeMs || 0;
-    }
     constructor(io: Socket) {
         io.on("state_set", (new_state: VideoState) => {
             this.state = new_state;
@@ -414,8 +485,10 @@ class Player {
         return this.playlist;
     }
     createController() {
+        const currentProvider =
+            this.playlist[this.state.currentVideoIndex].provider;
         if (
-            !this.playlist[this.state.currentVideoIndex].provider &&
+            !currentProvider &&
             !(this.controller instanceof HTML5VideoController)
         ) {
             if (this.controller) {
@@ -424,7 +497,7 @@ class Player {
             console.log("creating new HTML5VideoController");
             this.controller = new HTML5VideoController(this.requestState);
         } else if (
-            this.playlist[this.state.currentVideoIndex].provider == "youtube" &&
+            currentProvider == "youtube" &&
             !(this.controller instanceof YoutubeVideoController)
         ) {
             if (this.controller) {
@@ -432,6 +505,15 @@ class Player {
             }
             console.log("creating new YoutubeVideoController");
             this.controller = new YoutubeVideoController(this.requestState);
+        } else if (
+            currentProvider == "vimeo" &&
+            !(this.controller instanceof VimeoVideoController)
+        ) {
+            if (this.controller) {
+                this.controller.remove();
+            }
+            console.log("creating new VimeoVideoController");
+            this.controller = new VimeoVideoController(this.requestState);
         }
     }
 }
