@@ -99,10 +99,15 @@ class HTML5VideoController extends VideoController {
         this.videoElement.addEventListener("durationchange", () => {
             DOMControls.timeDisplay.innerHTML = secondsToHMS(video.duration);
         });
+        DOMControls.seek.value = "0";
         this.videoElement.addEventListener("timeupdate", () => {
-            DOMControls.seek.value = String(
-                (video.currentTime / video.duration) * 100
-            );
+            if (video.duration != 0) {
+                DOMControls.seek.value = String(
+                    (video.currentTime / video.duration) * 100
+                );
+            } else {
+                DOMControls.seek.value = "0";
+            }
         });
         this.videoElement.addEventListener("playing", () => {
             // this event is "Fired when playback is ready to start after having been
@@ -110,12 +115,14 @@ class HTML5VideoController extends VideoController {
             // to request state to try to catch up to the server
             this.requestState();
         });
+        this.videoElement.volume = 1;
     }
 
     setState(playlist: Video[], v: VideoState) {
         const currentSource = playlist[v.currentVideoIndex];
         if (currentSource.src != this.prevSrc) {
             console.log("changing <video> src");
+            DOMControls.seek.value = "0";
             this.videoElement.src = currentSource.src;
             this.prevSrc = currentSource.src;
         }
@@ -125,9 +132,13 @@ class HTML5VideoController extends VideoController {
             1000
         ) {
             this.videoElement.currentTime = v.currentTimeMs / 1000;
-            DOMControls.seek.value = String(
-                (v.currentTimeMs / this.durationMs) * 100
-            );
+            if (this.durationMs != 0) {
+                DOMControls.seek.value = String(
+                    (v.currentTimeMs / this.durationMs) * 100
+                );
+            } else {
+                DOMControls.seek.value = "0";
+            }
         }
         if (v.playing && this.videoElement.paused) {
             DOMControls.playPauseImage.src = "/images/pause.svg";
@@ -265,18 +276,22 @@ class YoutubeVideoController extends VideoController {
             }
         }
         await this.YTPlayerReady;
+        if (!this.YTPlayer) {
+            return; // something went terribly wrong
+        }
+        this.YTPlayer.setVolume(100);
         if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
-            this.YTPlayer?.seekTo(v.currentTimeMs / 1000, true);
+            this.YTPlayer.seekTo(v.currentTimeMs / 1000, true);
         }
         if (
             v.playing &&
-            this.YTPlayer?.getPlayerState() != YT.PlayerState.PLAYING
+            this.YTPlayer.getPlayerState() != YT.PlayerState.PLAYING
         ) {
-            this.YTPlayer?.playVideo();
+            this.YTPlayer.playVideo();
             DOMControls.playPauseImage.src = "/images/pause.svg";
         } else if (
             !v.playing &&
-            this.YTPlayer?.getPlayerState() == YT.PlayerState.PLAYING
+            this.YTPlayer.getPlayerState() == YT.PlayerState.PLAYING
         ) {
             this.YTPlayer.pauseVideo();
             DOMControls.playPauseImage.src = "/images/play.svg";
@@ -341,6 +356,7 @@ class VimeoVideoController extends VideoController {
                     );
                 });
                 this.vimeoPlayer.on("playing", () => this.requestState());
+                this.vimeoPlayer.setVolume(1);
             } else {
                 this.vimeoPlayer.loadVideo(Number(currentSource.src));
             }
