@@ -307,7 +307,13 @@ class Theater {
                 } else {
                     provider = "vimeo";
                     videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
-                    videoID = url; // TODO: find out whether an id is necessary
+                    const uri = new URL.URL(url).pathname;
+                    const idMatch = uri.match(/\d+$/);
+                    if (idMatch) {
+                        videoID = idMatch[0];
+                    } else {
+                        throw new Error("could not get video id from " + url);
+                    }
                 }
                 const videoData = await (await fetch(videoDataURL)).json();
                 const title = videoData.title;
