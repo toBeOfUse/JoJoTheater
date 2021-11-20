@@ -89,6 +89,11 @@ video#player {
     transition-property: opacity;
 }
 
+#time-display {
+    -webkit-text-stroke: vars.$mitchbot-blue 0.5px;
+    font-weight: bold;
+}
+
 #seek {
     width: 100%;
 }
