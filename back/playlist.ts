@@ -48,41 +48,13 @@ const localPlaylist: Video[] = [
         captions: false,
     },
     {
-        src: "/videos/vampiresvbronx.mp4",
-        title: "Vampires vs. the Bronx (2020)",
-        type: "video/mp4",
-        size: 1080,
-        captions: false,
-    },
-    {
-        src: "/videos/motherhonksherhorn.mp4",
-        title: "Taskmaster S07E08: Mother honks her horn.",
-        type: "video/mp4",
-        size: 720,
-        captions: false,
-    },
-    {
-        src: "/videos/thependulumdrawstheeye.mp4",
-        title: "Taskmaster S07E09: The pendulum draws the eye.",
-        type: "video/mp4",
-        size: 720,
-        captions: false,
-    },
-    {
-        src: "/videos/icanhearitgooping.mp4",
-        title: "Taskmaster S07E10: I can hear it gooping.",
-        type: "video/mp4",
-        size: 720,
-        captions: false,
-    },
-	{
         src: "/videos/tutue1.mp4",
         title: "Princess Tutu S01E01: The Duck and the Prince",
         type: "video/mp4",
         size: 720,
         captions: false,
     },
-	{
+    {
         src: "/videos/tutue2.mp4",
         title: "Princess Tutu S01E02: Pieces of the Heart",
         type: "video/mp4",
