@@ -41,6 +41,13 @@ const playlist: Video[] = [
 
 const localPlaylist: Video[] = [
     {
+        src: "/videos/scottishchristmas.mp4",
+        title: "A Castle for Christmas (2021)",
+        type: "video/mp4",
+        size: 720,
+        captions: false,
+    },
+    {
         src: "/videos/vampiresvbronx.mp4",
         title: "Vampires vs. the Bronx (2020)",
         type: "video/mp4",
