@@ -82,7 +82,7 @@ async function buildMessagesDB() {
         logger.debug("creating table 'messages'");
         await messageDB.schema.createTable("messages", (table) => {
             table.increments();
-            table.timestamp("createdAt").notNullable();
+            table.timestamp("createdAt").notNullable().index("chrono");
 
             table.boolean("isAnnouncement").notNullable();
             table.string("messageHTML").notNullable();
