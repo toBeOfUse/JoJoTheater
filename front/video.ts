@@ -71,6 +71,8 @@ abstract class VideoController {
     // abstract get currentTimeMs(): number;
     abstract get durationMs(): number;
     abstract setState(playlist: Video[], v: VideoState): void;
+    abstract isPlaying(): Promise<boolean>;
+    abstract getCurrentTimeMs(): Promise<number>;
     abstract remove(): void;
 }
 
@@ -154,6 +156,14 @@ class HTML5VideoController extends VideoController {
         }
     }
 
+    async isPlaying() {
+        return !this.videoElement.paused;
+    }
+
+    async getCurrentTimeMs() {
+        return this.currentTimeMs;
+    }
+
     remove() {
         this.videoElement.remove();
     }
@@ -192,10 +202,14 @@ class YoutubeVideoController extends VideoController {
 
     get currentTimeMs(): number {
         if (!this.YTPlayer) {
-            return 0;
+            return -1;
         } else {
             return this.YTPlayer.getCurrentTime() * 1000;
         }
+    }
+
+    async getCurrentTimeMs() {
+        return this.currentTimeMs;
     }
 
     get durationMs(): number {
@@ -203,6 +217,14 @@ class YoutubeVideoController extends VideoController {
             return 0;
         } else {
             return this.YTPlayer.getDuration() * 1000;
+        }
+    }
+
+    async isPlaying() {
+        if (!this.YTPlayer) {
+            return false;
+        } else {
+            return this.YTPlayer.getPlayerState() == 1;
         }
     }
 
@@ -330,6 +352,22 @@ class VimeoVideoController extends VideoController {
 
     get durationMs(): number {
         return this.cachedDurationMs;
+    }
+
+    async isPlaying() {
+        if (!this.vimeoPlayer) {
+            return false;
+        } else {
+            return !(await this.vimeoPlayer.getPaused());
+        }
+    }
+
+    async getCurrentTimeMs() {
+        if (!this.vimeoPlayer) {
+            return -1;
+        } else {
+            return (await this.vimeoPlayer.getCurrentTime()) * 1000;
+        }
     }
 
     async setState(playlist: Video[], v: VideoState) {
@@ -537,6 +575,19 @@ class Player {
 function initVideo(io: Socket): Player {
     const player = new Player(io);
     initializePlayerInterface(io, player);
+    io.on("request_state_report", async () => {
+        let state;
+        if (!player.controller) {
+            state = undefined;
+        } else {
+            state = {
+                playing: await player.controller.isPlaying(),
+                currentTimeMs: await player.controller.getCurrentTimeMs(),
+                currentVideoIndex: player.state.currentVideoIndex,
+            };
+        }
+        io.emit("state_report", state);
+    });
     return player;
 }
 

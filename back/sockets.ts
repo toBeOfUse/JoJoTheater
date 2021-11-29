@@ -26,7 +26,8 @@ type ServerSentEvent =
     | "chat_message"
     | "chat_announcement"
     | "add_video_failed"
-    | "state_set";
+    | "state_set"
+    | "request_state_report";
 
 type ClientSentEvent =
     | "state_change_request"
@@ -35,7 +36,8 @@ type ClientSentEvent =
     | "user_info_set"
     | "wrote_message"
     | "disconnect"
-    | "error_report";
+    | "error_report"
+    | "state_report";
 
 interface ConnectionStatus {
     chatName: string;
@@ -44,6 +46,7 @@ interface ConnectionStatus {
     avgPing: number;
     pingHistogram: [number[], string[]];
     location: string;
+    playerState: PlayerState | undefined;
 }
 
 interface ChatUserInfo {
@@ -59,11 +62,6 @@ class AudienceMember {
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
-    private static pingID = 0;
-
-    // managed by the Theater
-    announcement: ChatMessage | undefined = undefined;
-    hasSentMessage = false;
 
     get lastRecordedLatency(): number {
         return this.lastLatencies[this.lastLatencies.length - 1];
@@ -101,7 +99,11 @@ class AudienceMember {
         return Date.now() - this.connected.getTime();
     }
 
-    get connectionInfo(): ConnectionStatus {
+    async getConnectionInfo(): Promise<ConnectionStatus> {
+        const playerState = await this.getMemberState();
+        if (playerState && playerState.currentTimeMs){
+            playerState.currentTimeMs = Math.round(playerState.currentTimeMs)
+        }
         return {
             chatName: this.chatInfo?.name || "",
             uptimeMs: this.uptimeMs,
@@ -109,6 +111,7 @@ class AudienceMember {
             avgPing: this.meanLatency,
             pingHistogram: this.latencyHistogram,
             location: this.location,
+            playerState
         };
     }
 
@@ -116,7 +119,7 @@ class AudienceMember {
         this.socket = socket;
         this.id = socket.id;
         this.socket.onAny((eventName: string) => {
-            if (!eventName.startsWith("pong")) {
+            if (eventName !== "pong") {
                 logger.debug(eventName + " event from id " + this.id);
             }
         });
@@ -155,21 +158,29 @@ class AudienceMember {
         }
     }
 
-    updateLatency(): Promise<number> {
-        return new Promise((resolve) => {
-            this.socket.emit("ping", AudienceMember.pingID);
-            const pingTime = Date.now();
-            this.socket.once("pong_" + AudienceMember.pingID, () => {
-                const pongTime = Date.now();
-                this.lastLatencies.push(pongTime - pingTime);
-                if (this.lastLatencies.length > 100) {
-                    this.lastLatencies = this.lastLatencies.slice(-100);
-                }
-                resolve(pingTime);
-            });
-            AudienceMember.pingID++;
-            AudienceMember.pingID %= 10000;
+    updateLatency() {
+        const pingTime = Date.now();
+        this.socket.once("pong", () => {
+            const pongTime = Date.now();
+            this.lastLatencies.push(pongTime - pingTime);
+            if (this.lastLatencies.length > 100) {
+                this.lastLatencies = this.lastLatencies.slice(-100);
+            }
         });
+        this.socket.emit("ping");
+    }
+
+    getMemberState(): Promise<PlayerState | undefined> {
+        const request = new Promise<PlayerState>((resolve) => {
+            this.socket.once("state_report", (state: PlayerState) => {
+                resolve(state);
+            });
+            setTimeout(() => {
+                resolve(undefined as any);
+            }, 1000);
+        });
+        this.emit("request_state_report");
+        return request;
     }
 
     emit(event: ServerSentEvent, ...args: any[]) {
@@ -338,13 +349,11 @@ class Theater {
                     messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
                 };
                 this.sendToChat(announcement);
-                member.announcement = announcement;
             }
         });
 
         member.on("wrote_message", (messageText: string) => {
             if (member.chatInfo) {
-                member.hasSentMessage = true;
                 const message: ChatMessage = {
                     isAnnouncement: false,
                     messageHTML: escapeHTML(messageText),
@@ -390,10 +399,13 @@ class Theater {
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const theater = new Theater(io);
-    app.get("/stats", (_, res) => {
+    app.get("/stats", async (_, res) => {
         logger.debug("rendering stats page");
         res.render("connections", {
-            connections: theater.audience.map((a) => a.connectionInfo),
+            connections: await Promise.all(
+                theater.audience.map(async (a) => await a.getConnectionInfo())
+            ),
+            theaterState: theater.currentState,
         });
     });
 }

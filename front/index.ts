@@ -8,8 +8,8 @@ import initVideo from "./video";
 
 const socket = io();
 socket.on("id_set", (e) => console.log("client has id", e));
-socket.on("ping", (pingID) => {
-    socket.emit("pong_" + pingID);
+socket.on("ping", () => {
+    socket.emit("pong");
 });
 
 window.onerror = (event) => {
