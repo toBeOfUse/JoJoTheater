@@ -9,6 +9,9 @@
         border: none;
     }
     background-color: vars.$mitchbot-blue;
+    &.fullscreen {
+        background-color: black;
+    }
     overflow: hidden;
     position: relative;
 }
