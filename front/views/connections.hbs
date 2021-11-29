@@ -3,14 +3,26 @@
         <meta charset="utf-8" />
         <title>Connections Dashboard</title>
         <style>
+            body {
+                font-family: sans-serif;
+            }
+            pre {
+                display: inline;
+                white-space: pre-wrap;
+            }
             thead { border: 2px solid #333; } td, th {padding: 10px; width:
             150px;} th {border-right: 1px solid #333;} td { text-align: center;
             } tr:nth-of-type(even) td:nth-of-type(even) { background-color:
             #eee; } tr:nth-of-type(odd) td:nth-of-type(odd) { background-color:
             #eee; } table { border-collapse: collapse; letter-spacing: 1px;
-            font-family: sans-serif; font-size: .8rem; }
+            font-size: .8rem; }
         </style>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js" integrity="sha512-Wt1bJGtlnMtGP0dqNFH1xlkLBNpEodaiQ8ZN5JLA5wpc1sUlk/O5uuOMNgvzddzkpvZ9GLyYNa8w2s7rqiTk5Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
+            integrity="sha512-Wt1bJGtlnMtGP0dqNFH1xlkLBNpEodaiQ8ZN5JLA5wpc1sUlk/O5uuOMNgvzddzkpvZ9GLyYNa8w2s7rqiTk5Q=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
     </head>
     <body>
         <table>
@@ -18,6 +30,7 @@
                 <tr>
                     <th scope="col">Uptime</th>
                     <th scope="col">Name in chat</th>
+                    <th scope="col">Reported player state</th>
                     <th scope="col">Latest ping</th>
                     <th scope="col">Average ping</th>
                     <th scope="col">Ping distribution</th>
@@ -31,6 +44,11 @@
                         <td>{{this.chatName}}
                             {{#unless this.chatName}}<em>not logged in</em>{{/unless}}
                         </td>
+                        <td style="text-align: left; font-size: small;">
+                            Playing: {{this.playerState.playing}}<br>
+                            Current Time: {{msToHMS this.playerState.currentTimeMs}}<br>
+                            Video: {{this.playerState.currentVideoIndex}}
+                        </td>
                         <td>{{this.latestPing}} ms</td>
                         <td>{{round this.avgPing}} ms</td>
                         <td><canvas width="160" height="100" id="chart{{@index}}"></canvas></td>
@@ -39,8 +57,13 @@
                 {{/each}}
             </tbody>
         </table>
+        <p>Current server state:
+            Playing: {{theaterState.playing}},
+            current time: {{msToHMS theaterState.currentTimeMs}},
+            current video index: {{theaterState.currentVideoIndex}}
+        </p>
         <script>
-            const inject = '{{{stringify connections}}}';
+            const inject = `{{{stringify connections}}}`;
             const data = JSON.parse(inject);
             data.map((c, i) => {
                 const ctx = document.getElementById('chart'+i).getContext('2d');

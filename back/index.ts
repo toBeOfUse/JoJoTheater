@@ -41,8 +41,11 @@ const renderer = handlebars.create({
         msToSeconds(n: number): string {
             return (n / 1000).toFixed(2);
         },
+        msToHMS(n: number): string {
+            return new Date(n).toISOString().slice(11, 19);
+        },
         stringify(o: object): string {
-            return JSON.stringify(o);
+            return JSON.stringify(o, null, 1);
         },
     },
 });
