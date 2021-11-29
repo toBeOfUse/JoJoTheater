@@ -101,8 +101,8 @@ class AudienceMember {
 
     async getConnectionInfo(): Promise<ConnectionStatus> {
         const playerState = await this.getMemberState();
-        if (playerState && playerState.currentTimeMs){
-            playerState.currentTimeMs = Math.round(playerState.currentTimeMs)
+        if (playerState && playerState.currentTimeMs) {
+            playerState.currentTimeMs = Math.round(playerState.currentTimeMs);
         }
         return {
             chatName: this.chatInfo?.name || "",
@@ -111,7 +111,7 @@ class AudienceMember {
             avgPing: this.meanLatency,
             pingHistogram: this.latencyHistogram,
             location: this.location,
-            playerState
+            playerState,
         };
     }
 
@@ -123,8 +123,7 @@ class AudienceMember {
                 logger.debug(eventName + " event from id " + this.id);
             }
         });
-        this.updateLatency();
-        setInterval(() => this.updateLatency(), 20000);
+        this.startPinging();
         this.socket.on("user_info_set", (info: ChatUserInfo) => {
             info.name = info.name.trim();
             if (
@@ -158,16 +157,23 @@ class AudienceMember {
         }
     }
 
-    updateLatency() {
-        const pingTime = Date.now();
-        this.socket.once("pong", () => {
+    startPinging() {
+        let pingTime = NaN;
+        const ping = () => {
+            pingTime = Date.now();
+            this.socket.emit("ping");
+        };
+        const pongHandler = () => {
             const pongTime = Date.now();
             this.lastLatencies.push(pongTime - pingTime);
             if (this.lastLatencies.length > 100) {
                 this.lastLatencies = this.lastLatencies.slice(-100);
             }
-        });
-        this.socket.emit("ping");
+        };
+        this.socket.on("pong", pongHandler);
+        ping();
+        const updateInterval = setInterval(ping, 20000);
+        this.on("disconnect", () => clearInterval(updateInterval));
     }
 
     getMemberState(): Promise<PlayerState | undefined> {
