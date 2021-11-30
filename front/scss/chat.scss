@@ -19,6 +19,12 @@
     position: fixed;
     width: 300px;
     left: 0;
+    &:not(.logged-in) #chat-body {
+        display: none;
+    }
+    &.logged-in #chat-login {
+        display: none;
+    }
 }
 
 .window-body {

@@ -23,6 +23,7 @@ type ServerSentEvent =
     | "ping"
     | "id_set"
     | "playlist_set"
+    | "chat_login_successful"
     | "chat_message"
     | "chat_announcement"
     | "add_video_failed"
@@ -136,6 +137,7 @@ class AudienceMember {
                     "audience member successfully set their chat info to:"
                 );
                 logger.debug(JSON.stringify(info));
+                this.emit("chat_login_successful");
             } else {
                 logger.debug("chat info rejected:");
                 logger.debug(JSON.stringify(info).substring(0, 1000));

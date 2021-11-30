@@ -34,8 +34,6 @@ function selectAvatar(index: number) {
 }
 
 export default function initChat(socket: Socket) {
-    console.log("setting up chat");
-
     const loginSubmitButton = $("#user-info-submit");
 
     // setting up avatar input
@@ -64,9 +62,10 @@ export default function initChat(socket: Socket) {
                 avatarURL: avatar.attr("src") as string,
             };
             socket.emit("user_info_set", info);
-            $("#chat-login").css({ display: "none" });
-            $("#chat-body").css({ display: "" });
         }
+    });
+    socket.on("chat_login_successful", () => {
+        $("#chat-window").addClass("logged-in");
     });
 
     $(".prompt").on("animationend", function () {
