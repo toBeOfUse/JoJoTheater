@@ -8,6 +8,10 @@
     line-height: 1;
 }
 
+.resize-cursor {
+    cursor: ns-resize;
+}
+
 .title-bar-text {
     -moz-user-select: none;
     -webkit-user-select: none;
@@ -25,22 +29,29 @@
     &.logged-in #chat-login {
         display: none;
     }
+    &.logged-in:not(.chat-minimized) #chat-header::after {
+        position: absolute;
+        top: -5px;
+        left: 0;
+        width: 100%;
+        height: 10px;
+        content: "";
+        cursor: ns-resize;
+    }
+    &.chat-minimized {
+        & #chat-window-body {
+            display: none;
+        }
+        & div.status-bar {
+            display: none;
+        }
+    }
 }
 
 .window-body {
     font-family: "Lora", serif;
     height: 160px;
     text-align: left;
-}
-
-.chat-minimized {
-    height: 0px;
-    margin: 0px !important;
-    overflow: hidden;
-}
-
-.chat-minimized + div.status-bar {
-    display: none;
 }
 
 #chat-login {

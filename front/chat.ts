@@ -115,8 +115,9 @@ export default function initChat(socket: Socket) {
         scrollMessagesToBottom();
     });
 
-    // set up dragging and maximizing/minimizing the chat window
+    // set up dragging, resizing, and maximizing/minimizing the chat window
     const chatWindow = $("#chat-window");
+    const chatBody = $("#chat-window-body");
     const initialCWBox = chatWindow[0].getBoundingClientRect();
     const initialCWLeft = initialCWBox.left;
     const initialCWBottom = 0;
@@ -125,7 +126,10 @@ export default function initChat(socket: Socket) {
     let cwLeft = initialCWLeft;
     let cwBottom = initialCWBottom;
 
+    let minimized = true;
+
     function moveChatWindow(x: number, y: number) {
+        if (minimized) return;
         cwLeft += x;
         cwBottom -= y;
         cwBottom = Math.max(cwBottom, -(chatWindow.height() as number) + 15);
@@ -138,25 +142,35 @@ export default function initChat(socket: Socket) {
         chatWindow.css({ left: cwLeft, bottom: cwBottom });
     }
 
-    function keepChatWindowOnScreen() {
-        // simple way of enforcing the min/max bounds
-        moveChatWindow(0, 0);
+    function resizeChatWindow(deltaY: number) {
+        if (chatBody.css("display") == "none") {
+            return;
+        }
+        const minBodyHeight = 160; // in accordance with chat.scss
+        const maxBodyHeight = window.innerHeight * 0.7;
+        const currentHeight = chatBody.height() as number;
+        const newHeight = Math.min(
+            Math.max(currentHeight - deltaY, minBodyHeight),
+            maxBodyHeight
+        );
+        chatBody.css("height", newHeight + "px");
     }
 
-    window.addEventListener("resize", () => keepChatWindowOnScreen());
-
-    let minimized = true;
+    window.addEventListener("resize", () => {
+        // simple way of ensuring the window stays inside the min/max bounds
+        moveChatWindow(0, 0);
+    });
 
     const chatWindowBody = $("#chat-window-body");
 
     $("#chat-window-minimize").on("click", () => {
-        chatWindowBody.addClass("chat-minimized");
+        chatWindow.addClass("chat-minimized");
         minimized = true;
         chatWindow.css({ left: initialCWLeft, bottom: initialCWBottom });
     });
 
     $("#chat-window-maximize").on("click", () => {
-        chatWindowBody.removeClass("chat-minimized");
+        chatWindow.removeClass("chat-minimized");
         minimized = false;
         chatWindow.css({ left: cwLeft, bottom: cwBottom });
         const chatWindowRect = chatWindow[0].getBoundingClientRect();
@@ -175,21 +189,40 @@ export default function initChat(socket: Socket) {
     chatWindowHeader.on("mousedown", (mouseDownEvent) => {
         mouseDownEvent.preventDefault();
         mouseDownEvent.stopPropagation();
-        let lastScreenX = mouseDownEvent.screenX;
-        let lastScreenY = mouseDownEvent.screenY;
         if (!minimized) {
+            let lastClientX = mouseDownEvent.clientX;
+            let lastClientY = mouseDownEvent.clientY;
+            const chatWindowTop =
+                chatWindowHeader[0].getBoundingClientRect().top;
+            const resizing =
+                mouseDownEvent.clientY > chatWindowTop - 5 &&
+                mouseDownEvent.clientY < chatWindowTop + 5 &&
+                chatWindow.hasClass("logged-in");
+            const messageCont = $("#messages");
+            const messageScrollTop = messageCont.scrollTop();
+            if (resizing) {
+                $("body").addClass("resize-cursor");
+            }
             const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                moveChatWindow(
-                    mouseMoveEvent.screenX - lastScreenX,
-                    mouseMoveEvent.screenY - lastScreenY
-                );
-                lastScreenX = mouseMoveEvent.screenX;
-                lastScreenY = mouseMoveEvent.screenY;
+                if (resizing) {
+                    resizeChatWindow(mouseMoveEvent.clientY - lastClientY);
+                    messageCont.scrollTop(messageScrollTop as number);
+                } else {
+                    moveChatWindow(
+                        mouseMoveEvent.clientX - lastClientX,
+                        mouseMoveEvent.clientY - lastClientY
+                    );
+                }
+                lastClientX = mouseMoveEvent.clientX;
+                lastClientY = mouseMoveEvent.clientY;
             };
             window.addEventListener("mousemove", handleMouseMove);
             const cancelMouseMove = () => {
                 window.removeEventListener("mousemove", handleMouseMove);
                 window.removeEventListener("mouseup", cancelMouseMove);
+                if (resizing) {
+                    $("body").removeClass("resize-cursor");
+                }
             };
             window.addEventListener("mouseup", cancelMouseMove);
         }
