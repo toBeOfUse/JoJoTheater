@@ -1,4 +1,4 @@
-@font-face {
+/* @font-face {
     font-family: "Manga Temple";
     src: url("mangat-webfont.woff2") format("woff2"),
         url("mangat-webfont.woff") format("woff");
@@ -19,8 +19,8 @@
     src: url("mangati-webfont.woff2") format("woff2"),
         url("mangati-webfont.woff") format("woff");
     font-weight: normal;
-    font-style: italic;
-}
+    font-style: italic; 
+}*/
 
 @font-face {
     font-family: "Lora";
