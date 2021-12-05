@@ -50,6 +50,27 @@ const DOMControls = {
     ) as HTMLDivElement,
 };
 
+function setSeekDisplay(percentWatched: number) {
+    if (!userIsSeeking) {
+        DOMControls.seek.value = String(percentWatched);
+    }
+}
+
+function setTimeDisplay(currentTimeS: number, durationS: number) {
+    DOMControls.timeDisplay.innerHTML =
+        secondsToHMS(currentTimeS) + " / " + secondsToHMS(durationS);
+}
+
+function setTimeAndSeek(currentTimeS: number, durationS: number) {
+    if (!isNaN(currentTimeS) && !isNaN(durationS) && durationS != 0) {
+        setTimeDisplay(currentTimeS, durationS);
+        setSeekDisplay((currentTimeS / durationS) * 100);
+    } else {
+        setTimeDisplay(0, 0);
+        setSeekDisplay(0);
+    }
+}
+
 /**
  * Responsible for creating and removing the DOM element that will directly display
  * the video (i. e. a <video> tag or an iframe containing embedded video) and
@@ -99,17 +120,10 @@ class HTML5VideoController extends VideoController {
         }
         this.videoElement = video;
         this.videoElement.addEventListener("durationchange", () => {
-            DOMControls.timeDisplay.innerHTML = secondsToHMS(video.duration);
+            setTimeAndSeek(video.currentTime, video.duration);
         });
-        DOMControls.seek.value = "0";
         this.videoElement.addEventListener("timeupdate", () => {
-            if (video.duration != 0) {
-                DOMControls.seek.value = String(
-                    (video.currentTime / video.duration) * 100
-                );
-            } else {
-                DOMControls.seek.value = "0";
-            }
+            setTimeAndSeek(video.currentTime, video.duration);
         });
         this.videoElement.addEventListener("playing", () => {
             // this event is "Fired when playback is ready to start after having been
@@ -124,7 +138,7 @@ class HTML5VideoController extends VideoController {
         const currentSource = playlist[v.currentVideoIndex];
         if (currentSource.src != this.prevSrc) {
             console.log("changing <video> src");
-            DOMControls.seek.value = "0";
+            setSeekDisplay(0);
             this.videoElement.src = currentSource.src;
             this.prevSrc = currentSource.src;
         }
@@ -134,13 +148,6 @@ class HTML5VideoController extends VideoController {
             1000
         ) {
             this.videoElement.currentTime = v.currentTimeMs / 1000;
-            if (this.durationMs != 0) {
-                DOMControls.seek.value = String(
-                    (v.currentTimeMs / this.durationMs) * 100
-                );
-            } else {
-                DOMControls.seek.value = "0";
-            }
         }
         if (v.playing && this.videoElement.paused) {
             DOMControls.playPauseImage.src = "/images/pause.svg";
@@ -278,16 +285,9 @@ class YoutubeVideoController extends VideoController {
                     this.timeUpdate = setInterval(async () => {
                         await this.YTPlayerReady;
                         if (this.YTPlayer) {
-                            DOMControls.timeDisplay.innerHTML = secondsToHMS(
-                                this.YTPlayer.getDuration()
-                            );
-                            if (!userIsSeeking) {
-                                DOMControls.seek.value = String(
-                                    (this.YTPlayer.getCurrentTime() /
-                                        this.YTPlayer.getDuration()) *
-                                        100
-                                );
-                            }
+                            const duration = this.YTPlayer.getDuration();
+                            const current = this.YTPlayer.getCurrentTime();
+                            setTimeAndSeek(current, duration);
                         }
                     }, 500);
                 });
@@ -380,18 +380,11 @@ class VimeoVideoController extends VideoController {
                     controls: false,
                     responsive: true,
                 });
-                DOMControls.seek.value = "0";
-                DOMControls.timeDisplay.innerHTML = secondsToHMS(0);
                 this.vimeoPlayer.on("durationchange", async (e) => {
                     this.cachedDurationMs = e.duration * 1000;
-                    DOMControls.timeDisplay.innerHTML = secondsToHMS(
-                        e.duration
-                    );
                 });
                 this.vimeoPlayer.on("timeupdate", (e) => {
-                    DOMControls.seek.value = String(
-                        (e.seconds / e.duration) * 100
-                    );
+                    setTimeAndSeek(e.seconds, e.duration);
                 });
                 this.vimeoPlayer.on("playing", () => this.requestState());
                 this.vimeoPlayer.setVolume(1);

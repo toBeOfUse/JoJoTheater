@@ -99,6 +99,8 @@ video#player {
 #time-display {
     -webkit-text-stroke: vars.$mitchbot-blue 0.5px;
     font-weight: bold;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 #seek {
