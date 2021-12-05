@@ -89,11 +89,10 @@ abstract class VideoController {
         this.requestState = requestState;
     }
     abstract videoElement: HTMLElement;
-    // abstract get currentTimeMs(): number;
+    abstract get currentTimeMs(): number;
     abstract get durationMs(): number;
     abstract setState(playlist: Video[], v: VideoState): void;
     abstract isPlaying(): Promise<boolean>;
-    abstract getCurrentTimeMs(): Promise<number>;
     abstract remove(): void;
 }
 
@@ -167,10 +166,6 @@ class HTML5VideoController extends VideoController {
         return !this.videoElement.paused;
     }
 
-    async getCurrentTimeMs() {
-        return this.currentTimeMs;
-    }
-
     remove() {
         this.videoElement.remove();
     }
@@ -213,10 +208,6 @@ class YoutubeVideoController extends VideoController {
         } else {
             return this.YTPlayer.getCurrentTime() * 1000;
         }
-    }
-
-    async getCurrentTimeMs() {
-        return this.currentTimeMs;
     }
 
     get durationMs(): number {
@@ -337,6 +328,7 @@ class VimeoVideoController extends VideoController {
     vimeoPlayer: VimeoPlayer | null = null;
     prevSrc: string = "";
     cachedDurationMs: number = 0;
+    cachedCurrentTimeMs: number = 0;
 
     constructor(requestState: () => void) {
         super(requestState);
@@ -354,19 +346,15 @@ class VimeoVideoController extends VideoController {
         return this.cachedDurationMs;
     }
 
+    get currentTimeMs(): number {
+        return this.cachedCurrentTimeMs;
+    }
+
     async isPlaying() {
         if (!this.vimeoPlayer) {
             return false;
         } else {
             return !(await this.vimeoPlayer.getPaused());
-        }
-    }
-
-    async getCurrentTimeMs() {
-        if (!this.vimeoPlayer) {
-            return -1;
-        } else {
-            return (await this.vimeoPlayer.getCurrentTime()) * 1000;
         }
     }
 
@@ -382,6 +370,8 @@ class VimeoVideoController extends VideoController {
                 });
                 this.vimeoPlayer.on("timeupdate", (e) => {
                     setTimeAndSeek(e.seconds, e.duration);
+                    this.cachedDurationMs = e.duration * 1000;
+                    this.cachedCurrentTimeMs = e.seconds * 1000;
                 });
                 this.vimeoPlayer.on("playing", () => this.requestState());
                 this.vimeoPlayer.setVolume(1);
@@ -576,7 +566,7 @@ function initVideo(io: Socket): Player {
         } else {
             state = {
                 playing: await player.controller.isPlaying(),
-                currentTimeMs: await player.controller.getCurrentTimeMs(),
+                currentTimeMs: player.controller.currentTimeMs,
                 currentVideoIndex: player.state.currentVideoIndex,
             };
         }
