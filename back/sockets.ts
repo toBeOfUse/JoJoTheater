@@ -54,6 +54,9 @@ interface ChatUserInfo {
     id: string;
     name: string;
     avatarURL: string;
+    // if they are resuming a previous login session (this is indicated by the
+    // client) and so we do not need to announce them
+    resumed: boolean;
 }
 
 class AudienceMember {
@@ -351,7 +354,7 @@ class Theater {
         });
 
         member.on("user_info_set", () => {
-            if (member.chatInfo) {
+            if (member.chatInfo && !member.chatInfo.resumed) {
                 const announcement = {
                     isAnnouncement: true,
                     messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,

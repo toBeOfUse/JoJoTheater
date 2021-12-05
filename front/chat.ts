@@ -33,6 +33,8 @@ function selectAvatar(index: number) {
 }
 
 export default function initChat(socket: Socket) {
+    const loginInfoKey = "loginInfo"; // used to save login information in session storage
+
     const loginSubmitButton = $("#user-info-submit");
 
     // setting up avatar input
@@ -59,12 +61,23 @@ export default function initChat(socket: Socket) {
             const info = {
                 name,
                 avatarURL: avatar.attr("src") as string,
+                resumed: false,
             };
+            try {
+                sessionStorage.setItem(loginInfoKey, JSON.stringify(info));
+            } catch {
+                console.log("could not use session storage");
+            }
             socket.emit("user_info_set", info);
         }
     });
     socket.on("chat_login_successful", () => {
         $("#chat-window").addClass("logged-in");
+        // in case the session was restored from sessionStorage behind the scenes.
+        // the click listener triggered below is guaranteed to be present on the
+        // element because we don't try to restore the session until after it's added,
+        // but watch out
+        $("#chat-window-maximize").trigger("click");
     });
 
     $(".prompt").on("animationend", function () {
@@ -231,6 +244,19 @@ export default function initChat(socket: Socket) {
             window.addEventListener("mouseup", cancelMouseMove);
         }
     });
+
+    // restore last session if possible
+    const lastLogin = sessionStorage.getItem(loginInfoKey);
+    if (lastLogin) {
+        try {
+            socket.emit("user_info_set", {
+                ...JSON.parse(lastLogin),
+                resumed: true,
+            });
+        } catch {
+            console.log("could not parse previous login info");
+        }
+    }
 
     // risky full screen stuff
     const chatContainer = $("#chat-container");
