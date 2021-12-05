@@ -48,6 +48,13 @@
     }
 }
 
+#chat-window-log-out {
+    background-image: url(../../assets/images/logoutnohover.svg);
+    &:hover {
+        background-image: url(../../assets/images/logouthover.svg);
+    }
+}
+
 .window-body {
     font-family: "Lora", serif;
     height: 160px;

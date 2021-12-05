@@ -1,7 +1,7 @@
 import path from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
-import CopyWebpackPlugin from "copy-webpack-plugin";
 import webpack from "webpack";
+const svgToMiniDataURI = require("mini-svg-data-uri");
 
 const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === "production" ? "production" : "development",
@@ -23,6 +23,16 @@ const config: webpack.Configuration = {
             {
                 test: /\.scss$/i,
                 use: ["style-loader", "css-loader", "sass-loader"],
+            },
+            {
+                test: /\.svg$/i,
+                type: "asset/inline",
+                generator: {
+                    dataUrl: (content: string) => {
+                        content = content.toString();
+                        return svgToMiniDataURI(content);
+                    },
+                },
             },
             {
                 test: /\.tsx?$/,
