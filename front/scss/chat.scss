@@ -21,7 +21,7 @@
 
 #chat-window {
     position: fixed;
-    width: 300px;
+    width: vars.$chat-width;
     left: 0;
     &:not(.logged-in) #chat-body {
         display: none;

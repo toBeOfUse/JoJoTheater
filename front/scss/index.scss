@@ -63,9 +63,10 @@ body {
 }
 
 #container-container {
-    width: 60%;
-    @media (max-width: 500px) {
+    width: calc(100% - #{vars.$chat-width * 2});
+    @media (max-aspect-ratio: 14/9) {
         width: 95%;
+        margin-bottom: 200px; // leave space at bottom for chat window in vertical mode
     }
     text-align: center;
 }
@@ -110,13 +111,12 @@ body {
 
 #playlist-container {
     text-align: left;
-    margin: 10px auto 50px auto;
+    margin: 10px auto;
     font-family: vars.$ms-font;
     width: 75%;
     @media (max-width: 600px) {
         width: 90%;
     }
-    min-height: 250px; // to reserve room for the chat window
 }
 
 .playlist-item {
