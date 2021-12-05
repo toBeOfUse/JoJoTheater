@@ -188,6 +188,7 @@ export default function initChat(socket: Socket) {
     $("#chat-window-log-out").on("click", () => {
         chatWindow.removeClass("logged-in");
         resizeChatWindow(-100000); // the function will apply bounds
+        sessionStorage.removeItem(loginInfoKey);
     });
 
     $("#chat-window-maximize").on("click", () => {
