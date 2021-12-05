@@ -380,9 +380,6 @@ class VimeoVideoController extends VideoController {
                     controls: false,
                     responsive: true,
                 });
-                this.vimeoPlayer.on("durationchange", async (e) => {
-                    this.cachedDurationMs = e.duration * 1000;
-                });
                 this.vimeoPlayer.on("timeupdate", (e) => {
                     setTimeAndSeek(e.seconds, e.duration);
                 });
