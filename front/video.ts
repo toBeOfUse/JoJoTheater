@@ -488,7 +488,11 @@ function initializePlayerInterface(io: Socket, player: Player) {
     });
     DOMControls.fullscreen.addEventListener("click", () => {
         if (!currentlyFullscreen) {
-            fscreen.requestFullscreen(DOMControls.videoContainer);
+            try {
+                fscreen.requestFullscreen(DOMControls.videoContainer);
+            } catch {
+                displayMessage("fullscreen blocked by your device");
+            }
         } else if (currentlyFullscreen) {
             fscreen.exitFullscreen();
         }
