@@ -35,6 +35,11 @@ function selectAvatar(index: number) {
 export default function initChat(socket: Socket) {
     const loginInfoKey = "loginInfo"; // used to save login information in session storage
 
+    const messages = $("#messages");
+    function scrollMessagesToBottom() {
+        messages.scrollTop(messages[0].scrollHeight as number);
+    }
+
     const loginSubmitButton = $("#user-info-submit");
 
     // setting up avatar input
@@ -86,9 +91,6 @@ export default function initChat(socket: Socket) {
 
     // set up sending and receiving chat messages and announcements and displaying
     // them
-    function scrollMessagesToBottom() {
-        messages.scrollTop(messages[0].scrollHeight as number);
-    }
     const messageInput = $("#message-input");
     const sendButton = $("#send-message");
     sendButton.on("click", () => {
@@ -104,7 +106,6 @@ export default function initChat(socket: Socket) {
         }
     });
 
-    const messages = $("#messages");
     let lastSenderID = "";
     socket.on("chat_announcement", (announcement: string) => {
         messages.append(
@@ -157,18 +158,20 @@ export default function initChat(socket: Socket) {
         chatWindow.css({ left: cwLeft, bottom: cwBottom });
     }
 
-    function resizeChatWindow(deltaY: number) {
+    function resizeChatWindow(changeInHeight: number): number {
+        // returns the actual change in height after bounds are applied
         if (chatBody.css("display") == "none") {
-            return;
+            return 0;
         }
         const minBodyHeight = 160; // in accordance with chat.scss
         const maxBodyHeight = window.innerHeight * 0.7;
-        const currentHeight = chatBody.height() as number;
+        const oldHeight = chatBody.height() as number;
         const newHeight = Math.min(
-            Math.max(currentHeight - deltaY, minBodyHeight),
+            Math.max(oldHeight + changeInHeight, minBodyHeight),
             maxBodyHeight
         );
         chatBody.css("height", newHeight + "px");
+        return newHeight - oldHeight;
     }
 
     window.addEventListener("resize", () => {
@@ -184,6 +187,7 @@ export default function initChat(socket: Socket) {
 
     $("#chat-window-log-out").on("click", () => {
         chatWindow.removeClass("logged-in");
+        resizeChatWindow(-100000); // the function will apply bounds
     });
 
     $("#chat-window-maximize").on("click", () => {
@@ -194,6 +198,7 @@ export default function initChat(socket: Socket) {
         if (chatWindowRect.bottom > window.innerHeight) {
             moveChatWindow(0, -(chatWindowRect.bottom - window.innerHeight));
         }
+        scrollMessagesToBottom();
     });
 
     const chatWindowHeader = $("#chat-header");
@@ -203,46 +208,66 @@ export default function initChat(socket: Socket) {
         event.stopPropagation();
     });
 
-    chatWindowHeader.on("mousedown", (mouseDownEvent) => {
+    chatWindow.on("mousedown", (mouseDownEvent) => {
+        if (minimized) {
+            return;
+        }
+        let lastClientX = mouseDownEvent.clientX;
+        let lastClientY = mouseDownEvent.clientY;
+        const chatWindowRect = chatWindow[0].getBoundingClientRect();
+        // rMargin should stay in sync with the ::after elements that provide the
+        // cursor: ns-resize in chat.scss
+        const rMargin = 5;
+        const resizing =
+            ((lastClientY > chatWindowRect.top - rMargin &&
+                lastClientY < chatWindowRect.top + rMargin) ||
+                (lastClientY > chatWindowRect.bottom - rMargin &&
+                    lastClientY < chatWindowRect.bottom + rMargin)) &&
+            chatWindow.hasClass("logged-in");
+        const moving =
+            !resizing &&
+            $(mouseDownEvent.target).parents("#chat-header").length;
+        if (!(moving || resizing)) {
+            return;
+        }
         mouseDownEvent.preventDefault();
         mouseDownEvent.stopPropagation();
-        if (!minimized) {
-            let lastClientX = mouseDownEvent.clientX;
-            let lastClientY = mouseDownEvent.clientY;
-            const chatWindowTop =
-                chatWindowHeader[0].getBoundingClientRect().top;
-            const resizing =
-                mouseDownEvent.clientY > chatWindowTop - 5 &&
-                mouseDownEvent.clientY < chatWindowTop + 5 &&
-                chatWindow.hasClass("logged-in");
-            const messageCont = $("#messages");
-            const messageScrollTop = messageCont.scrollTop();
+        const messageCont = $("#messages");
+        const messageScrollTop = messageCont.scrollTop();
+        if (resizing) {
+            $("body").addClass("resize-cursor");
+        }
+        const fromTop =
+            lastClientY < chatWindowRect.top + chatWindowRect.height / 2;
+        const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
             if (resizing) {
-                $("body").addClass("resize-cursor");
-            }
-            const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                if (resizing) {
-                    resizeChatWindow(mouseMoveEvent.clientY - lastClientY);
-                    messageCont.scrollTop(messageScrollTop as number);
+                if (fromTop) {
+                    resizeChatWindow(lastClientY - mouseMoveEvent.clientY);
                 } else {
-                    moveChatWindow(
-                        mouseMoveEvent.clientX - lastClientX,
+                    const resized = resizeChatWindow(
                         mouseMoveEvent.clientY - lastClientY
                     );
+                    moveChatWindow(0, resized);
                 }
-                lastClientX = mouseMoveEvent.clientX;
-                lastClientY = mouseMoveEvent.clientY;
-            };
-            window.addEventListener("mousemove", handleMouseMove);
-            const cancelMouseMove = () => {
-                window.removeEventListener("mousemove", handleMouseMove);
-                window.removeEventListener("mouseup", cancelMouseMove);
-                if (resizing) {
-                    $("body").removeClass("resize-cursor");
-                }
-            };
-            window.addEventListener("mouseup", cancelMouseMove);
-        }
+                messageCont.scrollTop(messageScrollTop as number);
+            } else if (moving) {
+                moveChatWindow(
+                    mouseMoveEvent.clientX - lastClientX,
+                    mouseMoveEvent.clientY - lastClientY
+                );
+            }
+            lastClientX = mouseMoveEvent.clientX;
+            lastClientY = mouseMoveEvent.clientY;
+        };
+        window.addEventListener("mousemove", handleMouseMove);
+        const cancelMouseMove = () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", cancelMouseMove);
+            if (resizing) {
+                $("body").removeClass("resize-cursor");
+            }
+        };
+        window.addEventListener("mouseup", cancelMouseMove);
     });
 
     // restore last session if possible

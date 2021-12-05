@@ -34,7 +34,16 @@
         top: -5px;
         left: 0;
         width: 100%;
-        height: 10px;
+        height: 10px; // should stay in sync with rMargin in chat.ts
+        content: "";
+        cursor: ns-resize;
+    }
+    &::after {
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 10px; // should stay in sync with rMargin in chat.ts
         content: "";
         cursor: ns-resize;
     }
