@@ -3,6 +3,7 @@ import http from "http";
 import express from "express";
 import compression from "compression";
 import handlebars from "express-handlebars";
+import formidable from "formidable";
 
 import init from "./sockets";
 import logger from "./logger";
@@ -56,6 +57,27 @@ app.use(express.static("assets"));
 app.engine("hbs", renderer.engine);
 app.set("view engine", "hbs");
 app.set("views", path.resolve(process.cwd(), "front/views/"));
+
+app.get("/upload", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "../front/upload.html"));
+});
+
+app.post("/api/upload", (req, res, next) => {
+    const form = formidable({
+        multiples: false,
+        keepExtensions: true,
+        maxFileSize: 4294967296,
+        uploadDir: path.resolve(__dirname, "../uploads/"),
+    });
+
+    form.parse(req, (err, fields, files) => {
+        if (err) {
+            next(err);
+            return;
+        }
+        res.json({ fields, files });
+    });
+});
 
 const server = http.createServer(app);
 init(server, app);
