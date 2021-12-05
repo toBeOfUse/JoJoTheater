@@ -361,7 +361,8 @@ class Theater {
         });
 
         member.on("wrote_message", (messageText: string) => {
-            if (member.chatInfo) {
+            messageText = messageText.trim();
+            if (member.chatInfo && messageText) {
                 const message: ChatMessage = {
                     isAnnouncement: false,
                     messageHTML: escapeHTML(messageText),

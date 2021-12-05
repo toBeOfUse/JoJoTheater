@@ -80,8 +80,11 @@ export default function initChat(socket: Socket) {
     const messageInput = $("#message-input");
     const sendButton = $("#send-message");
     sendButton.on("click", () => {
-        socket.emit("wrote_message", messageInput.val());
-        messageInput.val("");
+        const messageText = (messageInput.val() as string).trim();
+        if (messageText) {
+            socket.emit("wrote_message", messageText);
+            messageInput.val("");
+        }
     });
     messageInput.on("keydown", (event) => {
         if (event.key == "Enter") {
