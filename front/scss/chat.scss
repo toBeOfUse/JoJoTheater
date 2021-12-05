@@ -89,13 +89,18 @@
     border-radius: 50%;
     width: 30px;
     height: 30px;
-    border: 2px solid transparent;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #0003;
     margin: 0 3px;
     cursor: pointer;
+    background-color: white;
 }
 
 .avatar-option.selected {
-    border: 2px solid vars.$mitchbot-blue;
+    border-color: vars.$mitchbot-blue;
+    border-style: inset;
+    background-color: #eee;
 }
 
 .validation-warning {
