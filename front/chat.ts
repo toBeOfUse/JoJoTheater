@@ -1,7 +1,6 @@
 import $ from "jquery";
 import type { Socket } from "socket.io-client";
 import type { ChatMessage } from "../types";
-import "./spinner.css";
 
 // load xp.css as raw, put it in a style element, and then modify the rules so that
 // they only apply to elements within the .xp class
@@ -164,12 +163,14 @@ export default function initChat(socket: Socket) {
         moveChatWindow(0, 0);
     });
 
-    const chatWindowBody = $("#chat-window-body");
-
     $("#chat-window-minimize").on("click", () => {
         chatWindow.addClass("chat-minimized");
         minimized = true;
         chatWindow.css({ left: initialCWLeft, bottom: initialCWBottom });
+    });
+
+    $("#chat-window-log-out").on("click", () => {
+        chatWindow.removeClass("logged-in");
     });
 
     $("#chat-window-maximize").on("click", () => {

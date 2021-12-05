@@ -1,6 +1,7 @@
 import "normalize.css";
 import "./scss/index.scss";
 import "../fonts/fonts.css";
+import "./spinner.css";
 import { io } from "socket.io-client";
 import { Video, StateChangeRequest, StateElements } from "../types";
 import initChat from "./chat";
