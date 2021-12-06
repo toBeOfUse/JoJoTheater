@@ -81,17 +81,22 @@ function setAspectRatio(aspect: number) {
 
 /**
  * Responsible for creating and removing the DOM element that will directly display
- * the video (i. e. a <video> tag or an iframe containing embedded video) and
- * applying the state held by an instance of Player to it. Subclassed to deal with
- * aforementioned different elements for different video sources.
+ * the video (i. e. a <video> tag or an iframe containing embedded video), applying
+ * the state held by an instance of Player to it, and updating the play/pause button
+ * image, the seek slider, and the duration/current time display as the underlying
+ * video state changes. TODO: also responsible for displaying a message when the
+ * video is buffering, requesting a state update after the video buffers to sync up
+ * with the server again, and setting the play/pause icon to pause and the time
+ * indicators to currentTime==duration when the video ends. Subclassed to deal with
+ * different elements and APIs for different video sources.
  */
 abstract class VideoController {
     requestState: () => void;
     /**
      * @param requestState () => void: The video controller might need to request an updated
      * current video state (ideally from the server) if it thinks it's out-of-date
-     * due to buffering or similar. As a result of calling this function, state
-     * information should be passed to setState.
+     * due to buffering or similar. As a result of calling this function, setState
+     * should be called at some point in the near future.
      */
     constructor(requestState: () => void) {
         this.requestState = requestState;
@@ -102,6 +107,7 @@ abstract class VideoController {
     abstract setState(playlist: Video[], v: VideoState): void;
     abstract isPlaying(): Promise<boolean>;
     abstract remove(): void;
+    abstract videoReady: Promise<void>; // TODO: implement and use to know when to hide the loading spinner that isn't created yet
 }
 
 class HTML5VideoController extends VideoController {
@@ -119,12 +125,7 @@ class HTML5VideoController extends VideoController {
         video.src = "";
         video.id = "player";
         video.controls = false;
-        const container = document.querySelector("#video-container");
-        if (!container) {
-            console.error("could not select video container");
-        } else {
-            container.prepend(video);
-        }
+        DOMControls.videoContainer.prepend(video);
         this.videoElement = video;
         this.videoElement.addEventListener("loadedmetadata", () => {
             setAspectRatio(
@@ -136,12 +137,6 @@ class HTML5VideoController extends VideoController {
         });
         this.videoElement.addEventListener("timeupdate", () => {
             setTimeAndSeek(video.currentTime, video.duration);
-        });
-        this.videoElement.addEventListener("playing", () => {
-            // this event is "Fired when playback is ready to start after having been
-            // paused or delayed due to lack of data" (MDN); after buffering, we need
-            // to request state to try to catch up to the server
-            this.requestState();
         });
         this.videoElement.volume = 1;
     }
@@ -217,7 +212,7 @@ class YoutubeVideoController extends VideoController {
 
     get currentTimeMs(): number {
         if (!this.YTPlayer) {
-            return -1;
+            return 0;
         } else {
             return this.YTPlayer.getCurrentTime() * 1000;
         }
@@ -278,11 +273,6 @@ class YoutubeVideoController extends VideoController {
                                         ytstate[event.data]
                                 );
                                 console.log(event);
-                                if (event.data == 1) {
-                                    // try to prevent player falling behind when it
-                                    // starts playing especially after buffering
-                                    this.requestState();
-                                }
                             },
                         },
                     });
@@ -386,7 +376,6 @@ class VimeoVideoController extends VideoController {
                     this.cachedDurationMs = e.duration * 1000;
                     this.cachedCurrentTimeMs = e.seconds * 1000;
                 });
-                this.vimeoPlayer.on("playing", () => this.requestState());
                 this.vimeoPlayer.setVolume(1);
             } else {
                 this.vimeoPlayer.loadVideo(Number(currentSource.src));
@@ -419,12 +408,14 @@ class VimeoVideoController extends VideoController {
 }
 
 /**
- * Function that creates listeners for events that occur on the DOMControls elements
+ * Function that creates listeners for events that occur on the DOMControls elements,
  * to send the appropriate messages back to the server to request changes in the
- * video state.
+ * video state and enter and exit fullscreen mode, as well as directly triggering the
+ * player to play the first time so that autoplay blocking will see that the user is
+ * specifically trying to play the video.
  * @param io Socket.io client used for communicating with the server
  * @param player instance of Player used to determine the current player state, so
- * that we can  request specific changes to it
+ * we have a basis for our modifications
  */
 function initializePlayerInterface(io: Socket, player: Player) {
     io.on("message", (message: string) => displayMessage(message));
@@ -434,6 +425,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
             newValue: !player.state.playing,
         };
         io.emit("state_change_request", changeRequest);
+        // TODO: set player state to playing directly if we are playing
     });
     // store whether the player was playing, pre-seek and restore in endSeek?
     const beginSeek = () => {
@@ -500,42 +492,56 @@ function initializePlayerInterface(io: Socket, player: Player) {
 }
 
 /**
- * Responsible for the current state of the video being played. Is a singleton,
- * assuming we only want one video playing at a time, which is all our HTML is set up
- * for. Creates, updates, and destroys instances of VideoController at will to
- * represent itself in the DOM. Receives state updates from the server.
+ * Responsible for holding the current state of the video being played and the
+ * controller that's playing it, as well as distributing state updates from the
+ * server to the controller and editing the DOM while we are "between controllers."
+ * Is a singleton, assuming we only want one video playing at a time, which is all
+ * our HTML is set up for
  */
 class Player {
     private playlist: Video[] = []; // use getter/setter
     playlistShown: boolean = false;
     state: VideoState = {
         playing: false,
-        currentVideoIndex: 0,
+        currentVideoIndex: -1,
         currentTimeMs: 0,
     };
     controller: VideoController | null = null;
     requestState: () => void;
     constructor(io: Socket) {
         io.on("state_set", (new_state: VideoState) => {
+            const sourceChanged =
+                this.state.currentVideoIndex != new_state.currentVideoIndex;
             this.state = new_state;
             if (this.playlist.length > 0) {
-                this.createController();
+                this.updateController();
             }
             this.controller?.setState(this.playlist, this.state);
+            if (sourceChanged) {
+                setTimeAndSeek(0, 0);
+                setAspectRatio(16 / 9);
+                DOMControls.playPauseImage.src = "/images/play.svg";
+                // TODO: create loading spinner while next controller loads and
+                // dismiss it when the "ready" promise resolves
+            }
         });
         this.requestState = () => io.emit("state_update_request");
     }
     setPlaylist(newPlaylist: Video[]) {
+        const oldSource = this.playlist[this.state.currentVideoIndex]?.src;
+        const newSource = newPlaylist[this.state.currentVideoIndex].src;
         this.playlist = newPlaylist;
-        if (this.playlist.length > 0) {
-            this.createController();
+        if (oldSource != newSource) {
+            if (this.playlist.length > 0) {
+                this.updateController();
+            }
+            this.controller?.setState(this.playlist, this.state);
         }
-        this.controller?.setState(this.playlist, this.state);
     }
     getPlaylist(): Video[] {
         return this.playlist;
     }
-    createController() {
+    updateController() {
         const currentProvider =
             this.playlist[this.state.currentVideoIndex].provider;
         if (

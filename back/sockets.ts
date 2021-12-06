@@ -279,12 +279,13 @@ class Theater {
                     this.currentState.currentTimeMs;
                 this.lastKnownState.playing = newState.newValue as boolean;
             } else if (newState.whichElement == StateElements.time) {
-                this.currentState.playing = false;
+                this.lastKnownState.playing = false;
                 this.lastKnownState.currentTimeMs = newState.newValue as number;
             } else if (newState.whichElement == StateElements.index) {
                 this.lastKnownState.currentVideoIndex =
                     newState.newValue as number;
                 this.lastKnownState.currentTimeMs = 0;
+                this.lastKnownState.playing = false;
             }
             this.lastKnownStateTimestamp = Date.now();
             logger.debug("emitting accepted player state:");
