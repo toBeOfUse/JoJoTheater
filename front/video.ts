@@ -71,6 +71,14 @@ function setTimeAndSeek(currentTimeS: number, durationS: number) {
     }
 }
 
+function setAspectRatio(aspect: number) {
+    const neededPadding = (1 / aspect) * 100;
+    // max out container aspect ratio at 4:3 to keep videos from going off the top
+    // and bottom of the screen
+    DOMControls.videoContainer.style.paddingTop =
+        Math.min(neededPadding, 75) + "%";
+}
+
 /**
  * Responsible for creating and removing the DOM element that will directly display
  * the video (i. e. a <video> tag or an iframe containing embedded video) and
@@ -118,6 +126,11 @@ class HTML5VideoController extends VideoController {
             container.prepend(video);
         }
         this.videoElement = video;
+        this.videoElement.addEventListener("loadedmetadata", () => {
+            setAspectRatio(
+                this.videoElement.videoWidth / this.videoElement.videoHeight
+            );
+        });
         this.videoElement.addEventListener("durationchange", () => {
             setTimeAndSeek(video.currentTime, video.duration);
         });
