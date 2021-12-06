@@ -104,8 +104,13 @@ function renderPlaylist() {
     });
     item.appendChild(urlInput);
     const addButton = document.createElement("button");
-    addButton.innerHTML = "+";
+    addButton.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 16 16">
+        <rect x="7" y="0" width="2" height="16" fill="black" />
+        <rect x="0" y="7" width="16" height="2" fill="black" />
+    </svg>`;
     addButton.style.marginLeft = "auto";
+    addButton.style.width = "20px";
+    addButton.style.height = "20px";
     addButton.addEventListener("click", () => {
         addButton.disabled = true;
         urlInput.disabled = true;
