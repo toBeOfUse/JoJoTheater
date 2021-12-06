@@ -1,6 +1,8 @@
 *.mp4
 *.vtt
 *.db
+uploads/*
+!uploads/.gitkeep
 
 
 # Logs
