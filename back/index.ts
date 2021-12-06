@@ -10,27 +10,32 @@ import logger from "./logger";
 
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
-const webpacker = webpack(webpackConfig);
-logger.info("starting webpack in mode " + webpackConfig.mode);
-webpacker.watch(
-    {
-        aggregateTimeout: 300,
-    },
-    (err, stats) => {
-        if (err || stats?.hasErrors()) {
-            logger.warn("webpack error");
-            if (err) {
-                console.error(err.stack || err);
-            }
+const mode =
+    process.env.NODE_ENV == "production" ? "production" : "development";
+logger.info("starting webpack in mode " + mode);
+const webpacker = webpack(webpackConfig(mode));
+const webpackCallback = (
+    err: Error | undefined,
+    stats: webpack.Stats | undefined
+) => {
+    if (err || stats?.hasErrors()) {
+        logger.warn("webpack error");
+        if (err) {
+            console.error(err.stack || err);
         }
-        console.log(
-            stats?.toString({
-                colors: true,
-                chunks: false,
-            })
-        );
     }
-);
+    console.log(
+        stats?.toString({
+            colors: true,
+            chunks: false,
+        })
+    );
+};
+if (mode == "development") {
+    webpacker.watch({ aggregateTimeout: 300 }, webpackCallback);
+} else {
+    webpacker.run(webpackCallback);
+}
 
 const renderer = handlebars.create({
     extname: "hbs",
