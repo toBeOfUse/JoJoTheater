@@ -224,6 +224,7 @@ class YoutubeVideoController extends VideoController {
     videoElement: HTMLDivElement;
     YTPlayer: YT.Player | null = null;
     videoReady: Promise<void>;
+    _videoReady: boolean = false;
     prevSrc: string;
     timeUpdate: NodeJS.Timeout | undefined;
 
@@ -255,6 +256,7 @@ class YoutubeVideoController extends VideoController {
                 },
                 events: {
                     onReady: () => {
+                        this._videoReady = true;
                         resolve();
                     },
                     onStateChange: (event) => {
@@ -287,7 +289,7 @@ class YoutubeVideoController extends VideoController {
     }
 
     get currentTimeMs(): number {
-        if (!this.YTPlayer) {
+        if (!this.YTPlayer || !this._videoReady) {
             return 0;
         } else {
             return this.YTPlayer.getCurrentTime() * 1000;
@@ -295,7 +297,7 @@ class YoutubeVideoController extends VideoController {
     }
 
     get durationMs(): number {
-        if (!this.YTPlayer) {
+        if (!this.YTPlayer || !this._videoReady) {
             return 0;
         } else {
             return this.YTPlayer.getDuration() * 1000;
@@ -303,7 +305,7 @@ class YoutubeVideoController extends VideoController {
     }
 
     async isPlaying() {
-        if (!this.YTPlayer) {
+        if (!this.YTPlayer || !this._videoReady) {
             return false;
         } else {
             return this.YTPlayer.getPlayerState() == 1;
@@ -311,7 +313,7 @@ class YoutubeVideoController extends VideoController {
     }
 
     manuallyPressPlay() {
-        if (this.YTPlayer) {
+        if (this.YTPlayer && this.YTPlayer.playVideo) {
             this.YTPlayer.playVideo();
             DOMControls.playPauseImage.src = "/images/pause.svg";
         }
