@@ -18,9 +18,9 @@
 
 #toast {
     position: absolute;
-    left: 25%;
-    width: 50%;
-    bottom: 40%;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 50px;
     background-color: gray;
     color: white;
     text-align: center;
