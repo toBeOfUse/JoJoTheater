@@ -28,11 +28,11 @@ type ServerSentEvent =
     | "chat_announcement"
     | "add_video_failed"
     | "state_set"
-    | "request_state_report";
+    | "request_state_report"
+    | "alert";
 
 type ClientSentEvent =
     | "state_change_request"
-    | "state_update_request"
     | "add_video"
     | "user_info_set"
     | "wrote_message"
@@ -104,7 +104,7 @@ class AudienceMember {
     }
 
     async getConnectionInfo(): Promise<ConnectionStatus> {
-        const playerState = await this.getMemberState();
+        const playerState = await this.getClientState();
         if (playerState && playerState.currentTimeMs) {
             playerState.currentTimeMs = Math.round(playerState.currentTimeMs);
         }
@@ -123,7 +123,7 @@ class AudienceMember {
         this.socket = socket;
         this.id = socket.id;
         this.socket.onAny((eventName: string) => {
-            if (eventName !== "pong") {
+            if (eventName !== "pong" && eventName != "state_report") {
                 logger.debug(eventName + " event from id " + this.id);
             }
         });
@@ -181,14 +181,14 @@ class AudienceMember {
         this.on("disconnect", () => clearInterval(updateInterval));
     }
 
-    getMemberState(): Promise<PlayerState | undefined> {
+    getClientState(): Promise<PlayerState | undefined> {
         const request = new Promise<PlayerState>((resolve) => {
             this.socket.once("state_report", (state: PlayerState) => {
                 resolve(state);
             });
             setTimeout(() => {
                 resolve(undefined as any);
-            }, 1000);
+            }, 2000);
         });
         this.emit("request_state_report");
         return request;
@@ -250,6 +250,7 @@ class Theater {
                     this.lastKnownStateTimestamp = Date.now();
                 }
             });
+            this.checkSynchronization();
         });
     }
 
@@ -293,13 +294,6 @@ class Theater {
             this.audience.forEach((a) =>
                 a.emit("state_set", this.lastKnownState)
             );
-        });
-
-        member.on("state_update_request", () => {
-            member.emit("state_set", this.currentState);
-            getPlaylist().then((playlist) => {
-                member.emit("playlist_set", playlist);
-            });
         });
 
         member.on("add_video", async (url: string) => {
@@ -402,6 +396,27 @@ class Theater {
         member.on("disconnect", () => {
             this.removeMember(member);
         });
+    }
+
+    async checkSynchronization() {
+        while (true) {
+            for (const member of this.audience) {
+                const memberState = await member.getClientState();
+                if (memberState) {
+                    const difference = Math.abs(
+                        memberState.currentTimeMs -
+                            this.currentState.currentTimeMs
+                    );
+                    if (difference > 1000) {
+                        member.emit("state_set", this.currentState);
+                        if (difference > 3000) {
+                            member.emit("alert", "MitchBot is syncing you up");
+                        }
+                    }
+                }
+            }
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
     }
 
     removeMember(member: AudienceMember) {

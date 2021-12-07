@@ -118,16 +118,6 @@ function hideSpinner() {
  * different elements and APIs for different video sources.
  */
 abstract class VideoController {
-    requestState: () => void;
-    /**
-     * @param requestState () => void: The video controller might need to request an
-     * updated current video state (ideally from the server) if it thinks it's
-     * out-of-date due to buffering or similar. As a result of calling this function,
-     * setState should be called at some point in the near future.
-     */
-    constructor(requestState: () => void) {
-        this.requestState = requestState;
-    }
     abstract videoElement: HTMLElement;
     abstract get currentTimeMs(): number;
     abstract get durationMs(): number;
@@ -148,8 +138,8 @@ class HTML5VideoController extends VideoController {
     get durationMs(): number {
         return this.videoElement?.duration * 1000 || 0;
     }
-    constructor(source: Video, state: VideoState, requestState: () => void) {
-        super(requestState);
+    constructor(source: Video, state: VideoState) {
+        super();
         const video = document.createElement("video");
         video.src = "";
         video.id = "player";
@@ -237,12 +227,8 @@ class YoutubeVideoController extends VideoController {
     prevSrc: string;
     timeUpdate: NodeJS.Timeout | undefined;
 
-    constructor(
-        currentSource: Video,
-        state: VideoState,
-        requestState: () => void
-    ) {
-        super(requestState);
+    constructor(currentSource: Video, state: VideoState) {
+        super();
         this.videoElement = document.createElement("div");
         this.videoElement.id = "youtube-embed-location";
         const container = document.querySelector("#video-container");
@@ -382,12 +368,8 @@ class VimeoVideoController extends VideoController {
     cachedCurrentTimeMs: number = 0;
     videoReady: Promise<void>;
 
-    constructor(
-        currentSource: Video,
-        state: VideoState,
-        requestState: () => void
-    ) {
-        super(requestState);
+    constructor(currentSource: Video, state: VideoState) {
+        super();
         this.videoElement = document.createElement("div");
         this.videoElement.id = "vimeo-embed-location";
         const container = document.querySelector("#video-container");
@@ -474,7 +456,7 @@ class VimeoVideoController extends VideoController {
  * we have a basis for our modifications
  */
 function initializePlayerInterface(io: Socket, player: Player) {
-    io.on("message", (message: string) => displayMessage(message));
+    io.on("alert", (message: string) => displayMessage(message));
     DOMControls.playPause.addEventListener("click", () => {
         const changeRequest: StateChangeRequest = {
             whichElement: StateElements.playing,
@@ -566,7 +548,6 @@ class Player {
         currentTimeMs: 0,
     };
     controller: VideoController | null = null;
-    requestState: () => void;
     constructor(io: Socket) {
         io.on("state_set", (new_state: VideoState) => {
             const sourceChanged =
@@ -579,7 +560,6 @@ class Player {
             }
             this.updateController(sourceChanged);
         });
-        this.requestState = () => io.emit("state_update_request");
     }
     setPlaylist(newPlaylist: Video[]) {
         const oldSource = this.playlist[this.state.currentVideoIndex]?.src;
@@ -615,8 +595,7 @@ class Player {
                 }
                 this.controller = new NeededController(
                     currentSource,
-                    this.state,
-                    this.requestState
+                    this.state
                 );
                 this.controller.videoReady.then(hideSpinner);
             }
