@@ -580,12 +580,14 @@ class Player {
         }
         if (sourceChanged) {
             const currentProvider = currentSource.provider;
-            const NeededController = {
-                undefined: HTML5VideoController,
-                "": HTML5VideoController,
+            const controllerTypes = {
                 youtube: YoutubeVideoController,
                 vimeo: VimeoVideoController,
-            }[String(currentProvider)] as typeof HTML5VideoController;
+            };
+            const NeededController =
+                controllerTypes[
+                    String(currentProvider) as keyof typeof controllerTypes
+                ] || HTML5VideoController;
 
             if (!(this.controller instanceof NeededController)) {
                 showSpinner();
