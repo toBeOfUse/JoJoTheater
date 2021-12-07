@@ -60,6 +60,7 @@ function getConfig(mode: "development" | "production") {
         ],
         optimization: {
             minimizer: [new CssMinimizerPlugin(), "..."],
+            realContentHash: false,
         },
     };
     return config;
