@@ -79,6 +79,31 @@ function setAspectRatio(aspect: number) {
         Math.min(neededPadding, 75) + "%";
 }
 
+function showSpinner() {
+    DOMControls.loadingSpinner.style.display = "unset";
+    const animateElement = DOMControls.loadingSpinner.querySelector(
+        "animateTransform"
+    ) as any;
+    animateElement.beginElement();
+}
+
+function hideSpinner() {
+    if (DOMControls.loadingSpinner.style.display == "none") {
+        return;
+    }
+    const stop = () => {
+        DOMControls.loadingSpinner.style.display = "none";
+    };
+    const animateElement = DOMControls.loadingSpinner.querySelector(
+        "animateTransform"
+    ) as SVGAnimateElement;
+    if ("onrepeat" in animateElement) {
+        animateElement.addEventListener("repeat", stop);
+    } else {
+        stop();
+    }
+}
+
 /**
  * Responsible for creating and removing the DOM element that will directly display
  * the video (i. e. a <video> tag or an iframe containing embedded video), applying

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 89.999997">
+   <g>
+      <g transform="rotate(-50) translate(15,-207)">
+         <path d="m -4.4535302,166.32318 v 58.96436 H -13.630746 L 0.45986711,249.69329 14.55048,225.28754 H 5.3737771 v -58.96436 z"
+            style="opacity:0.3;fill:#000000;" />
+      </g>
+      <animateTransform attributeName="transform" type="translate" from="-41.364 -34.71" to="165.456 138.84" repeatCount="indefinite" dur="1.5s" />
+   </g>
+</svg>
