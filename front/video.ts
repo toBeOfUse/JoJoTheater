@@ -113,19 +113,17 @@ function hideSpinner() {
  * the video (i. e. a <video> tag or an iframe containing embedded video), applying
  * the state held by an instance of Player to it, and updating the play/pause button
  * image, the seek slider, and the duration/current time display as the underlying
- * video state changes. TODO: also responsible for displaying a message when the
- * video is buffering, requesting a state update after the video buffers to sync up
- * with the server again, and setting the play/pause icon to pause and the time
+ * video state changes. TODO: set the play/pause icon to pause and the time
  * indicators to currentTime==duration when the video ends. Subclassed to deal with
  * different elements and APIs for different video sources.
  */
 abstract class VideoController {
     requestState: () => void;
     /**
-     * @param requestState () => void: The video controller might need to request an updated
-     * current video state (ideally from the server) if it thinks it's out-of-date
-     * due to buffering or similar. As a result of calling this function, setState
-     * should be called at some point in the near future.
+     * @param requestState () => void: The video controller might need to request an
+     * updated current video state (ideally from the server) if it thinks it's
+     * out-of-date due to buffering or similar. As a result of calling this function,
+     * setState should be called at some point in the near future.
      */
     constructor(requestState: () => void) {
         this.requestState = requestState;
@@ -136,6 +134,7 @@ abstract class VideoController {
     abstract setState(source: Video, v: VideoState): void;
     abstract isPlaying(): Promise<boolean>;
     abstract remove(): void;
+    abstract manuallyPressPlay(): void; // used to signal user intent to autoplay blockers
     abstract videoReady: Promise<void>;
 }
 
@@ -203,6 +202,11 @@ class HTML5VideoController extends VideoController {
             DOMControls.playPauseImage.src = "/images/play.svg";
             this.videoElement.pause();
         }
+    }
+
+    manuallyPressPlay() {
+        this.videoElement.play();
+        DOMControls.playPauseImage.src = "/images/pause.svg";
     }
 
     async isPlaying() {
@@ -317,6 +321,13 @@ class YoutubeVideoController extends VideoController {
             return false;
         } else {
             return this.YTPlayer.getPlayerState() == 1;
+        }
+    }
+
+    manuallyPressPlay() {
+        if (this.YTPlayer) {
+            this.YTPlayer.playVideo();
+            DOMControls.playPauseImage.src = "/images/pause.svg";
         }
     }
 
@@ -437,6 +448,11 @@ class VimeoVideoController extends VideoController {
         }
     }
 
+    manuallyPressPlay() {
+        this.vimeoPlayer.play();
+        DOMControls.playPauseImage.src = "/images/pause.svg";
+    }
+
     remove() {
         if (this.vimeoPlayer) {
             this.vimeoPlayer.destroy();
@@ -465,7 +481,10 @@ function initializePlayerInterface(io: Socket, player: Player) {
             newValue: !player.state.playing,
         };
         io.emit("state_change_request", changeRequest);
-        // TODO: set player state to playing directly if we are playing
+        // signal direct user intent to autoplay blockers
+        if (changeRequest.newValue && player.controller) {
+            player.controller.manuallyPressPlay();
+        }
     });
     // store whether the player was playing, pre-seek and restore in endSeek?
     const beginSeek = () => {
