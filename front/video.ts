@@ -48,6 +48,9 @@ const DOMControls = {
     controlsContainer: document.querySelector(
         "#controls-overlay"
     ) as HTMLDivElement,
+    loadingSpinner: document.querySelector(
+        "#video-loading-spinner"
+    ) as SVGElement,
 };
 
 function setSeekDisplay(percentWatched: number) {
@@ -91,14 +94,15 @@ function hideSpinner() {
     if (DOMControls.loadingSpinner.style.display == "none") {
         return;
     }
-    const stop = () => {
-        DOMControls.loadingSpinner.style.display = "none";
-    };
     const animateElement = DOMControls.loadingSpinner.querySelector(
         "animateTransform"
-    ) as SVGAnimateElement;
+    ) as any;
+    const stop = () => {
+        animateElement.endElement();
+        DOMControls.loadingSpinner.style.display = "none";
+    };
     if ("onrepeat" in animateElement) {
-        animateElement.addEventListener("repeat", stop);
+        (animateElement as any).onrepeat = stop;
     } else {
         stop();
     }
