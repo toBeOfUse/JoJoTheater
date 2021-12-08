@@ -229,7 +229,7 @@ class HTML5VideoController extends VideoController {
     }
 
     async isPlaying() {
-        return !this.videoElement.paused;
+        return !this.videoElement.paused && !this.videoElement.ended;
     }
 
     remove() {
@@ -302,7 +302,11 @@ class YoutubeVideoController extends VideoController {
                             "YT player state change to " + ytstate[event.data]
                         );
                         console.log(event);
-                        if (event.data == 0 || event.data == 2) {
+                        if (
+                            event.data == 0 ||
+                            event.data == 2 ||
+                            event.data == -1
+                        ) {
                             playButtonIcon("play");
                         } else if (event.data == 1 || event.data == 3) {
                             playButtonIcon("pause");
@@ -453,7 +457,9 @@ class VimeoVideoController extends VideoController {
         if (!this.vimeoPlayer) {
             return false;
         } else {
-            return !(await this.vimeoPlayer.getPaused());
+            const paused = await this.vimeoPlayer.getPaused();
+            const ended = await this.vimeoPlayer.getEnded();
+            return !paused && !ended;
         }
     }
 
