@@ -108,14 +108,21 @@ function hideSpinner() {
     }
 }
 
+function playButtonIcon(setTo: "play" | "pause") {
+    if (setTo == "play") {
+        DOMControls.playPauseImage.src = "/images/play.svg";
+    } else {
+        DOMControls.playPauseImage.src = "/images/pause.svg";
+    }
+}
+
 /**
  * Responsible for creating and removing the DOM element that will directly display
  * the video (i. e. a <video> tag or an iframe containing embedded video), applying
  * the state held by an instance of Player to it, and updating the play/pause button
  * image, the seek slider, and the duration/current time display as the underlying
- * video state changes. TODO: set the play/pause icon to pause and the time
- * indicators to currentTime==duration when the video ends. Subclassed to deal with
- * different elements and APIs for different video sources.
+ * video state changes. Subclassed to deal with different elements and APIs for
+ * different video sources.
  */
 abstract class VideoController {
     abstract videoElement: HTMLElement;
@@ -124,7 +131,8 @@ abstract class VideoController {
     abstract setState(source: Video, v: VideoState): void;
     abstract isPlaying(): Promise<boolean>;
     abstract remove(): void;
-    abstract manuallyPressPlay(): void; // used to signal user intent to autoplay blockers
+    // called directly from onclick listener to signal user intent to autoplay blockers
+    abstract manuallyPressPlay(): void;
     abstract videoReady: Promise<void>;
 }
 
@@ -162,6 +170,18 @@ class HTML5VideoController extends VideoController {
         this.videoElement.addEventListener("timeupdate", () => {
             setTimeAndSeek(video.currentTime, video.duration);
         });
+        this.videoElement.addEventListener("play", () =>
+            playButtonIcon("pause")
+        );
+        this.videoElement.addEventListener("pause", () =>
+            playButtonIcon("play")
+        );
+        this.videoElement.addEventListener("ended", () =>
+            playButtonIcon("play")
+        );
+        // this.videoElement.addEventListener("waiting", () =>
+        //     displayMessage("Buffering...")
+        // );
         this.videoElement.volume = 1;
         this.setState(source, state);
     }
@@ -180,8 +200,7 @@ class HTML5VideoController extends VideoController {
         ) {
             this.videoElement.currentTime = v.currentTimeMs / 1000;
         }
-        if (v.playing && this.videoElement.paused) {
-            DOMControls.playPauseImage.src = "/images/pause.svg";
+        if (v.playing && this.videoElement.paused && !this.videoElement.ended) {
             try {
                 this.videoElement.play();
             } catch (e) {
@@ -189,14 +208,14 @@ class HTML5VideoController extends VideoController {
                 console.error(e);
             }
         } else if (!v.playing) {
-            DOMControls.playPauseImage.src = "/images/play.svg";
             this.videoElement.pause();
         }
     }
 
     manuallyPressPlay() {
-        this.videoElement.play();
-        DOMControls.playPauseImage.src = "/images/pause.svg";
+        if (!this.videoElement.ended) {
+            this.videoElement.play();
+        }
     }
 
     async isPlaying() {
@@ -253,6 +272,7 @@ class YoutubeVideoController extends VideoController {
                     modestbranding: 1,
                     rel: 0,
                     autoplay: 0,
+                    showinfo: 0,
                 },
                 events: {
                     onReady: () => {
@@ -272,6 +292,14 @@ class YoutubeVideoController extends VideoController {
                             "YT player state change to " + ytstate[event.data]
                         );
                         console.log(event);
+                        if (event.data == 0 || event.data == 2) {
+                            playButtonIcon("play");
+                        } else if (event.data == 1 || event.data == 3) {
+                            playButtonIcon("pause");
+                            if (event.data == 3) {
+                                // displayMessage("Buffering...");
+                            }
+                        }
                     },
                 },
             });
@@ -313,9 +341,12 @@ class YoutubeVideoController extends VideoController {
     }
 
     manuallyPressPlay() {
-        if (this.YTPlayer && this.YTPlayer.playVideo) {
+        if (
+            this.YTPlayer &&
+            this._videoReady &&
+            this.YTPlayer.getPlayerState() != YT.PlayerState.ENDED
+        ) {
             this.YTPlayer.playVideo();
-            DOMControls.playPauseImage.src = "/images/pause.svg";
         }
     }
 
@@ -337,16 +368,15 @@ class YoutubeVideoController extends VideoController {
         }
         if (
             v.playing &&
-            this.YTPlayer.getPlayerState() != YT.PlayerState.PLAYING
+            this.YTPlayer.getPlayerState() != YT.PlayerState.PLAYING &&
+            this.YTPlayer.getPlayerState() != YT.PlayerState.ENDED
         ) {
             this.YTPlayer.playVideo();
-            DOMControls.playPauseImage.src = "/images/pause.svg";
         } else if (
             !v.playing &&
             this.YTPlayer.getPlayerState() == YT.PlayerState.PLAYING
         ) {
             this.YTPlayer.pauseVideo();
-            DOMControls.playPauseImage.src = "/images/play.svg";
         }
     }
     remove() {
@@ -384,12 +414,16 @@ class VimeoVideoController extends VideoController {
             id: Number(currentSource.src),
             controls: false,
             responsive: true,
+            loop: false,
         });
         this.vimeoPlayer.on("timeupdate", (e) => {
             setTimeAndSeek(e.seconds, e.duration);
             this.cachedDurationMs = e.duration * 1000;
             this.cachedCurrentTimeMs = e.seconds * 1000;
         });
+        this.vimeoPlayer.on("play", () => playButtonIcon("pause"));
+        this.vimeoPlayer.on("pause", () => playButtonIcon("play"));
+        this.vimeoPlayer.on("ended", () => playButtonIcon("play"));
         this.vimeoPlayer.setVolume(1);
         this.videoReady = new Promise<void>((resolve) => {
             this.vimeoPlayer.on("loaded", resolve);
@@ -419,22 +453,24 @@ class VimeoVideoController extends VideoController {
             this.vimeoPlayer.loadVideo(Number(currentSource.src));
         }
         const isPaused = await this.vimeoPlayer.getPaused();
-        if (v.playing && isPaused) {
+        const isEnded = await this.vimeoPlayer.getEnded();
+        if (v.playing && isPaused && !isEnded) {
             await this.vimeoPlayer.play();
-            DOMControls.playPauseImage.src = "/images/pause.svg";
         } else if (!v.playing && !isPaused) {
             await this.vimeoPlayer.pause();
-            DOMControls.playPauseImage.src = "/images/play.svg";
         }
         const playerCurrentTime = await this.vimeoPlayer.getCurrentTime();
         if (Math.abs(playerCurrentTime * 1000 - v.currentTimeMs) > 1000) {
-            this.vimeoPlayer.setCurrentTime(v.currentTimeMs / 1000);
+            this.vimeoPlayer.setCurrentTime(
+                Math.min(v.currentTimeMs / 1000, this.cachedDurationMs)
+            );
         }
     }
 
     manuallyPressPlay() {
-        this.vimeoPlayer.play();
-        DOMControls.playPauseImage.src = "/images/pause.svg";
+        if (this.cachedCurrentTimeMs != this.cachedDurationMs) {
+            this.vimeoPlayer.play();
+        }
     }
 
     remove() {
@@ -537,9 +573,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
 /**
  * Responsible for holding the current state of the video being played and the
  * controller that's playing it, as well as distributing state updates from the
- * server to the controller and editing the DOM while we are "between controllers."
- * Is a singleton, assuming we only want one video playing at a time, which is all
- * our HTML is set up for
+ * server to the controller and resetting the DOM when we are "between controllers."
  */
 class Player {
     private playlist: Video[] = []; // use getter/setter
@@ -558,7 +592,7 @@ class Player {
             if (sourceChanged) {
                 setTimeAndSeek(0, 0);
                 setAspectRatio(16 / 9);
-                DOMControls.playPauseImage.src = "/images/play.svg";
+                playButtonIcon("play");
             }
             this.updateController(sourceChanged);
         });
