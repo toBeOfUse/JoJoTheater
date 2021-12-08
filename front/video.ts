@@ -503,7 +503,7 @@ class VimeoVideoController extends VideoController {
  * Function that creates listeners for events that occur on the DOMControls elements,
  * to send the appropriate messages back to the server to request changes in the
  * video state and enter and exit fullscreen mode, as well as directly triggering the
- * player to play the first time so that autoplay blocking will see that the user is
+ * player to play sometimes so that autoplay blocking will see that the user is
  * specifically trying to play the video.
  * @param io Socket.io client used for communicating with the server
  * @param player instance of Player used to determine the current player state, so
@@ -520,6 +520,12 @@ function initializePlayerInterface(io: Socket, player: Player) {
         // signal direct user intent to autoplay blockers
         if (changeRequest.newValue && player.controller) {
             player.controller.manuallyPressPlay();
+        }
+    });
+    document.addEventListener("keydown", (e) => {
+        if (e.code == "Space") {
+            e.preventDefault();
+            DOMControls.playPause.click();
         }
     });
     // store whether the player was playing, pre-seek and restore in endSeek?
@@ -588,7 +594,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
 
 /**
  * Responsible for holding the current state of the video being played and the
- * controller that's playing it, as well as distributing state updates from the
+ * controller that's playing it, as well as passing state updates from the
  * server to the controller and resetting the DOM when we are "between controllers."
  */
 class Player {
