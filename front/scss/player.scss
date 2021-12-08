@@ -31,13 +31,24 @@
     transition: opacity 1s ease-in-out;
 }
 
-#video-loading-spinner {
+#big-loading-spinner {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     top: 0;
     height: 100%;
     display: none;
+}
+
+#small-loading-spinner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 @mixin playerElement {

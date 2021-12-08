@@ -48,9 +48,12 @@ const DOMControls = {
     controlsContainer: document.querySelector(
         "#controls-overlay"
     ) as HTMLDivElement,
-    loadingSpinner: document.querySelector(
-        "#video-loading-spinner"
+    bigLoadingSpinner: document.querySelector(
+        "#big-loading-spinner"
     ) as SVGElement,
+    smallLoadingSpinner: document.querySelector(
+        "#small-loading-spinner"
+    ) as HTMLDivElement,
 };
 
 function setSeekDisplay(percentWatched: number) {
@@ -82,30 +85,38 @@ function setAspectRatio(aspect: number) {
         Math.min(neededPadding, 75) + "%";
 }
 
-function showSpinner() {
-    DOMControls.loadingSpinner.style.display = "unset";
-    const animateElement = DOMControls.loadingSpinner.querySelector(
+function showBigSpinner() {
+    DOMControls.bigLoadingSpinner.style.display = "unset";
+    const animateElement = DOMControls.bigLoadingSpinner.querySelector(
         "animateTransform"
     ) as any;
     animateElement.beginElement();
 }
 
-function hideSpinner() {
-    if (DOMControls.loadingSpinner.style.display == "none") {
+function hideBigSpinner() {
+    if (DOMControls.bigLoadingSpinner.style.display == "none") {
         return;
     }
-    const animateElement = DOMControls.loadingSpinner.querySelector(
+    const animateElement = DOMControls.bigLoadingSpinner.querySelector(
         "animateTransform"
     ) as any;
     const stop = () => {
         animateElement.endElement();
-        DOMControls.loadingSpinner.style.display = "none";
+        DOMControls.bigLoadingSpinner.style.display = "none";
     };
     if ("onrepeat" in animateElement) {
         (animateElement as any).onrepeat = stop;
     } else {
         stop();
     }
+}
+
+function showSmallSpinner() {
+    DOMControls.smallLoadingSpinner.style.display = "flex";
+}
+
+function hideSmallSpinner() {
+    DOMControls.smallLoadingSpinner.style.display = "none";
 }
 
 function playButtonIcon(setTo: "play" | "pause") {
@@ -120,9 +131,9 @@ function playButtonIcon(setTo: "play" | "pause") {
  * Responsible for creating and removing the DOM element that will directly display
  * the video (i. e. a <video> tag or an iframe containing embedded video), applying
  * the state held by an instance of Player to it, and updating the play/pause button
- * image, the seek slider, and the duration/current time display as the underlying
- * video state changes. Subclassed to deal with different elements and APIs for
- * different video sources.
+ * image, the seek slider, the duration/current time display, and the buffering
+ * (small) spinner as the underlying video state changes. Subclassed to deal with
+ * different elements and APIs for different video sources.
  */
 abstract class VideoController {
     abstract videoElement: HTMLElement;
@@ -179,9 +190,8 @@ class HTML5VideoController extends VideoController {
         this.videoElement.addEventListener("ended", () =>
             playButtonIcon("play")
         );
-        // this.videoElement.addEventListener("waiting", () =>
-        //     displayMessage("Buffering...")
-        // );
+        this.videoElement.addEventListener("waiting", showSmallSpinner);
+        this.videoElement.addEventListener("canplay", hideSmallSpinner);
         this.videoElement.volume = 1;
         this.setState(source, state);
     }
@@ -296,10 +306,8 @@ class YoutubeVideoController extends VideoController {
                             playButtonIcon("play");
                         } else if (event.data == 1 || event.data == 3) {
                             playButtonIcon("pause");
-                            if (event.data == 3) {
-                                // displayMessage("Buffering...");
-                            }
                         }
+                        // we don't show a spinner for buffering here because youtube has its own
                     },
                 },
             });
@@ -424,6 +432,8 @@ class VimeoVideoController extends VideoController {
         this.vimeoPlayer.on("play", () => playButtonIcon("pause"));
         this.vimeoPlayer.on("pause", () => playButtonIcon("play"));
         this.vimeoPlayer.on("ended", () => playButtonIcon("play"));
+        this.vimeoPlayer.on("bufferstart", showSmallSpinner);
+        this.vimeoPlayer.on("bufferend", hideSmallSpinner);
         this.vimeoPlayer.setVolume(1);
         this.videoReady = new Promise<void>((resolve) => {
             this.vimeoPlayer.on("loaded", resolve);
@@ -625,7 +635,7 @@ class Player {
                 ] || HTML5VideoController;
 
             if (!(this.controller instanceof NeededController)) {
-                showSpinner();
+                showBigSpinner();
                 if (this.controller) {
                     this.controller.remove();
                 }
@@ -633,7 +643,7 @@ class Player {
                     currentSource,
                     this.state
                 );
-                this.controller.videoReady.then(hideSpinner);
+                this.controller.videoReady.then(hideBigSpinner);
             }
         }
         this.controller?.setState(currentSource, this.state);
