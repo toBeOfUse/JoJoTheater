@@ -187,6 +187,7 @@ class AudienceMember {
                 resolve(state);
             });
             setTimeout(() => {
+                // TODO: remove listener on timeout
                 resolve(undefined as any);
             }, 2000);
         });

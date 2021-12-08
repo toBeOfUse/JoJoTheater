@@ -1,12 +1,17 @@
 import "normalize.css";
 import "./scss/index.scss";
 import "../fonts/fonts.css";
-import { io } from "socket.io-client";
 import { Video, StateChangeRequest, StateElements } from "../types";
 import initChat from "./chat";
 import initVideo from "./video";
+import { socket } from "./globals";
+import Vue from "vue";
+import Chat from "./vchat.vue";
 
-const socket = io();
+new Vue({
+    render: (h) => h(Chat),
+}).$mount("#vuetest");
+
 socket.on("id_set", (e) => console.log("client has id", e));
 socket.on("ping", () => {
     socket.emit("pong");

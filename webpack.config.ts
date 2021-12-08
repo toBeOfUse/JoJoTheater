@@ -1,6 +1,7 @@
 import path from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import webpack from "webpack";
+import { VueLoaderPlugin } from "vue-loader";
 const svgToMiniDataURI = require("mini-svg-data-uri");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
@@ -23,6 +24,11 @@ function getConfig(mode: "development" | "production") {
         devtool: mode == "development" ? "eval" : false,
         module: {
             rules: [
+                {
+                    test: /\.vue$/i,
+                    loader: "vue-loader",
+                    options: { hotReload: false },
+                },
                 {
                     test: /\.css$/i,
                     use: [finalCSSLoader, "css-loader"],
@@ -49,6 +55,7 @@ function getConfig(mode: "development" | "production") {
             ],
         },
         plugins: [
+            new VueLoaderPlugin(),
             new MiniCssExtractPlugin(),
             new HtmlWebpackPlugin({
                 template: "./front/index.html",
