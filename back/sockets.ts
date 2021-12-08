@@ -410,7 +410,23 @@ class Theater {
                     if (difference > 1000) {
                         member.emit("state_set", this.currentState);
                         if (difference > 3000) {
-                            member.emit("alert", "MitchBot is syncing you up");
+                            if (
+                                memberState.playing == this.currentState.playing
+                            ) {
+                                member.emit(
+                                    "alert",
+                                    "MitchBot is syncing you up"
+                                );
+                            } else if (
+                                this.currentState.playing &&
+                                !memberState.playing
+                            ) {
+                                member.emit(
+                                    "alert",
+                                    "Your browser is blocking autoplay;" +
+                                        " press play to sync up with MitchBot"
+                                );
+                            }
                         }
                     }
                 }
