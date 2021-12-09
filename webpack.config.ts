@@ -19,7 +19,7 @@ function getConfig(mode: "development" | "production") {
             publicPath: "./",
         },
         resolve: {
-            extensions: [".ts", ".js", ".json"],
+            extensions: [".ts", ".js", ".json", ".vue"],
         },
         devtool: mode == "development" ? "eval" : false,
         module: {
@@ -49,14 +49,19 @@ function getConfig(mode: "development" | "production") {
                 },
                 {
                     test: /\.tsx?$/,
-                    use: "ts-loader",
+                    loader: "ts-loader",
                     exclude: /node_modules/,
+                    options: { appendTsSuffixTo: [/\.vue$/] },
                 },
             ],
         },
         plugins: [
+            new webpack.DefinePlugin({
+                __VUE_PROD_DEVTOOLS__: false,
+                __VUE_OPTIONS_API__: false,
+            }),
             new VueLoaderPlugin(),
-            new MiniCssExtractPlugin(),
+            new MiniCssExtractPlugin({ filename: "[name].[contenthash].css" }),
             new HtmlWebpackPlugin({
                 template: "./front/index.html",
             }),
