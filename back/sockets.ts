@@ -183,11 +183,13 @@ class AudienceMember {
 
     getClientState(): Promise<PlayerState | undefined> {
         const request = new Promise<PlayerState>((resolve) => {
-            this.socket.once("state_report", (state: PlayerState) => {
+            const listener = (state: PlayerState) => {
+                this.socket.removeListener("state_report", listener);
                 resolve(state);
-            });
+            };
+            this.socket.on("state_report", listener);
             setTimeout(() => {
-                // TODO: remove listener on timeout
+                this.socket.removeListener("state_report", listener);
                 resolve(undefined as any);
             }, 2000);
         });
