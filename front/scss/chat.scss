@@ -23,12 +23,7 @@
     position: fixed;
     width: vars.$chat-width;
     left: 0;
-    &:not(.logged-in) #chat-body {
-        display: none;
-    }
-    &.logged-in #chat-login {
-        display: none;
-    }
+    bottom: 0;
     &.logged-in:not(.chat-minimized) #chat-header::after {
         position: absolute;
         top: -5px;
@@ -46,14 +41,6 @@
         height: 10px; // should stay in sync with rMargin in chat.ts
         content: "";
         cursor: ns-resize;
-    }
-    &.chat-minimized {
-        & #chat-window-body {
-            display: none;
-        }
-        & div.status-bar {
-            display: none;
-        }
     }
 }
 

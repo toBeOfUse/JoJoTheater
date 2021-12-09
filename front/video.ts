@@ -523,7 +523,13 @@ function initializePlayerInterface(io: Socket, player: Player) {
         }
     });
     document.addEventListener("keydown", (e) => {
-        if (e.code == "Space") {
+        if (
+            e.code.toLowerCase() == "space" &&
+            (!e.target ||
+                ((e.target as HTMLElement).tagName.toLowerCase() != "input" &&
+                    (e.target as HTMLElement).tagName.toLowerCase() !=
+                        "textarea"))
+        ) {
             e.preventDefault();
             DOMControls.playPause.click();
         }
