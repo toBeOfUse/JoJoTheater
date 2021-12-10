@@ -164,6 +164,31 @@ export default defineComponent({
         const bottomPos = ref(0);
         let lastClientX = 0;
         let lastClientY = 0;
+        const MIN_CHAT_BODY_HEIGHT = 160;
+        const chatBodyHeight = ref(MIN_CHAT_BODY_HEIGHT);
+
+        const bound = (value: number, min: number, max: number) =>
+            Math.min(Math.max(value, min), max);
+        const enforceBounds = () => {
+            if (!chatWindow.value) return;
+            leftPos.value = bound(
+                leftPos.value,
+                0,
+                window.innerWidth - chatWindow.value.offsetWidth
+            );
+            bottomPos.value = bound(
+                bottomPos.value,
+                0,
+                window.innerHeight - chatWindow.value.offsetHeight
+            );
+            const maxChatBodyHeight = window.innerHeight * 0.7;
+            chatBodyHeight.value = bound(
+                chatBodyHeight.value,
+                MIN_CHAT_BODY_HEIGHT,
+                maxChatBodyHeight
+            );
+        };
+        window.addEventListener("resize", enforceBounds);
 
         const drag = (event: MouseEvent | TouchEvent) => {
             if (!chatWindow.value) {
@@ -184,26 +209,14 @@ export default defineComponent({
             }
             leftPos.value += newX - lastClientX;
             bottomPos.value -= newY - lastClientY;
-            leftPos.value = Math.max(leftPos.value, 0);
-            bottomPos.value = Math.max(bottomPos.value, 0);
-            leftPos.value = Math.min(
-                leftPos.value,
-                window.innerWidth - chatWindow.value.offsetWidth
-            );
-            bottomPos.value = Math.min(
-                bottomPos.value,
-                window.innerHeight - chatWindow.value.offsetHeight
-            );
+            enforceBounds();
             lastClientX = newX;
             lastClientY = newY;
         };
-        const MIN_CHAT_BODY_HEIGHT = 160;
-        const chatBodyHeight = ref(MIN_CHAT_BODY_HEIGHT);
         const resize = (event: TouchEvent | MouseEvent) => {
             if (!chatWindow.value || minimized.value || !loggedIn.value) {
                 return;
             }
-            const maxChatBodyHeight = window.innerHeight * 0.7;
             const newY = (
                 event.type.toLowerCase().startsWith("touch")
                     ? (event as TouchEvent).touches[0]
@@ -214,14 +227,7 @@ export default defineComponent({
             const prevHeight = chatBodyHeight.value;
             chatBodyHeight.value +=
                 (currentAction == "resizing_from_bottom" ? -1 : 1) * deltaY;
-            chatBodyHeight.value = Math.max(
-                MIN_CHAT_BODY_HEIGHT,
-                chatBodyHeight.value
-            );
-            chatBodyHeight.value = Math.min(
-                maxChatBodyHeight,
-                chatBodyHeight.value
-            );
+            enforceBounds();
             const finalDeltaY = prevHeight - chatBodyHeight.value;
             if (currentAction != "resizing_from_top") {
                 bottomPos.value += finalDeltaY;
