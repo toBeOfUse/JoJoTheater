@@ -63,8 +63,21 @@ async function addToPlaylist(v: Video) {
     const existingCount = Number(
         (await playlistDB.table("playlist").count({ count: "*" }))[0].count
     );
-    logger.debug("playlist has " + existingCount + " videos; adding one more");
-    if (existingCount < 100) {
+    const alreadyHaveVideo = (
+        await playlistDB
+            .table("playlist")
+            .count({ count: "*" })
+            .where("src", v.src)
+    )[0].count;
+    if (existingCount < 100 || alreadyHaveVideo) {
+        if (alreadyHaveVideo) {
+            logger.debug("deleting and replacing video with src " + v.src);
+            await playlistDB.table("playlist").where("src", v.src).del();
+        } else {
+            logger.debug(
+                "playlist has " + existingCount + " videos; adding one more"
+            );
+        }
         await playlistDB.table<Video>("playlist").insert(v);
     }
 }
