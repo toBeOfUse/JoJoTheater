@@ -7,7 +7,8 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const HtmlWebpackInlineSVGPlugin = require("html-webpack-inline-svg-plugin");
 
-function getConfig(mode: "development" | "production") {
+function getConfig(_: any, options: any) {
+    const mode = options.mode;
     const finalCSSLoader =
         mode == "development" ? "style-loader" : MiniCssExtractPlugin.loader;
     const config: webpack.Configuration = {

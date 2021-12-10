@@ -13,7 +13,7 @@ import webpack from "webpack";
 const mode =
     process.env.NODE_ENV == "production" ? "production" : "development";
 logger.info("starting webpack in mode " + mode);
-const webpacker = webpack(webpackConfig(mode));
+const webpacker = webpack(webpackConfig(null, { mode }));
 const webpackCallback = (
     err: Error | undefined,
     stats: webpack.Stats | undefined
