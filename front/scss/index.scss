@@ -1,7 +1,6 @@
 @use "sass:meta";
 @use "vars";
 @use "player";
-@use "chat";
 @use "spinners";
 
 @keyframes fadeInUp {
@@ -61,6 +60,14 @@ body {
     display: flex;
     align-items: center;
     flex: 1;
+}
+
+.xp,
+.xp * {
+    box-sizing: initial !important;
+    scrollbar-color: #c8d6fb #fbfbf8;
+    z-index: 100;
+    line-height: 1;
 }
 
 #container-container {

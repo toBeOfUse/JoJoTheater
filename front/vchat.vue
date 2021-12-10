@@ -8,9 +8,11 @@
                 : { left: leftPos + 'px', bottom: bottomPos + 'px' }
         "
         id="chat-window"
-        @mousedown.prevent.stop="startDrag"
+        @mousedown="pointerDown"
+        @touchstart="pointerDown"
+        ref="chatWindow"
     >
-        <div id="chat-header" class="title-bar">
+        <div id="chat-header" class="title-bar" ref="chatHeader">
             <div class="title-bar-text">MitchBot Instant Messenger (MBIM)</div>
             <div class="title-bar-controls">
                 <button
@@ -33,7 +35,12 @@
                 ></button>
             </div>
         </div>
-        <div id="chat-window-body" class="window-body" v-if="!minimized">
+        <div
+            id="chat-window-body"
+            class="window-body"
+            v-if="!minimized"
+            :style="!loggedIn ? {} : { height: chatBodyHeight + 'px' }"
+        >
             <div id="chat-login" v-if="!loggedIn">
                 <label class="prompt" id="avatar-prompt">
                     Choose your avatar:
@@ -44,7 +51,7 @@
                         :key="image"
                         class="avatar-option"
                         :class="image == selectedAvatar ? 'selected' : ''"
-                        :src="'/images/avatars/' + image"
+                        :src="image"
                         @click="selectedAvatar = image"
                         @dblclick="attemptLogin"
                     />
@@ -130,7 +137,7 @@
 <script setup lang="ts">
 import type { ChatMessage } from "../types";
 import { socket } from "./globals";
-import { ref, computed, nextTick } from "vue";
+import { ref, nextTick } from "vue";
 
 // positioning logic:
 const minimized = ref(true);
@@ -140,29 +147,79 @@ function scrollMessagePanelToBottom() {
         messagePanel.value.scrollTop = messagePanel.value.scrollHeight;
     }
 }
+const chatWindow = ref<null | HTMLElement>(null);
+const chatHeader = ref<null | HTMLElement>(null);
 const leftPos = ref(0);
 const bottomPos = ref(0);
 let lastClientX = 0;
 let lastClientY = 0;
+
 const drag = (event: MouseEvent | TouchEvent) => {
+    if (!chatWindow.value) {
+        return;
+    }
     event.stopPropagation();
     event.preventDefault();
     let newX, newY;
-    if (event instanceof MouseEvent) {
+    if (event.type.toLowerCase().startsWith("mouse")) {
+        event = event as MouseEvent;
         newX = event.clientX;
         newY = event.clientY;
     } else {
+        event = event as TouchEvent;
         const touch = event.touches[0];
         newX = touch.clientX;
         newY = touch.clientY;
     }
     leftPos.value += newX - lastClientX;
     bottomPos.value -= newY - lastClientY;
+    leftPos.value = Math.max(leftPos.value, 0);
+    bottomPos.value = Math.max(bottomPos.value, 0);
+    leftPos.value = Math.min(
+        leftPos.value,
+        window.innerWidth - chatWindow.value.offsetWidth
+    );
+    bottomPos.value = Math.min(
+        bottomPos.value,
+        window.innerHeight - chatWindow.value.offsetHeight
+    );
     lastClientX = newX;
     lastClientY = newY;
 };
-const startDrag = (event: MouseEvent | TouchEvent) => {
-    console.log("starting drag from mousedown/touchstart");
+const MIN_CHAT_BODY_HEIGHT = 160; // TODO: pass to CSS
+const chatBodyHeight = ref(MIN_CHAT_BODY_HEIGHT);
+const resize = (event: TouchEvent | MouseEvent) => {
+    if (!chatWindow.value || minimized.value || !loggedIn.value) {
+        return;
+    }
+    const maxChatBodyHeight = window.innerHeight * 0.7;
+    const newY = (
+        event.type.toLowerCase().startsWith("touch")
+            ? (event as TouchEvent).touches[0]
+            : (event as MouseEvent)
+    ).clientY;
+    const deltaY = lastClientY - newY;
+    lastClientY = newY;
+    const prevHeight = chatBodyHeight.value;
+    chatBodyHeight.value +=
+        (currentAction == "resizing_from_bottom" ? -1 : 1) * deltaY;
+    chatBodyHeight.value = Math.max(MIN_CHAT_BODY_HEIGHT, chatBodyHeight.value);
+    chatBodyHeight.value = Math.min(maxChatBodyHeight, chatBodyHeight.value);
+    const finalDeltaY = prevHeight - chatBodyHeight.value;
+    if (currentAction != "resizing_from_top") {
+        bottomPos.value += finalDeltaY;
+    }
+};
+const RESIZE_AREA_HEIGHT = 10; // also for css
+let currentAction:
+    | "drag"
+    | "resizing_from_top"
+    | "resizing_from_bottom"
+    | "none" = "none";
+const pointerDown = (event: MouseEvent | TouchEvent) => {
+    if (!chatWindow.value || !chatHeader.value || minimized.value) return;
+    const windowBox = chatWindow.value.getBoundingClientRect();
+    const headerBox = chatHeader.value.getBoundingClientRect();
     if (event instanceof MouseEvent) {
         lastClientX = event.clientX;
         lastClientY = event.clientY;
@@ -170,13 +227,57 @@ const startDrag = (event: MouseEvent | TouchEvent) => {
         lastClientX = event.touches[0].clientX;
         lastClientY = event.touches[0].clientY;
     }
-    // TODO: determine if resizing or dragging
-    window.addEventListener("mousemove", drag);
-    window.addEventListener("mouseup", endDrag);
+    const margin = RESIZE_AREA_HEIGHT / 2;
+    if (
+        lastClientY < windowBox.top + margin &&
+        lastClientY > windowBox.top - margin
+    ) {
+        currentAction = "resizing_from_top";
+    } else if (
+        lastClientY < windowBox.top + windowBox.height + margin &&
+        lastClientY > windowBox.top + windowBox.height - margin
+    ) {
+        // bottom edge grabbed
+        currentAction = "resizing_from_bottom";
+    } else if (
+        lastClientY > headerBox.top &&
+        lastClientY < headerBox.top + headerBox.height
+    ) {
+        // header grabbed
+        currentAction = "drag";
+    } else {
+        currentAction = "none";
+        return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    let listener;
+    if (currentAction == "drag") {
+        listener = drag;
+    } else {
+        listener = resize;
+    }
+    window.addEventListener("mousemove", listener);
+    window.addEventListener("touchmove", listener);
+    window.addEventListener("mouseup", pointerUp);
+    window.addEventListener("touchend", pointerUp);
+    window.addEventListener("touchcancel", pointerUp);
 };
-const endDrag = () => {
-    window.removeEventListener("mousemove", drag);
-    window.removeEventListener("mouseup", endDrag);
+const pointerUp = () => {
+    let listener;
+    if (currentAction == "drag") {
+        listener = drag;
+    } else if (currentAction != "none") {
+        listener = resize;
+    } else {
+        return;
+    }
+    window.removeEventListener("mousemove", listener);
+    window.removeEventListener("touchmove", listener);
+    window.removeEventListener("mouseup", pointerUp);
+    window.removeEventListener("touchend", pointerUp);
+    window.removeEventListener("touchcancel", pointerUp);
+    currentAction = "none";
 };
 
 // login session logic:
@@ -195,7 +296,7 @@ const avatars = [
     "doittoem.png",
     "yeehaw.png",
     "sparklewink.png",
-];
+].map((a) => "/images/avatars/" + a);
 const selectedAvatar = ref("");
 const avatarRow = (which: number) => {
     if (which == 1) {
@@ -217,6 +318,12 @@ if (lastLoginString) {
             ...lastLogin,
             resumed: true,
         });
+        if (lastLogin.name) {
+            nameInput.value = lastLogin.name;
+        }
+        if (lastLogin.avatarURL) {
+            selectedAvatar.value = lastLogin.avatarURL;
+        }
     } catch {
         console.log("could not parse previous login info");
     }
@@ -230,7 +337,7 @@ const attemptLogin = () => {
     ) {
         const info = {
             name: nameInput.value,
-            avatarURL: "/images/avatars/" + selectedAvatar.value,
+            avatarURL: selectedAvatar.value,
             resumed: false,
         };
         try {
@@ -265,37 +372,176 @@ const send = () => {
 };
 
 // message display logic:
-const messages = ref<ChatMessage[]>([]);
+const groupedMessages = ref<ChatMessage[][]>([]);
+let lastSender = "";
 socket.on("chat_announcement", async (announcement: string) => {
-    messages.value.push({ isAnnouncement: true, messageHTML: announcement });
+    groupedMessages.value.push([
+        { isAnnouncement: true, messageHTML: announcement },
+    ]);
+    lastSender = "";
     await nextTick();
     scrollMessagePanelToBottom();
 });
 socket.on("chat_message", async (message: ChatMessage) => {
-    messages.value.push(message);
+    if (message.senderID != lastSender || groupedMessages.value.length == 0) {
+        groupedMessages.value.push([message]);
+    } else {
+        groupedMessages.value[groupedMessages.value.length - 1].push(message);
+    }
+    lastSender = message.senderID as string;
     await nextTick();
     scrollMessagePanelToBottom();
 });
-const groupedMessages = computed<ChatMessage[][]>(() => {
-    if (messages.value.length == 0) {
-        return [];
-    }
-    const groups: ChatMessage[][] = [];
-    let group: ChatMessage[] = [messages.value[0]];
-    for (let i = 1; i < messages.value.length; i++) {
-        const prev = messages.value[i - 1];
-        const curr = messages.value[i];
-        if (
-            curr.isAnnouncement ||
-            prev.isAnnouncement ||
-            prev.senderID != curr.senderID
-        ) {
-            groups.push(group);
-            group = [];
-        }
-        group.push(curr);
-    }
-    groups.push(group);
-    return groups;
-});
 </script>
+
+<style scoped lang="scss">
+@use "./scss/vars";
+.title-bar-text {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#chat-window {
+    position: fixed;
+    width: vars.$chat-width;
+    left: 0;
+    bottom: 0;
+    &.logged-in:not(.chat-minimized) #chat-header::after {
+        position: absolute;
+        top: -5px;
+        left: 0;
+        width: 100%;
+        height: 10px;
+        content: "";
+        cursor: ns-resize;
+    }
+    &::after {
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 10px;
+        content: "";
+        cursor: ns-resize;
+    }
+}
+
+#chat-window-log-out {
+    background-image: url(../assets/images/logoutnohover.svg);
+    &:hover {
+        background-image: url(../assets/images/logouthover.svg);
+    }
+}
+
+.window-body {
+    font-family: "Lora", serif;
+    height: 160px;
+    text-align: left;
+}
+
+#chat-login {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-evenly;
+    height: 100%;
+}
+
+.avatar-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.avatar-option {
+    display: inline;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #0003;
+    margin: 0 3px;
+    cursor: pointer;
+    background-color: white;
+    &.selected {
+        border-color: vars.$mitchbot-blue;
+        border-style: inset;
+        background-color: #eee;
+    }
+}
+
+.validation-warning {
+    animation: 1s flashRed;
+}
+
+.xp input[type="text"] {
+    border: solid #7f9db9 1px;
+    padding: 0 5px;
+}
+
+#chat-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#messages {
+    height: 100%;
+    overflow-y: scroll;
+    padding: 7px;
+    overflow-wrap: break-word;
+}
+
+#message-input-row {
+    display: flex;
+}
+
+#message-input {
+    width: 100%;
+}
+
+#send-message {
+    min-width: initial;
+}
+
+.message {
+    margin: 3px 0;
+    width: 100%;
+}
+
+.announcement {
+    font-style: italic;
+    margin: 5px 0;
+}
+
+.chat-section {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 3px;
+}
+
+.chat-section:last-of-type {
+    margin-bottom: 0;
+}
+
+.chat-section-text {
+    width: calc(100% - 35px);
+    overflow-x: hidden;
+}
+
+.in-chat-avatar {
+    display: inline;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.in-chat-username {
+    font-weight: bold;
+    font-size: 1.3em;
+}
+</style>
