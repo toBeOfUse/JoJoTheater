@@ -51,7 +51,10 @@ function getConfig(mode: "development" | "production") {
                     test: /\.tsx?$/,
                     loader: "ts-loader",
                     exclude: /node_modules/,
-                    options: { appendTsSuffixTo: [/\.vue$/] },
+                    options: {
+                        appendTsSuffixTo: [/\.vue$/],
+                        ignoreDiagnostics: [7006], // deal with weird problem with vue-loader
+                    },
                 },
             ],
         },
