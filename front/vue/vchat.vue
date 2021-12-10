@@ -31,7 +31,7 @@
                     id="chat-window-maximize"
                     aria-label="Maximize"
                     title="Maximize"
-                    @click="minimized = false"
+                    @click="maximize"
                 ></button>
             </div>
         </div>
@@ -311,6 +311,12 @@ export default defineComponent({
             currentAction = "none";
         };
 
+        const maximize = async () => {
+            minimized.value = false;
+            await nextTick();
+            scrollMessagePanelToBottom();
+        };
+
         // login session logic:
         const loggedIn = ref(false);
 
@@ -460,6 +466,7 @@ export default defineComponent({
             messageInput,
             send,
             groupedMessages,
+            maximize,
         };
     },
 });
