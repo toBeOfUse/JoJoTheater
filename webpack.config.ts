@@ -63,7 +63,7 @@ function getConfig(mode: "development" | "production") {
             new VueLoaderPlugin(),
             new MiniCssExtractPlugin({ filename: "[name].[contenthash].css" }),
             new HtmlWebpackPlugin({
-                template: "./front/index.html",
+                template: "./front/html/index.html",
             }),
             new webpack.WatchIgnorePlugin({
                 paths: [path.resolve(__dirname, "back")],

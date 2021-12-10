@@ -145,8 +145,8 @@
 </template>
 
 <script lang="ts">
-import type { ChatMessage } from "../types";
-import { socket } from "./globals";
+import type { ChatMessage } from "../../types";
+import { socket } from "../globals";
 import { ref, nextTick, defineComponent } from "vue";
 export default defineComponent({
     setup(props, context) {
@@ -496,9 +496,9 @@ export default defineComponent({
 }
 
 #chat-window-log-out {
-    background-image: url(../assets/images/logoutnohover.svg);
+    background-image: url(../../assets/images/logoutnohover.svg);
     &:hover {
-        background-image: url(../assets/images/logouthover.svg);
+        background-image: url(../../assets/images/logouthover.svg);
     }
 }
 

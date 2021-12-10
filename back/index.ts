@@ -73,7 +73,7 @@ app.set("view engine", "hbs");
 app.set("views", path.resolve(process.cwd(), "front/views/"));
 
 app.get("/upload", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../front/upload.html"));
+    res.sendFile(path.resolve(__dirname, "../front/html/upload.html"));
 });
 
 app.post("/api/upload", (req, res, next) => {
