@@ -1,7 +1,7 @@
 <template>
     <div
         class="window"
-        :class="{ resizable: loggedIn && !minimized }"
+        :class="{ resizable: loggedIn && !minimized, minimized }"
         :style="
             minimized
                 ? { left: 0, bottom: 0 }
@@ -486,6 +486,9 @@ export default defineComponent({
         height: v-bind('RESIZE_AREA_HEIGHT + "px"');
         content: "";
         cursor: ns-resize;
+    }
+    .fullscreen &.minimized {
+        display: none;
     }
 }
 
