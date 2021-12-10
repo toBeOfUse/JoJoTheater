@@ -26,12 +26,14 @@ if (xpStyle.sheet) {
 import "xp.css/gui/_fonts.scss";
 
 import { createApp } from "vue";
-import { Video, StateChangeRequest, StateElements } from "../types";
-import initVideo from "./video";
-import { socket } from "./globals";
-import Chat from "./vue/vchat.vue";
+import { io } from "socket.io-client";
 
-createApp(Chat).mount("#chat-container");
+import { Video } from "../types";
+import initVideo from "./video";
+import Chat from "./vue/vchat.vue";
+import Playlist from "./vue/playlist.vue";
+
+const socket = io();
 
 socket.on("id_set", (e) => console.log("client has id", e));
 socket.on("ping", () => {
@@ -44,14 +46,15 @@ window.onerror = (event) => {
 
 const player = initVideo(socket);
 
+createApp(Chat, { socket }).mount("#chat-container");
+createApp(Playlist, { socket }).mount("#playlist-container");
+
 socket.on("playlist_set", (newPlaylist: Video[]) => {
     player.setPlaylist(newPlaylist);
-    renderPlaylist();
     renderTitle();
 });
 
 socket.on("state_set", () => {
-    renderPlaylist();
     renderTitle();
 });
 
@@ -61,10 +64,6 @@ function renderTitle() {
     if (currentVideo && (title = document.querySelector("#video-title"))) {
         title.innerHTML = currentVideo.title;
     }
-}
-
-function renderPlaylist() {
-    // todo: set vue props
 }
 
 // remove the loading spinner and create the video player once all the images have shown up

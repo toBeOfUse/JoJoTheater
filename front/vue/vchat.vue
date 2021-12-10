@@ -146,10 +146,17 @@
 
 <script lang="ts">
 import type { ChatMessage } from "../../types";
-import { socket } from "../globals";
-import { ref, nextTick, defineComponent } from "vue";
+import type { Socket } from "socket.io-client";
+import { ref, nextTick, defineComponent, PropType } from "vue";
 export default defineComponent({
+    props: {
+        socket: {
+            type: Object as PropType<Socket>,
+            required: true,
+        },
+    },
     setup(props, context) {
+        const socket = props.socket;
         // positioning logic:
         const minimized = ref(true);
         const messagePanel = ref<null | HTMLElement>(null);
@@ -459,7 +466,7 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@use "./scss/vars";
+@use "../scss/vars";
 .title-bar-text {
     -moz-user-select: none;
     -webkit-user-select: none;

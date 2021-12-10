@@ -14,17 +14,6 @@
     }
 }
 
-:root {
-    --plyr-font-family: #{meta.inspect(vars.$ms-font)}; /* whyyyy */
-    --plyr-font-size-base: 25px;
-    @media (max-width: 500px) {
-        --plyr-control-icon-size: 8px;
-        --plyr-control-spacing: 5px;
-        --plyr-font-size-small: 8px;
-        --plyr-range-thumb-height: 9px;
-    }
-}
-
 * {
     box-sizing: border-box;
 }
@@ -106,48 +95,5 @@ body {
     width: 75%;
     @media (max-width: 600px) {
         width: 90%;
-    }
-}
-
-.playlist-item {
-    background-color: white;
-    margin: 5px 0px;
-    padding: 5px 5px;
-    border: 1px solid black;
-    border-radius: 3px;
-    &.active {
-        font-style: italic;
-        color: gray;
-    }
-    &.not-active {
-        cursor: pointer;
-    }
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-#playlist-header {
-    padding: 10px 20px;
-    margin: 0 auto;
-    background-image: url("../../assets/images/fun-square.svg");
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: center;
-    width: 150px;
-    text-align: center;
-    cursor: pointer;
-    color: vars.$mitchbot-blue;
-}
-
-.playlist-icon {
-    height: 1em;
-    margin: 0 5px;
-}
-
-.playlist-input {
-    & input[type="text"] {
-        margin-right: 3px;
-        width: 100%;
     }
 }
