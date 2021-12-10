@@ -14,24 +14,6 @@
     }
 }
 
-@keyframes flashRed {
-    0% {
-        color: black;
-    }
-    25% {
-        color: red;
-    }
-    50% {
-        color: black;
-    }
-    75% {
-        color: red;
-    }
-    100% {
-        color: black;
-    }
-}
-
 :root {
     --plyr-font-family: #{meta.inspect(vars.$ms-font)}; /* whyyyy */
     --plyr-font-size-base: 25px;

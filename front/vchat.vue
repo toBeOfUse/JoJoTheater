@@ -1,7 +1,7 @@
 <template>
     <div
         class="window"
-        :class="{ loggedIn: 'logged-in', minimized: 'chat-minimized' }"
+        :class="{ resizable: loggedIn && !minimized }"
         :style="
             minimized
                 ? { left: 0, bottom: 0 }
@@ -42,7 +42,14 @@
             :style="!loggedIn ? {} : { height: chatBodyHeight + 'px' }"
         >
             <div id="chat-login" v-if="!loggedIn">
-                <label class="prompt" id="avatar-prompt">
+                <label
+                    class="prompt"
+                    id="avatar-prompt"
+                    :class="{
+                        'validation-warning': validationWarn == 'avatar',
+                    }"
+                    @animationEnd="validationWarn = 'none'"
+                >
                     Choose your avatar:
                 </label>
                 <div class="avatar-row" v-for="row in 2" :key="row">
@@ -62,6 +69,10 @@
                         id="name-prompt"
                         for="chat-name-input"
                         style="flex-shrink: 0"
+                        :class="{
+                            'validation-warning': validationWarn == 'name',
+                        }"
+                        @animationend="validationWarn = 'none'"
                     >
                         Enter your name:
                     </label>
@@ -137,7 +148,7 @@
 <script setup lang="ts">
 import type { ChatMessage } from "../types";
 import { socket } from "./globals";
-import { ref, nextTick } from "vue";
+import { ref, nextTick, watch } from "vue";
 
 // positioning logic:
 const minimized = ref(true);
@@ -186,7 +197,7 @@ const drag = (event: MouseEvent | TouchEvent) => {
     lastClientX = newX;
     lastClientY = newY;
 };
-const MIN_CHAT_BODY_HEIGHT = 160; // TODO: pass to CSS
+const MIN_CHAT_BODY_HEIGHT = 160;
 const chatBodyHeight = ref(MIN_CHAT_BODY_HEIGHT);
 const resize = (event: TouchEvent | MouseEvent) => {
     if (!chatWindow.value || minimized.value || !loggedIn.value) {
@@ -210,7 +221,7 @@ const resize = (event: TouchEvent | MouseEvent) => {
         bottomPos.value += finalDeltaY;
     }
 };
-const RESIZE_AREA_HEIGHT = 10; // also for css
+const RESIZE_AREA_HEIGHT = 10;
 let currentAction:
     | "drag"
     | "resizing_from_top"
@@ -329,6 +340,10 @@ if (lastLoginString) {
     }
 }
 // attempt to start a new chat session
+const validationWarn = ref<"none" | "name" | "avatar">("none");
+watch(validationWarn, (newV, oldV) => {
+    console.log(newV, oldV);
+});
 const attemptLogin = () => {
     if (
         nameInput.value.trim() &&
@@ -347,7 +362,11 @@ const attemptLogin = () => {
         }
         socket.emit("user_info_set", info);
     } else {
-        // TODO: validation warning
+        if (!selectedAvatar.value) {
+            validationWarn.value = "avatar";
+        } else {
+            validationWarn.value = "name";
+        }
     }
 };
 socket.on("chat_login_successful", async () => {
@@ -408,21 +427,21 @@ socket.on("chat_message", async (message: ChatMessage) => {
     width: vars.$chat-width;
     left: 0;
     bottom: 0;
-    &.logged-in:not(.chat-minimized) #chat-header::after {
+    &.resizable #chat-header::after {
         position: absolute;
         top: -5px;
         left: 0;
         width: 100%;
-        height: 10px;
+        height: v-bind('RESIZE_AREA_HEIGHT + "px"');
         content: "";
         cursor: ns-resize;
     }
-    &::after {
+    &.resizable::after {
         position: absolute;
         left: 0;
         bottom: -5px;
         width: 100%;
-        height: 10px;
+        height: v-bind('RESIZE_AREA_HEIGHT + "px"');
         content: "";
         cursor: ns-resize;
     }
@@ -437,7 +456,7 @@ socket.on("chat_message", async (message: ChatMessage) => {
 
 .window-body {
     font-family: "Lora", serif;
-    height: 160px;
+    height: v-bind('MIN_CHAT_BODY_HEIGHT + "px"');
     text-align: left;
 }
 
@@ -470,6 +489,24 @@ socket.on("chat_message", async (message: ChatMessage) => {
         border-color: vars.$mitchbot-blue;
         border-style: inset;
         background-color: #eee;
+    }
+}
+
+@keyframes flashRed {
+    0% {
+        color: black;
+    }
+    25% {
+        color: red;
+    }
+    50% {
+        color: black;
+    }
+    75% {
+        color: red;
+    }
+    100% {
+        color: black;
     }
 }
 

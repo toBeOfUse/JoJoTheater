@@ -21,7 +21,7 @@ function getConfig(mode: "development" | "production") {
         resolve: {
             extensions: [".ts", ".js", ".json", ".vue"],
         },
-        devtool: mode == "development" ? "eval-source-map" : false,
+        devtool: mode == "development" ? "eval-cheap-module-source-map" : false,
         module: {
             rules: [
                 {

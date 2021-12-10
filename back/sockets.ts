@@ -182,7 +182,8 @@ class AudienceMember {
     }
 
     getClientState(): Promise<PlayerState | undefined> {
-        const request = new Promise<PlayerState>((resolve) => {
+        // TODO: this is still causing state_report listeners to build up somehow
+        const request = new Promise<PlayerState | undefined>((resolve) => {
             const listener = (state: PlayerState) => {
                 this.socket.removeListener("state_report", listener);
                 resolve(state);
@@ -190,10 +191,10 @@ class AudienceMember {
             this.socket.on("state_report", listener);
             setTimeout(() => {
                 this.socket.removeListener("state_report", listener);
-                resolve(undefined as any);
+                resolve(undefined);
             }, 2000);
+            this.emit("request_state_report");
         });
-        this.emit("request_state_report");
         return request;
     }
 
