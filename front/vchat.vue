@@ -384,6 +384,9 @@ export default defineComponent({
             minimized.value = false;
             await nextTick();
             scrollMessagePanelToBottom();
+            if (messageInput.value) {
+                messageInput.value.focus();
+            }
         });
         const logout = () => {
             loggedIn.value = false;
