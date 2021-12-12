@@ -32,4 +32,20 @@ interface StateChangeRequest {
     newValue: boolean | number;
 }
 
-export { ChatMessage, Video, VideoState, StateElements, StateChangeRequest };
+interface ChatUserInfo {
+    id: string;
+    name: string;
+    avatarURL: string;
+    // if they are resuming a previous login session (this is indicated by the
+    // client) and so we do not need to announce them
+    resumed: boolean;
+}
+
+export {
+    ChatMessage,
+    Video,
+    VideoState,
+    StateElements,
+    StateChangeRequest,
+    ChatUserInfo,
+};

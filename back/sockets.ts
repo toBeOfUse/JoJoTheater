@@ -16,6 +16,7 @@ import {
     VideoState as PlayerState,
     StateChangeRequest,
     StateElements,
+    ChatUserInfo,
 } from "../types";
 import logger from "./logger";
 
@@ -48,15 +49,6 @@ interface ConnectionStatus {
     pingHistogram: [number[], string[]];
     location: string;
     playerState: PlayerState | undefined;
-}
-
-interface ChatUserInfo {
-    id: string;
-    name: string;
-    avatarURL: string;
-    // if they are resuming a previous login session (this is indicated by the
-    // client) and so we do not need to announce them
-    resumed: boolean;
 }
 
 class AudienceMember {
