@@ -1,38 +1,38 @@
 import "normalize.css";
-import "./scss/index.scss";
+import(/* webpackChunkName: "index.css" */ "./scss/index.scss");
 import "../fonts/fonts.css";
 // load xp.css as raw, put it in a style element, and then modify the rules so that
 // they only apply to elements within the .xp class
-import xp from "!raw-loader!xp.css/dist/XP.css";
-const xpStyle = document.createElement("style");
-xpStyle.innerHTML = xp;
-document.head.appendChild(xpStyle);
-if (xpStyle.sheet) {
-    for (const rule of Array.from(xpStyle.sheet.cssRules)) {
-        if (rule instanceof CSSStyleRule) {
-            rule.selectorText = ".xp " + rule.selectorText;
-        }
-    }
+import(/* webpackChunkName: "xp.css" */ "!raw-loader!xp.css/dist/XP.css").then(
+    (xpImport) => {
+        const xp = xpImport.default as string;
+        const xpStyle = document.createElement("style");
+        xpStyle.innerHTML = xp;
+        document.head.appendChild(xpStyle);
+        if (xpStyle.sheet) {
+            for (const rule of Array.from(xpStyle.sheet.cssRules)) {
+                if (rule instanceof CSSStyleRule) {
+                    rule.selectorText = ".xp " + rule.selectorText;
+                }
+            }
 
-    // the best way to load the fonts is still to let the sass-loader import them though
-    for (let i = xpStyle.sheet.cssRules.length - 1; i >= 0; i--) {
-        if (xpStyle.sheet.cssRules[i] instanceof CSSFontFaceRule) {
-            xpStyle.sheet.deleteRule(i);
+            // the best way to load the fonts is still to let the sass-loader import them though
+            for (let i = xpStyle.sheet.cssRules.length - 1; i >= 0; i--) {
+                if (xpStyle.sheet.cssRules[i] instanceof CSSFontFaceRule) {
+                    xpStyle.sheet.deleteRule(i);
+                }
+            }
+        } else {
+            console.error("browser not generating xp style sheet properly");
         }
     }
-} else {
-    console.error("browser not generating xp style sheet properly");
-}
+);
 import "xp.css/gui/_fonts.scss";
 
-import { createApp } from "vue";
 import { io } from "socket.io-client";
 
 import { Video } from "../types";
 import initVideo from "./video";
-import Chat from "./vue/vchat.vue";
-import Playlist from "./vue/playlist.vue";
-
 const socket = io();
 
 socket.on("id_set", (e) => console.log("client has id", e));
@@ -46,8 +46,14 @@ window.onerror = (event) => {
 
 const player = initVideo(socket);
 
-createApp(Chat, { socket }).mount("#chat-container");
-createApp(Playlist, { socket }).mount("#playlist-container");
+import(/* webpackChunkName: "vue-comps" */ "vue").then(async (Vue) => {
+    const Chat = await import("./vue/vchat.vue");
+    const Playlist = await import("./vue/playlist.vue");
+    const Audience = await import("./vue/audience.vue");
+    Vue.createApp(Chat.default, { socket }).mount("#chat-container");
+    Vue.createApp(Playlist.default, { socket }).mount("#playlist-container");
+    Vue.createApp(Audience.default).mount("#audience-container");
+});
 
 socket.on("playlist_set", (newPlaylist: Video[]) => {
     player.setPlaylist(newPlaylist);
