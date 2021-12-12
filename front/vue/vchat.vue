@@ -510,9 +510,9 @@ export default defineComponent({
 }
 
 #chat-window-log-out {
-    background-image: url(../../assets/images/logoutnohover.svg);
+    background-image: url(../../assets/images/logoutnohover.inline.svg);
     &:hover {
-        background-image: url(../../assets/images/logouthover.svg);
+        background-image: url(../../assets/images/logouthover.inline.svg);
     }
 }
 

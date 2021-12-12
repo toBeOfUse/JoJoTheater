@@ -5,29 +5,53 @@
             class="chair-container"
             :class="getMarginClass(i)"
             :key="user.id"
+            :title="user.name"
         >
-            <img class="chair-image" :src="'/images/chairs/' + getChair(i)" />
-            <img
-                class="chair-avatar"
-                :src="user.avatarURL"
-                :title="user.name"
-            />
+            <component
+                :is="getChair(i)"
+                v-hijack-svg-image="user.avatarURL"
+                v-scale-svg="1 / 7"
+            ></component>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, DirectiveBinding, ref } from "vue";
 import type { ChatUserInfo } from "../../types";
+import BlueChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
+import GameChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/gamechairopt.svg";
+import GreyCouch from "!vue-loader!vue-svg-loader!../../assets/images/chairs/greycouchopt.svg";
+import TanChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/tanchairopt.svg";
+import ShoppingCart from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
 
 export default defineComponent({
+    directives: {
+        "hijack-svg-image"(
+            el: SVGElement,
+            replacement: DirectiveBinding<string>
+        ) {
+            const image = el.querySelector("image") as SVGImageElement;
+            if (image) {
+                image.setAttribute("href", replacement.value);
+                image.setAttribute("xlink:href", replacement.value);
+            }
+        },
+        "scale-svg"(el: SVGElement, scaleFactor: DirectiveBinding<number>) {
+            console.log("scaling svg");
+            const oldHeight = Number(el.getAttribute("height"));
+            const oldWidth = Number(el.getAttribute("width"));
+            el.setAttribute("height", String(oldHeight * scaleFactor.value));
+            el.setAttribute("width", String(oldWidth * scaleFactor.value));
+        },
+    },
     setup() {
         const chairs = [
-            "tanchair.svg",
-            "gamechair.svg",
-            "greychair.svg",
-            "greycouch.svg",
-            "tancouch.svg",
+            BlueChair,
+            GreyCouch,
+            ShoppingCart,
+            GameChair,
+            TanChair,
         ];
         const getChair = (i: number) => chairs[i % chairs.length];
         const marginClasses = ["left-margin-1", "right-margin-1"];
@@ -72,7 +96,6 @@ export default defineComponent({
     flex-direction: row;
     justify-content: space-evenly;
     align-items: center;
-    height: 100px;
     width: 100%;
     margin: 10px 0;
 }
@@ -90,16 +113,5 @@ export default defineComponent({
             top: 50px;
         }
     }
-}
-.chair-image {
-    height: 100px;
-}
-.chair-avatar {
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    position: absolute;
-    left: 50%;
-    top: 50%;
 }
 </style>

@@ -39,7 +39,7 @@ function getConfig(_: any, options: any) {
                     use: [finalCSSLoader, "css-loader", "sass-loader"],
                 },
                 {
-                    test: /\.svg$/i,
+                    test: /\.inline\.svg$/i,
                     type: "asset/inline",
                     generator: {
                         dataUrl: (content: string) => {
