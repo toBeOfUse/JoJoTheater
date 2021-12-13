@@ -275,6 +275,7 @@ class Theater {
     initializeMember(member: AudienceMember) {
         this.audience.push(member);
         this.monitorSynchronization(member);
+        member.emit("audience_info_set", this.allUserInfo);
 
         member.on("state_change_request", (newState: StateChangeRequest) => {
             if (newState.whichElement == StateElements.playing) {
@@ -402,6 +403,7 @@ class Theater {
 
         member.on("disconnect", () => {
             this.removeMember(member);
+            this.emitAll("audience_info_set", this.allUserInfo);
         });
     }
 
