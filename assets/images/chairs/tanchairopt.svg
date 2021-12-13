@@ -79,11 +79,11 @@
       d="m 161.47293,130.89789 c -21.34322,4.22529 -43.25965,7.6686 -64.910157,10.97265 -4.835357,-1.69375 -5.783876,0.45499 -4.927734,5.36328 1.43e-4,9.08661 -0.09101,18.17338 -0.291016,27.25782 2.772492,1.13928 5.373549,0.2443 8.25586,-0.25586 0.350944,-3.01512 5.391557,0.21929 9.774127,-1.91662 19.40396,-4.14837 39.09747,-6.98191 58.20634,-12.42518 0.99961,-8.54892 2.45182,-17.64798 0.38476,-26.08203 -1.0782,-2.03506 -4.65837,-4.50544 -6.49218,-2.91406 z"
       style="color:#000000;font-weight:400;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;text-transform:none;text-orientation:mixed;white-space:normal;shape-padding:0;overflow:visible;isolation:auto;mix-blend-mode:normal;solid-color:#000000;solid-opacity:1;fill:#a5a59d;stroke:#4f4a3d;stroke-width:1.14699996;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
    <g transform="translate(-171.85988,18.17519)" id="g4969">
+      <circle id="circle4365" r="53.172741" cy="35.497551" cx="287.14758"
+         style="fill:white;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" />
       <image id="image4394" y="-351.66159" x="-705.24927" xlink:href="C:\Users\Extreme PC\strongseal.png" preserveAspectRatio="none"
          height="179.26129" width="179.26129" clip-path="url(#clipPath4420)" transform="matrix(0.60721,0,0,0.60721,660.95738,194.60536)"
          style="fill:none" />
-      <circle id="circle4365" r="53.172741" cy="35.497551" cx="287.14758"
-         style="fill:none;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" />
    </g>
    <path id="path4380"
       d="M 25.015898,60.673281 C 19.066322,60.519438 14.497373,60.825262 8.7033981,62.067813 27.68915,69.155265 45.91901,75.416356 65.12918,81.8725 c 0.07401,-6.269255 7.224239,-5.164059 11.334537,-4.438847 7.528467,1.563153 -0.632639,-4.072214 -3.770556,-5.544171 C 59.439144,66.081769 44.914544,63.718829 30.814726,60.806094 28.890582,60.603195 26.947496,60.664542 25.015898,60.673281 Z"

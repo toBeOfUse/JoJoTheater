@@ -583,11 +583,11 @@
       <path id="path500" filter="url(#aE)" stroke-linecap="round" stroke-width="3" stroke="#fff" fill="none"
          d="m1715.282 525.67182-318.0673 81.53369c-17.8912 6.74267-32.0357 8.64204-47.3321 5.0269l-185.1498-38.85603c-3.9261-.81692-5.2149-3.94452-1.9764-6.49067.3078-.24199 2.0738-1.31622 2.465-1.54522"
          transform="matrix(.99917 .00526 .04072 1.00104 -1133.389 -21.17184)" />
+      <circle transform="scale(-1,1)"
+         style="fill:white;stroke:#1a191e;stroke-width:3.87401685;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" cx="-337.84891"
+         cy="326.20886" r="205.9893" id="circle223" />
       <image style="fill:none" id="image502" y="-351.66159" x="-705.24927" xlink:href="C:\Users\Extreme PC\strongseal.png" preserveAspectRatio="none"
          height="179.26129" width="179.26129" clip-path="url(#clipPath1376)" transform="matrix(-2.35231 0 0 2.35231 -1110.277 942.58688)" />
-      <circle transform="scale(-1,1)"
-         style="fill:none;stroke:#1a191e;stroke-width:3.87401685;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" cx="-337.84891"
-         cy="326.20886" r="205.9893" id="circle223" />
       <path id="path504" stroke-linecap="round" stroke-width="10" stroke="#999" fill="none"
          d="m648.84214 274.60059-367.29243 148.5177c-19.4481 8.07318-34.60081 10.99652-50.61988 8.44267l-204.2615-36.41113c-6.78773-1.4614-1.30734-7.37152 7.33634-11.20173" />
       <path id="path506" filter="url(#aD)" stroke-linecap="round" stroke-width="3" stroke="#fff" fill="none"

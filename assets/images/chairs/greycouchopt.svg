@@ -94,9 +94,9 @@
          d="m 223.34766,-118.01956 0.0527,1.04687 -5.35742,2.9375 -0.40039,-0.69922 z M -7.05078,-104.875 c 0.56644,0.62326 0.99067,1.12693 1.63672,1.81641 1.2331,1.31597 2.88352,2.94771 4.32031,4.42578 l -1.08594,0.45703 -4.8711,-4.31445 z m 90.48242,67.44531 -0.10352,1.4043 -14.6914,9.19922 -4.88672,-4.4961 0.24805,-1.98828 2.6582,2.66797 c 0.02338,0.0345 0.74258,1.08995 1.79688,1.3711 0.2991,0.07976 0.6569,0.0049 1.03515,-0.13086 0.37825,-0.13579 0.77704,-0.33959 1.14453,-0.55079 0.72777,-0.41825 1.3164,-0.86034 1.32813,-0.86914 l 0.01367,-0.0078 z" />
    </g>
    <g transform="translate(268.48692,37.796367)" id="g4206">
+      <circle cx="-91.512039" cy="24.983801" r="53.172741" id="circle1893"
+         style="fill:white;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" />
       <image transform="matrix(0.60721,0,0,0.60721,282.29776,184.09161)" clip-path="url(#clipPath3657)" width="179.26129" height="179.26129"
          preserveAspectRatio="none" xlink:href="C:\Users\Extreme PC\strongseal.png" x="-705.24927" y="-351.66159" id="image1926" />
-      <circle cx="-91.512039" cy="24.983801" r="53.172741" id="circle1893"
-         style="fill:none;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" />
    </g>
 </svg>

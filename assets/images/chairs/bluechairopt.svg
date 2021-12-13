@@ -93,10 +93,10 @@
             style="fill:#acacac" />
       </g>
       <g id="g2668" transform="translate(196.43849,-32.375164)">
+         <circle style="fill:white;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" id="circle81"
+            r="53.172741" cy="-44.92696" cx="-330.00311" />
          <image transform="matrix(0.60721,0,0,0.60721,43.806675,114.18085)" clip-path="url(#clipPath2662)" width="179.26129" height="179.26129"
             preserveAspectRatio="none" xlink:href="C:\Users\Extreme PC\strongseal.png" x="-705.24927" y="-351.66159" id="image102" />
-         <circle style="fill:none;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" id="circle81"
-            r="53.172741" cy="-44.92696" cx="-330.00311" />
       </g>
    </g>
 </svg>
