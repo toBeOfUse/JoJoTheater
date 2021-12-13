@@ -48,6 +48,7 @@
                             Playing: {{this.playerState.playing}}<br>
                             Current Time: {{msToHMS this.playerState.currentTimeMs}}<br>
                             Video: {{this.playerState.currentVideoIndex}}
+                            Last Update Time: {{this.playerState.receivedTimeISO}}
                         </td>
                         <td>{{this.latestPing}} ms</td>
                         <td>{{round this.avgPing}} ms</td>
@@ -65,7 +66,7 @@
         <script>
             const inject = `{{{stringify connections}}}`;
             const data = JSON.parse(inject);
-            data.map((c, i) => {
+            data.forEach((c, i) => {
                 const ctx = document.getElementById('chart'+i).getContext('2d');
                 Chart.defaults.backgroundColor = "rgba(0,0,0,0.5)";
                 new Chart(ctx, {
@@ -91,7 +92,7 @@
                         }
                     }
                 })
-            })
+            });
         </script>
     </body>
 </html>

@@ -671,7 +671,7 @@ class Player {
 function initVideo(io: Socket): Player {
     const player = new Player(io);
     initializePlayerInterface(io, player);
-    io.on("request_state_report", async () => {
+    const createStateReport = async () => {
         let state;
         if (!player.controller) {
             state = undefined;
@@ -683,7 +683,9 @@ function initVideo(io: Socket): Player {
             };
         }
         io.emit("state_report", state);
-    });
+    };
+    io.on("request_state_report", createStateReport);
+    setInterval(createStateReport, 5000);
     return player;
 }
 

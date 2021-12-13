@@ -58,6 +58,8 @@ class AudienceMember {
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
+    lastClientState: (PlayerState & { receivedTimeISO: string }) | undefined =
+        undefined;
 
     get lastRecordedLatency(): number {
         return this.lastLatencies[this.lastLatencies.length - 1];
@@ -96,7 +98,7 @@ class AudienceMember {
     }
 
     async getConnectionInfo(): Promise<ConnectionStatus> {
-        const playerState = await this.getClientState();
+        const playerState = this.lastClientState;
         if (playerState && playerState.currentTimeMs) {
             playerState.currentTimeMs = Math.round(playerState.currentTimeMs);
         }
@@ -120,6 +122,12 @@ class AudienceMember {
             }
         });
         this.startPinging();
+        this.socket.on("state_report", (state: PlayerState) => {
+            this.lastClientState = {
+                ...state,
+                receivedTimeISO: new Date().toISOString(),
+            };
+        });
         this.socket.on("user_info_set", (info: ChatUserInfo) => {
             info.name = info.name.trim();
             if (
@@ -171,23 +179,6 @@ class AudienceMember {
         ping();
         const updateInterval = setInterval(ping, 20000);
         this.on("disconnect", () => clearInterval(updateInterval));
-    }
-
-    getClientState(): Promise<PlayerState | undefined> {
-        // TODO: this is still causing state_report listeners to build up somehow
-        const request = new Promise<PlayerState | undefined>((resolve) => {
-            const listener = (state: PlayerState) => {
-                this.socket.removeListener("state_report", listener);
-                resolve(state);
-            };
-            this.socket.on("state_report", listener);
-            setTimeout(() => {
-                this.socket.removeListener("state_report", listener);
-                resolve(undefined);
-            }, 2000);
-            this.emit("request_state_report");
-        });
-        return request;
     }
 
     emit(event: ServerSentEvent, ...args: any[]) {
@@ -246,7 +237,6 @@ class Theater {
                     this.lastKnownStateTimestamp = Date.now();
                 }
             });
-            this.checkSynchronization();
         });
     }
 
@@ -269,6 +259,7 @@ class Theater {
 
     initializeMember(member: AudienceMember) {
         this.audience.push(member);
+        this.monitorSynchronization(member);
 
         member.on("state_change_request", (newState: StateChangeRequest) => {
             if (newState.whichElement == StateElements.playing) {
@@ -394,41 +385,31 @@ class Theater {
         });
     }
 
-    async checkSynchronization() {
-        while (true) {
-            for (const member of this.audience) {
-                const memberState = await member.getClientState();
-                if (memberState) {
-                    const difference = Math.abs(
-                        memberState.currentTimeMs -
-                            this.currentState.currentTimeMs
-                    );
-                    if (difference > 1000) {
-                        member.emit("state_set", this.currentState);
-                        if (difference > 3000) {
-                            if (
-                                memberState.playing == this.currentState.playing
-                            ) {
-                                member.emit(
-                                    "alert",
-                                    "MitchBot is syncing you up"
-                                );
-                            } else if (
-                                this.currentState.playing &&
-                                !memberState.playing
-                            ) {
-                                member.emit(
-                                    "alert",
-                                    "Your browser is blocking autoplay;" +
-                                        " press play to sync up with MitchBot"
-                                );
-                            }
+    async monitorSynchronization(member: AudienceMember) {
+        member.on("state_report", (memberState: PlayerState) => {
+            if (memberState) {
+                const difference = Math.abs(
+                    memberState.currentTimeMs - this.currentState.currentTimeMs
+                );
+                if (difference > 1000) {
+                    member.emit("state_set", this.currentState);
+                    if (difference > 3000) {
+                        if (memberState.playing == this.currentState.playing) {
+                            member.emit("alert", "MitchBot is syncing you up");
+                        } else if (
+                            this.currentState.playing &&
+                            !memberState.playing
+                        ) {
+                            member.emit(
+                                "alert",
+                                "Your browser is blocking autoplay;" +
+                                    " press play to sync up with MitchBot"
+                            );
                         }
                     }
                 }
             }
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-        }
+        });
     }
 
     removeMember(member: AudienceMember) {
