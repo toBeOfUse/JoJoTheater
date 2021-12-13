@@ -100,7 +100,13 @@ export default defineComponent({
         // ]);
         const users = ref<ChatUserInfo[]>([]);
         props.socket.on("audience_info_set", (audience: ChatUserInfo[]) => {
-            users.value = audience;
+            users.value = audience.map((u) => ({
+                ...u,
+                avatarURL: u.avatarURL.replace(
+                    "/avatars",
+                    "/avatars/facingright"
+                ),
+            }));
         });
         const getUsersPerRow = () =>
             Math.floor(
@@ -128,7 +134,6 @@ export default defineComponent({
             }
             return groups;
         });
-        // todo: listen for user info events and update
 
         return { getChair, users, groupedUsers, usersPerRow };
     },
