@@ -60,15 +60,15 @@ function getConfig(_: any, options: any) {
             ],
         },
         plugins: [
+            new HtmlWebpackPlugin({
+                template: "./front/html/index.html",
+            }),
             new webpack.DefinePlugin({
                 __VUE_PROD_DEVTOOLS__: false,
                 __VUE_OPTIONS_API__: false,
             }),
             new VueLoaderPlugin(),
             new MiniCssExtractPlugin({ filename: "[name].[contenthash].css" }),
-            new HtmlWebpackPlugin({
-                template: "./front/html/index.html",
-            }),
             new webpack.WatchIgnorePlugin({
                 paths: [path.resolve(__dirname, "back")],
             }),
@@ -76,7 +76,7 @@ function getConfig(_: any, options: any) {
         ],
         optimization: {
             minimizer: [new CssMinimizerPlugin(), "..."],
-            realContentHash: false,
+            // realContentHash: false,
         },
     };
     return config;
