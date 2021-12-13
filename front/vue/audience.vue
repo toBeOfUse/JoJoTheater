@@ -16,7 +16,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, DirectiveBinding, ref, computed } from "vue";
+import {
+    defineComponent,
+    DirectiveBinding,
+    ref,
+    computed,
+    onMounted,
+} from "vue";
 import type { ChatUserInfo } from "../../types";
 import BlueChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
 import GameChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/gamechairopt.svg";
@@ -88,14 +94,22 @@ export default defineComponent({
                 (document.querySelector("#container-container") as HTMLElement)
                     .offsetWidth / 120
             );
-        const usersPerRow = ref(getUsersPerRow());
+        const usersPerRow = ref(-1);
         window.addEventListener("resize", () => {
+            usersPerRow.value = getUsersPerRow();
+        });
+        onMounted(() => {
             usersPerRow.value = getUsersPerRow();
         });
         const groupedUsers = computed(() => {
             const groups = [];
             let i = 0;
-            while (i < users.value.length) {
+            while (
+                i < users.value.length &&
+                usersPerRow.value != -1 &&
+                !isNaN(usersPerRow.value)
+            ) {
+                console.log("creating users row");
                 groups.push(users.value.slice(i, i + usersPerRow.value));
                 i += usersPerRow.value;
             }
