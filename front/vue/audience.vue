@@ -1,29 +1,28 @@
 <template>
-    <div class="chair-space" v-if="users.length > 0">
+    <div class="chair-space" v-for="(group, i) in groupedUsers" :key="i">
         <div
-            v-for="(user, i) in users"
+            v-for="(user, j) in group"
             class="chair-container"
-            :class="getMarginClass(i)"
             :key="user.id"
             :title="user.name"
         >
             <component
-                :is="getChair(i)"
+                :is="getChair(j + groupedUsers[0].length * i)"
                 v-hijack-svg-image="user.avatarURL"
-                v-scale-svg="1 / 7"
+                v-scale-svg="0.1"
             ></component>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, DirectiveBinding, ref } from "vue";
+import { defineComponent, DirectiveBinding, ref, computed } from "vue";
 import type { ChatUserInfo } from "../../types";
 import BlueChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
 import GameChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/gamechairopt.svg";
 import GreyCouch from "!vue-loader!vue-svg-loader!../../assets/images/chairs/greycouchopt.svg";
 import TanChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/tanchairopt.svg";
-import ShoppingCart from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
+import ShoppingCart from "!vue-loader!vue-svg-loader!../../assets/images/chairs/shoppingcartopt.svg";
 
 export default defineComponent({
     directives: {
@@ -37,12 +36,16 @@ export default defineComponent({
                 image.setAttribute("xlink:href", replacement.value);
             }
         },
-        "scale-svg"(el: SVGElement, scaleFactor: DirectiveBinding<number>) {
-            console.log("scaling svg");
-            const oldHeight = Number(el.getAttribute("height"));
-            const oldWidth = Number(el.getAttribute("width"));
-            el.setAttribute("height", String(oldHeight * scaleFactor.value));
-            el.setAttribute("width", String(oldWidth * scaleFactor.value));
+        "scale-svg": {
+            mounted(el: SVGElement, scaleFactor: DirectiveBinding<number>) {
+                const oldHeight = Number(el.getAttribute("height"));
+                const oldWidth = Number(el.getAttribute("width"));
+                el.setAttribute(
+                    "height",
+                    String(oldHeight * scaleFactor.value)
+                );
+                el.setAttribute("width", String(oldWidth * scaleFactor.value));
+            },
         },
     },
     setup() {
@@ -54,38 +57,53 @@ export default defineComponent({
             TanChair,
         ];
         const getChair = (i: number) => chairs[i % chairs.length];
-        const marginClasses = ["left-margin-1", "right-margin-1"];
-        const getMarginClass = (i: number) =>
-            i < marginClasses.length ? marginClasses[i] : "";
         const users = ref<ChatUserInfo[]>([
             {
-                avatarURL: "/images/avatars/strongseal.png",
+                avatarURL: "/images/avatars/facingright/strongseal.png",
                 name: "fake selki",
                 id: "1",
                 resumed: false,
             },
             {
-                avatarURL: "/images/avatars/bad.png",
+                avatarURL: "/images/avatars/facingright/bad.png",
                 name: "fake erica",
                 id: "2",
                 resumed: false,
             },
             {
-                avatarURL: "/images/avatars/scream.png",
+                avatarURL: "/images/avatars/facingright/scream.png",
                 name: "fake dorian",
                 id: "3",
                 resumed: false,
             },
             {
-                avatarURL: "/images/avatars/purpleface.png",
+                avatarURL: "/images/avatars/facingright/purpleface.png",
                 name: "fake mickey",
                 id: "4",
                 resumed: false,
             },
         ]);
+        const getUsersPerRow = () =>
+            Math.floor(
+                (document.querySelector("#container-container") as HTMLElement)
+                    .offsetWidth / 120
+            );
+        const usersPerRow = ref(getUsersPerRow());
+        window.addEventListener("resize", () => {
+            usersPerRow.value = getUsersPerRow();
+        });
+        const groupedUsers = computed(() => {
+            const groups = [];
+            let i = 0;
+            while (i < users.value.length) {
+                groups.push(users.value.slice(i, i + usersPerRow.value));
+                i += usersPerRow.value;
+            }
+            return groups;
+        });
         // todo: listen for user info events and update
 
-        return { getChair, getMarginClass, users };
+        return { getChair, users, groupedUsers, usersPerRow };
     },
 });
 </script>
@@ -94,24 +112,25 @@ export default defineComponent({
 .chair-space {
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
-    align-items: center;
-    width: 100%;
-    margin: 10px 0;
+    justify-content: center;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin: 10px auto;
+    padding: 10px;
+    border: 3px solid black;
+    border-radius: 10px;
+    background-image: url("/assets/images/chairs/background.svg");
+    background-position: center;
+    background-size: cover;
 }
 .chair-container {
     position: relative;
-    @media (min-aspect-ratio: 14/9) {
-        &.left-margin-1 {
-            position: absolute;
-            left: 50px;
-            top: 50px;
-        }
-        &.right-margin-1 {
-            position: absolute;
-            right: 50px;
-            top: 50px;
-        }
+    margin: 0 10px;
+    &.flipped {
+        transform: scaleX(-1);
     }
+}
+image {
+    background-color: white;
 }
 </style>
