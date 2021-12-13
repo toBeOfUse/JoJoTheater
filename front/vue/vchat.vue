@@ -404,6 +404,7 @@ export default defineComponent({
         const logout = () => {
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
+            socket.emit("user_info_clear");
         };
 
         // message sending:

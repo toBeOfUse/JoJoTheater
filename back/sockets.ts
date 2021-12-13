@@ -29,6 +29,7 @@ type ServerSentEvent =
     | "chat_announcement"
     | "add_video_failed"
     | "state_set"
+    | "audience_info_set"
     | "request_state_report"
     | "alert";
 
@@ -36,6 +37,7 @@ type ClientSentEvent =
     | "state_change_request"
     | "add_video"
     | "user_info_set"
+    | "user_info_clear"
     | "wrote_message"
     | "disconnect"
     | "error_report"
@@ -146,6 +148,9 @@ class AudienceMember {
                 logger.debug(JSON.stringify(info).substring(0, 1000));
             }
         });
+        this.socket.on("user_info_clear", () => {
+            this.chatInfo = undefined;
+        });
         socket.on("error_report", (error_desc: string) => {
             logger.error(`client side error from ${this.id}: ${error_desc}`);
         });
@@ -207,6 +212,16 @@ class Theater {
                   (Date.now() - this.lastKnownStateTimestamp)
                 : this.lastKnownState.currentTimeMs,
         };
+    }
+
+    get allUserInfo(): ChatUserInfo[] {
+        const info = [];
+        for (const user of this.audience) {
+            if (user.chatInfo) {
+                info.push(user.chatInfo);
+            }
+        }
+        return info;
     }
 
     constructor(io: SocketServer) {
@@ -284,6 +299,7 @@ class Theater {
         });
 
         member.on("add_video", async (url: string) => {
+            // TODO: most of this should go... somewhere else
             logger.debug(
                 "attempting to add video with url " + url + " to playlist"
             );
@@ -343,6 +359,10 @@ class Theater {
                 };
                 this.sendToChat(announcement);
             }
+            this.emitAll("audience_info_set", this.allUserInfo);
+        });
+        member.on("user_info_clear", () => {
+            this.emitAll("audience_info_set", this.allUserInfo);
         });
 
         member.on("wrote_message", (messageText: string) => {

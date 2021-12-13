@@ -22,8 +22,10 @@ import {
     ref,
     computed,
     onMounted,
+    PropType,
 } from "vue";
 import type { ChatUserInfo } from "../../types";
+import type { Socket } from "socket.io-client";
 import BlueChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
 import GameChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/gamechairopt.svg";
 import GreyCouch from "!vue-loader!vue-svg-loader!../../assets/images/chairs/greycouchopt.svg";
@@ -31,6 +33,12 @@ import TanChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/tanc
 import ShoppingCart from "!vue-loader!vue-svg-loader!../../assets/images/chairs/shoppingcartopt.svg";
 
 export default defineComponent({
+    props: {
+        socket: {
+            required: true,
+            type: Object as PropType<Socket>,
+        },
+    },
     directives: {
         "hijack-svg-image"(
             el: SVGElement,
@@ -54,7 +62,7 @@ export default defineComponent({
             },
         },
     },
-    setup() {
+    setup(props) {
         const chairs = [
             BlueChair,
             GreyCouch,
@@ -63,32 +71,37 @@ export default defineComponent({
             TanChair,
         ];
         const getChair = (i: number) => chairs[i % chairs.length];
-        const users = ref<ChatUserInfo[]>([
-            {
-                avatarURL: "/images/avatars/facingright/strongseal.png",
-                name: "fake selki",
-                id: "1",
-                resumed: false,
-            },
-            {
-                avatarURL: "/images/avatars/facingright/bad.png",
-                name: "fake erica",
-                id: "2",
-                resumed: false,
-            },
-            {
-                avatarURL: "/images/avatars/facingright/scream.png",
-                name: "fake dorian",
-                id: "3",
-                resumed: false,
-            },
-            {
-                avatarURL: "/images/avatars/facingright/purpleface.png",
-                name: "fake mickey",
-                id: "4",
-                resumed: false,
-            },
-        ]);
+        // test data
+        // const users = ref<ChatUserInfo[]>([
+        //     {
+        //         avatarURL: "/images/avatars/facingright/strongseal.png",
+        //         name: "fake selki",
+        //         id: "1",
+        //         resumed: false,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/facingright/bad.png",
+        //         name: "fake erica",
+        //         id: "2",
+        //         resumed: false,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/facingright/scream.png",
+        //         name: "fake dorian",
+        //         id: "3",
+        //         resumed: false,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/facingright/purpleface.png",
+        //         name: "fake mickey",
+        //         id: "4",
+        //         resumed: false,
+        //     },
+        // ]);
+        const users = ref<ChatUserInfo[]>([]);
+        props.socket.on("audience_info_set", (audience: ChatUserInfo[]) => {
+            users.value = audience;
+        });
         const getUsersPerRow = () =>
             Math.floor(
                 (document.querySelector("#container-container") as HTMLElement)
