@@ -1,6 +1,5 @@
 import "normalize.css";
 import(/* webpackChunkName: "index.css" */ "./scss/index.scss");
-import "../fonts/fonts.css";
 // load xp.css as raw, put it in a style element, and then modify the rules so that
 // they only apply to elements within the .xp class
 import(/* webpackChunkName: "xp.css" */ "!raw-loader!xp.css/dist/XP.css").then(
@@ -52,7 +51,7 @@ import(/* webpackChunkName: "vue-comps" */ "vue").then(async (Vue) => {
     const Audience = await import("./vue/audience.vue");
     Vue.createApp(Chat.default, { socket }).mount("#chat-container");
     Vue.createApp(Playlist.default, { socket }).mount("#playlist-container");
-    Vue.createApp(Audience.default).mount("#audience-container");
+    Vue.createApp(Audience.default, { socket }).mount("#audience-container");
 });
 
 socket.on("playlist_set", (newPlaylist: Video[]) => {

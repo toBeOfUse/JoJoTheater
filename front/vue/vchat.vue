@@ -475,6 +475,12 @@ export default defineComponent({
 
 <style scoped lang="scss">
 @use "../scss/vars";
+@font-face {
+    font-family: "B612";
+    src: url("../../assets/fonts/b612-regular-webfont.woff2") format("woff2"),
+        url("../../assets/fonts/b612-regular-webfont.woff") format("woff");
+}
+
 .title-bar-text {
     -moz-user-select: none;
     -webkit-user-select: none;
@@ -518,7 +524,7 @@ export default defineComponent({
 }
 
 .window-body {
-    font-family: "Lora", serif;
+    font-family: "B612", sans-serif;
     height: v-bind('MIN_CHAT_BODY_HEIGHT + "px"');
     text-align: left;
 }
