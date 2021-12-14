@@ -199,7 +199,7 @@ class Theater {
     audience: AudienceMember[] = [];
     lastKnownState: PlayerState = {
         playing: false,
-        currentVideoIndex: 0,
+        currentVideoID: 0,
         currentTimeMs: 0,
     };
     lastKnownStateTimestamp: number = Date.now();
@@ -225,6 +225,12 @@ class Theater {
     }
 
     constructor(io: SocketServer) {
+        getPlaylist().then((playlist) => {
+            this.lastKnownState.currentVideoID = playlist[0].id;
+            this.audience.forEach((a) =>
+                a.emit("state_set", this.currentState)
+            );
+        });
         io.on("connection", (socket: Socket) => {
             // TODO: most of this should logically be in initializeMember()
             const newMember = new AudienceMember(socket);
@@ -286,8 +292,8 @@ class Theater {
             } else if (newState.whichElement == StateElements.time) {
                 this.lastKnownState.playing = false;
                 this.lastKnownState.currentTimeMs = newState.newValue as number;
-            } else if (newState.whichElement == StateElements.index) {
-                this.lastKnownState.currentVideoIndex =
+            } else if (newState.whichElement == StateElements.videoID) {
+                this.lastKnownState.currentVideoID =
                     newState.newValue as number;
                 this.lastKnownState.currentTimeMs = 0;
                 this.lastKnownState.playing = false;
@@ -422,8 +428,8 @@ class Theater {
                 // the server, telling them to manually hit play if it seems to be
                 // necessary; then make sure they are seeked to the right time.
                 if (
-                    memberState.currentVideoIndex !=
-                    this.currentState.currentVideoIndex
+                    memberState.currentVideoID !=
+                    this.currentState.currentVideoID
                 ) {
                     member.emit("state_set", this.currentState);
                 } else if (memberState.playing != this.currentState.playing) {

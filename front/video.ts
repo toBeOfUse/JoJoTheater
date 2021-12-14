@@ -608,14 +608,18 @@ class Player {
     playlistShown: boolean = false;
     state: VideoState = {
         playing: false,
-        currentVideoIndex: -1,
+        currentVideoID: -1,
         currentTimeMs: 0,
     };
     controller: VideoController | null = null;
+    get currentVideo(): Video | undefined {
+        // TODO: optimize with a lookup object like Record<number, Video>
+        return this.playlist.find((v) => v.id == this.state.currentVideoID);
+    }
     constructor(io: Socket) {
         io.on("state_set", (new_state: VideoState) => {
             const sourceChanged =
-                this.state.currentVideoIndex != new_state.currentVideoIndex;
+                this.state.currentVideoID != new_state.currentVideoID;
             this.state = new_state;
             if (sourceChanged) {
                 setTimeAndSeek(0, 0);
@@ -626,10 +630,10 @@ class Player {
         });
     }
     setPlaylist(newPlaylist: Video[]) {
-        const oldSource = this.playlist[this.state.currentVideoIndex]?.src;
-        const newSource = newPlaylist[this.state.currentVideoIndex].src;
+        const oldSource = this.currentVideo;
         this.playlist = newPlaylist;
-        if (oldSource != newSource) {
+        const newSource = this.currentVideo;
+        if (oldSource?.src != newSource?.src) {
             this.updateController(true);
         }
     }
@@ -637,7 +641,7 @@ class Player {
         return this.playlist;
     }
     updateController(sourceChanged: boolean) {
-        const currentSource = this.playlist[this.state.currentVideoIndex];
+        const currentSource = this.currentVideo;
         if (!currentSource) {
             return;
         }
@@ -672,14 +676,14 @@ function initVideo(io: Socket): Player {
     const player = new Player(io);
     initializePlayerInterface(io, player);
     const createStateReport = async () => {
-        let state;
+        let state: VideoState | undefined;
         if (!player.controller) {
             state = undefined;
         } else {
             state = {
                 playing: await player.controller.isPlaying(),
                 currentTimeMs: player.controller.currentTimeMs,
-                currentVideoIndex: player.state.currentVideoIndex,
+                currentVideoID: player.state.currentVideoID,
             };
         }
         io.emit("state_report", state);

@@ -8,6 +8,7 @@ interface ChatMessage {
 }
 
 interface Video {
+    id: number;
     src: string;
     type?: string; // only for local files
     size?: number; // only for local files
@@ -18,13 +19,13 @@ interface Video {
 }
 interface VideoState {
     playing: boolean;
-    currentVideoIndex: number;
+    currentVideoID: number;
     currentTimeMs: number;
 }
 
 enum StateElements {
     playing,
-    index,
+    videoID,
     time,
 }
 

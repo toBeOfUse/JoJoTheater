@@ -5,10 +5,10 @@
     <template v-if="shown">
         <div
             class="playlist-item"
-            v-for="(video, i) in playlist"
+            v-for="video in playlist"
             :key="video.src"
-            :class="{ active: currentVideo == i }"
-            @click="changeVideo(i)"
+            :class="{ active: currentVideo == video.id }"
+            @click="changeVideo(video.id)"
         >
             <img :src="getIcon(video.provider)" class="playlist-icon" />{{
                 video.title
@@ -74,13 +74,13 @@ export default defineComponent({
         props.socket.on(
             "state_set",
             (newState: VideoState) =>
-                (currentVideo.value = newState.currentVideoIndex)
+                (currentVideo.value = newState.currentVideoID)
         );
 
-        const changeVideo = (newIndex: number) => {
+        const changeVideo = (newID: number) => {
             const req: StateChangeRequest = {
-                whichElement: StateElements.index,
-                newValue: newIndex,
+                whichElement: StateElements.videoID,
+                newValue: newID,
             };
             props.socket.emit("state_change_request", req);
         };

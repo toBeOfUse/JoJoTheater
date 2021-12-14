@@ -12,6 +12,7 @@ const streamsDB = knex({
 async function getPlaylist(): Promise<Video[]> {
     return await streamsDB
         .select([
+            "id",
             "src",
             "title",
             "captions",
@@ -24,7 +25,7 @@ async function getPlaylist(): Promise<Video[]> {
         .orderBy("folder", "id");
 }
 
-async function addToPlaylist(v: Video) {
+async function addToPlaylist(v: Omit<Video, "id">) {
     const existingCount = Number(
         (await streamsDB.table("playlist").count({ count: "*" }))[0].count
     );

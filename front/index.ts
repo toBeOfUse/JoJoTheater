@@ -65,7 +65,7 @@ socket.on("state_set", () => {
 
 function renderTitle() {
     let title;
-    let currentVideo = player.getPlaylist()[player.state.currentVideoIndex];
+    let currentVideo = player.currentVideo;
     if (currentVideo && (title = document.querySelector("#video-title"))) {
         title.innerHTML = currentVideo.title;
     }
