@@ -54,7 +54,7 @@ function getConfig(_: any, options: any) {
                     exclude: /node_modules/,
                     options: {
                         appendTsSuffixTo: [/\.vue$/],
-                        ignoreDiagnostics: [7006], // deal with weird problem with vue-loader
+                        ignoreDiagnostics: [7006, 2363, 2365], // deal with weird problem with vue-loader
                     },
                 },
             ],
@@ -76,7 +76,7 @@ function getConfig(_: any, options: any) {
         ],
         optimization: {
             minimizer: [new CssMinimizerPlugin(), "..."],
-            // realContentHash: false,
+            realContentHash: false,
         },
     };
     return config;
