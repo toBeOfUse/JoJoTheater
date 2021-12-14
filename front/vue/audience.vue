@@ -9,7 +9,6 @@
             <component
                 :is="getChair(j + groupedUsers[0].length * i)"
                 v-hijack-svg-image="user.avatarURL"
-                v-scale-svg="0.1"
             ></component>
         </div>
     </div>
@@ -49,17 +48,6 @@ export default defineComponent({
                 image.setAttribute("href", replacement.value);
                 image.setAttribute("xlink:href", replacement.value);
             }
-        },
-        "scale-svg": {
-            mounted(el: SVGElement, scaleFactor: DirectiveBinding<number>) {
-                const oldHeight = Number(el.getAttribute("height"));
-                const oldWidth = Number(el.getAttribute("width"));
-                el.setAttribute(
-                    "height",
-                    String(oldHeight * scaleFactor.value)
-                );
-                el.setAttribute("width", String(oldWidth * scaleFactor.value));
-            },
         },
     },
     setup(props) {
@@ -111,7 +99,7 @@ export default defineComponent({
         const getUsersPerRow = () =>
             Math.floor(
                 (document.querySelector("#container-container") as HTMLElement)
-                    .offsetWidth / 120
+                    .offsetWidth / (window.innerWidth > 450 ? 120 : 72)
             );
         const usersPerRow = ref(-1);
         window.addEventListener("resize", () => {
@@ -164,5 +152,12 @@ export default defineComponent({
 }
 image {
     background-color: white;
+}
+svg {
+    height: 100px;
+    @media (max-width: 450px) {
+        height: 60px;
+    }
+    width: auto;
 }
 </style>
