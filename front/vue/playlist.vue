@@ -3,34 +3,56 @@
         Playlist {{ shown ? "▾" : "▸" }}
     </h2>
     <template v-if="shown">
-        <div
-            class="playlist-item"
-            v-for="video in playlist"
-            :key="video.src"
-            :class="{ active: currentVideo == video.id }"
-            @click="changeVideo(video.id)"
-        >
-            <img :src="getIcon(video.provider)" class="playlist-icon" />{{
-                video.title
-            }}
-        </div>
-
-        <div class="playlist-item playlist-input">
-            <input
-                type="text"
-                placeholder="Type a Youtube or Vimeo URL..."
-                v-model="videoURL"
-                @keydown.enter="addVideo(videoURL)"
-            />
-            <button
-                @click="addVideo(videoURL)"
-                style="margin-left: auto; width: 20px; height: 20px"
-            >
-                <svg width="100%" height="100%" viewBox="0 0 16 16">
-                    <rect x="7" y="0" width="2" height="16" fill="black"></rect>
-                    <rect x="0" y="7" width="16" height="2" fill="black"></rect>
-                </svg>
-            </button>
+        <div class="folder" v-for="folder in playlist" :key="folder.name">
+            <h3 class="folder-header" @click="toggleOpen(folder.name)">
+                {{ folder.name + (openFolders.has(folder.name) ? "▾" : "▸") }}
+            </h3>
+            <template v-if="openFolders.has(folder.name)">
+                <div
+                    class="playlist-item"
+                    v-for="video in folder.videos"
+                    :key="video.src"
+                    :class="{ active: currentVideo == video.id }"
+                    @click="changeVideo(video.id)"
+                >
+                    <img
+                        :src="getIcon(video.provider)"
+                        class="playlist-icon"
+                    />{{ video.title }}
+                </div>
+                <div
+                    class="playlist-item playlist-input"
+                    v-if="folder.name == UserSubmittedFolderName"
+                >
+                    <input
+                        type="text"
+                        placeholder="Type a Youtube or Vimeo URL..."
+                        v-model="videoURL"
+                        @keydown.enter="addVideo(videoURL)"
+                    />
+                    <button
+                        @click="addVideo(videoURL)"
+                        style="margin-left: auto; width: 20px; height: 20px"
+                    >
+                        <svg width="100%" height="100%" viewBox="0 0 16 16">
+                            <rect
+                                x="7"
+                                y="0"
+                                width="2"
+                                height="16"
+                                fill="black"
+                            ></rect>
+                            <rect
+                                x="0"
+                                y="7"
+                                width="16"
+                                height="2"
+                                fill="black"
+                            ></rect>
+                        </svg>
+                    </button>
+                </div>
+            </template>
         </div>
     </template>
 </template>
@@ -42,6 +64,7 @@ import {
     VideoState,
     StateChangeRequest,
     StateElements,
+    UserSubmittedFolderName,
 } from "../../types";
 import { defineComponent, PropType, ref } from "vue";
 
@@ -64,13 +87,44 @@ export default defineComponent({
 
         const videoURL = ref("");
 
-        const playlist = ref<Video[]>([]);
-        const currentVideo = ref(0);
+        interface Folder {
+            name: string;
+            videos: Video[];
+        }
 
-        props.socket.on(
-            "playlist_set",
-            (newPlaylist: Video[]) => (playlist.value = newPlaylist)
-        );
+        const playlist = ref<Folder[]>();
+        const currentVideo = ref(-1);
+        const openFolders = ref(new Set<string>());
+
+        const toggleOpen = (folderName: string) => {
+            if (!openFolders.value.has(folderName)) {
+                openFolders.value.add(folderName);
+            } else {
+                openFolders.value.delete(folderName);
+            }
+        };
+
+        props.socket.on("playlist_set", (newPlaylist: Video[]) => {
+            const foldersObj: Record<string, Video[]> = {};
+            const submissionsFolder: Video[] = [];
+            for (const video of newPlaylist) {
+                if (video.folder == UserSubmittedFolderName) {
+                    submissionsFolder.push(video);
+                } else if (video.folder in foldersObj) {
+                    foldersObj[video.folder].push(video);
+                } else {
+                    foldersObj[video.folder] = [video];
+                }
+            }
+            const folders = Object.keys(foldersObj).map((folderName) => ({
+                name: folderName,
+                videos: foldersObj[folderName],
+            }));
+            playlist.value = folders.concat([
+                { name: UserSubmittedFolderName, videos: submissionsFolder },
+            ]);
+        });
+
         props.socket.on(
             "state_set",
             (newState: VideoState) =>
@@ -98,18 +152,23 @@ export default defineComponent({
             changeVideo,
             playlist,
             currentVideo,
+            openFolders,
+            UserSubmittedFolderName,
+            toggleOpen,
         };
     },
 });
 </script>
 
 <style lang="scss" scoped>
+@use "sass:color";
 @use "../scss/vars.scss";
 
 .playlist-item {
     background-color: white;
+    color: black;
     margin: 5px 0px;
-    padding: 5px 5px;
+    padding: 5px 5px 5px 0;
     border: 1px solid black;
     border-radius: 3px;
     &.active {
@@ -122,6 +181,7 @@ export default defineComponent({
     display: flex;
     flex-direction: row;
     align-items: center;
+    // margin-left: 10px;
 }
 
 #playlist-header {
@@ -135,6 +195,22 @@ export default defineComponent({
     text-align: center;
     cursor: pointer;
     color: vars.$mitchbot-blue;
+}
+
+.folder-header {
+    cursor: pointer;
+    font-weight: normal;
+    color: color.scale(vars.$mitchbot-blue, $lightness: -60%);
+    margin: 0;
+}
+
+.folder {
+    background-color: vars.$bg-blue;
+    color: vars.$mitchbot-blue;
+    border: 1px solid color.scale(vars.$mitchbot-blue, $lightness: -60%);
+    border-radius: 5px;
+    padding: 3px 5px;
+    margin: 12px 0;
 }
 
 .playlist-icon {

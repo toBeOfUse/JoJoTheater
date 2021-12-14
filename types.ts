@@ -43,6 +43,8 @@ interface ChatUserInfo {
     resumed: boolean;
 }
 
+const UserSubmittedFolderName = "The Unrestrained Id of the Audience";
+
 export {
     ChatMessage,
     Video,
@@ -50,4 +52,5 @@ export {
     StateElements,
     StateChangeRequest,
     ChatUserInfo,
+    UserSubmittedFolderName,
 };

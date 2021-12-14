@@ -17,6 +17,7 @@ import {
     StateChangeRequest,
     StateElements,
     ChatUserInfo,
+    UserSubmittedFolderName,
 } from "../types";
 import logger from "./logger";
 
@@ -350,7 +351,7 @@ class Theater {
                     src: videoID,
                     title,
                     captions: true,
-                    folder: "The Unfiltered Id of the Audience",
+                    folder: UserSubmittedFolderName,
                 });
                 this.emitAll("playlist_set", await getPlaylist());
             } catch (e) {
