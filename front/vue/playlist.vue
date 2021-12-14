@@ -168,7 +168,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@use "sass:color";
 @use "../scss/vars.scss";
 
 .playlist-item {
@@ -204,15 +203,16 @@ export default defineComponent({
     .folder-open-close {
         margin: 0 3px;
         height: 15px;
-        width: 15px;
+        width: auto;
     }
 }
 
 .folder-header {
     cursor: pointer;
     font-weight: normal;
-    color: color.scale(vars.$mitchbot-blue, $lightness: -60%);
+    color: vars.$mitchbot-blue;
     margin: 0;
+    text-shadow: 2px 0px 1px white;
     .folder-open-close {
         margin: 0 2px;
         height: 10px;
