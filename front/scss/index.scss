@@ -78,7 +78,7 @@ body {
     background-color: vars.$bg-blue;
     border-radius: 10px;
     border: 2px solid vars.$mitchbot-blue;
-    font-family: vars.$ms-font;
+    font-family: vars.$pilot-font;
     color: vars.$mitchbot-blue;
     text-align: center;
     padding: 1px;
@@ -90,7 +90,7 @@ body {
 #playlist-container {
     text-align: left;
     margin: 10px auto;
-    font-family: vars.$ms-font;
+    font-family: vars.$pilot-font;
     width: 65%;
     @media (max-width: 600px) {
         width: 90%;

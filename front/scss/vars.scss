@@ -1,4 +1,11 @@
+@font-face {
+    font-family: "B612";
+    src: url("../../assets/fonts/b612-regular-webfont.woff2") format("woff2"),
+        url("../../assets/fonts/b612-regular-webfont.woff") format("woff");
+}
+
 $ms-font: "Trebuchet MS", sans-serif;
+$pilot-font: "B612", sans-serif;
 $mitchbot-blue: #3e7ee4ff;
 $bg-blue: #caf8f8;
 
