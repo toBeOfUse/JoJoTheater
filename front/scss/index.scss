@@ -41,7 +41,7 @@ body {
 }
 
 #container-container {
-    width: calc(100% - #{vars.$chat-width * 2});
+    width: calc(100% - #{((vars.$chat-width * 2)+20)});
     @media (max-aspect-ratio: 14/9) {
         width: 95%;
         margin-bottom: 200px; // leave space at bottom for chat window in vertical mode
