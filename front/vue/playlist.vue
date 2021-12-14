@@ -1,11 +1,16 @@
 <template>
     <h2 @click="shown = !shown" id="playlist-header">
-        Playlist {{ shown ? "▾" : "▸" }}
+        Playlists
+        <OpenCloseIcon class="folder-open-close" :class="{ open: shown }" />
     </h2>
     <template v-if="shown">
         <div class="folder" v-for="folder in playlist" :key="folder.name">
             <h3 class="folder-header" @click="toggleOpen(folder.name)">
-                {{ folder.name + (openFolders.has(folder.name) ? "▾" : "▸") }}
+                {{ folder.name }}
+                <OpenCloseIcon
+                    class="folder-open-close"
+                    :class="{ open: openFolders.has(folder.name) }"
+                />
             </h3>
             <template v-if="openFolders.has(folder.name)">
                 <div
@@ -32,7 +37,7 @@
                     />
                     <button
                         @click="addVideo(videoURL)"
-                        style="margin-left: auto; width: 20px; height: 20px"
+                        class="add-video-button"
                     >
                         <svg width="100%" height="100%" viewBox="0 0 16 16">
                             <rect
@@ -67,6 +72,7 @@ import {
     UserSubmittedFolderName,
 } from "../../types";
 import { defineComponent, PropType, ref } from "vue";
+import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 
 export default defineComponent({
     props: {
@@ -75,6 +81,7 @@ export default defineComponent({
             required: true,
         },
     },
+    components: { OpenCloseIcon },
     setup(props) {
         const shown = ref(false);
         const getIcon = (provider: string) => {
@@ -181,7 +188,6 @@ export default defineComponent({
     display: flex;
     flex-direction: row;
     align-items: center;
-    // margin-left: 10px;
 }
 
 #playlist-header {
@@ -191,10 +197,15 @@ export default defineComponent({
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
-    width: 150px;
+    width: 175px;
     text-align: center;
     cursor: pointer;
     color: vars.$mitchbot-blue;
+    .folder-open-close {
+        margin: 0 3px;
+        height: 15px;
+        width: 15px;
+    }
 }
 
 .folder-header {
@@ -202,15 +213,28 @@ export default defineComponent({
     font-weight: normal;
     color: color.scale(vars.$mitchbot-blue, $lightness: -60%);
     margin: 0;
+    .folder-open-close {
+        margin: 0 2px;
+        height: 10px;
+        width: 10px;
+    }
 }
 
 .folder {
     background-color: vars.$bg-blue;
     color: vars.$mitchbot-blue;
-    border: 1px solid color.scale(vars.$mitchbot-blue, $lightness: -60%);
+    border: 1px solid vars.$mitchbot-blue;
     border-radius: 5px;
     padding: 3px 5px;
     margin: 12px 0;
+}
+
+.folder-open-close {
+    display: inline;
+    stroke: vars.$mitchbot-blue;
+    &.open {
+        transform: rotate(90deg);
+    }
 }
 
 .playlist-icon {
@@ -223,5 +247,11 @@ export default defineComponent({
         margin-right: 3px;
         width: 100%;
     }
+}
+
+.add-video-button {
+    margin-left: auto;
+    width: 20px;
+    height: 20px;
 }
 </style>
