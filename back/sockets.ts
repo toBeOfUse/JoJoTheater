@@ -447,6 +447,9 @@ class Theater {
                         }
                     }
                 } else if (difference > 1000) {
+                    logger.debug(
+                        `correcting currentTime for player ${member.id}, who is off by ${difference} ms`
+                    );
                     member.emit("state_set", this.currentState);
                     if (difference > 3000) {
                         member.emit("alert", "MitchBot is syncing you up");
