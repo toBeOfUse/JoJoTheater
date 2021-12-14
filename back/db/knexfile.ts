@@ -2,8 +2,9 @@ module.exports = {
     development: {
         client: "sqlite3",
         connection: {
-            filename: "./playlist.db",
+            filename: "./streams.db",
         },
+        useNullAsDefault: true,
         migrations: {
             tableName: "knex_migrations",
             directory: "./migrations/",
@@ -16,8 +17,9 @@ module.exports = {
     production: {
         client: "sqlite3",
         connection: {
-            filename: "./playlist.db",
+            filename: "./streams.db",
         },
+        useNullAsDefault: true,
         migrations: {
             tableName: "knex_migrations",
             directory: "./migrations/",
