@@ -10,7 +10,7 @@ import {
     addToPlaylist,
     getRecentMessages,
     addMessage,
-} from "./db";
+} from "./queries";
 import {
     ChatMessage,
     VideoState as PlayerState,
@@ -99,7 +99,7 @@ class AudienceMember {
         return Date.now() - this.connected.getTime();
     }
 
-    async getConnectionInfo(): Promise<ConnectionStatus> {
+    getConnectionInfo(): ConnectionStatus {
         const playerState = this.lastClientState;
         if (playerState && playerState.currentTimeMs) {
             playerState.currentTimeMs = Math.round(playerState.currentTimeMs);
@@ -344,6 +344,7 @@ class Theater {
                     src: videoID,
                     title,
                     captions: true,
+                    folder: "The Unfiltered Id of the Audience",
                 });
                 this.emitAll("playlist_set", await getPlaylist());
             } catch (e) {
@@ -459,9 +460,7 @@ export default function init(server: Server, app: Express) {
     app.get("/stats", async (_, res) => {
         logger.debug("rendering stats page");
         res.render("connections", {
-            connections: await Promise.all(
-                theater.audience.map(async (a) => await a.getConnectionInfo())
-            ),
+            connections: theater.audience.map((a) => a.getConnectionInfo()),
             theaterState: theater.currentState,
         });
     });

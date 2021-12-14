@@ -14,6 +14,7 @@ interface Video {
     title: string;
     provider?: string; // only for youtube/vimeo
     captions: boolean;
+    folder: string;
 }
 interface VideoState {
     playing: boolean;
