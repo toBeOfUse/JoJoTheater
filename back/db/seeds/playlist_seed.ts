@@ -1,8 +1,9 @@
 import { Knex } from "knex";
+import { Video, UserSubmittedFolderName } from "../../../types";
 
 export async function seed(knex: Knex): Promise<void> {
     // Ensures seed entries
-    await knex("playlist")
+    await knex<Video>("playlist")
         .insert([
             {
                 src: "GU4DJf2_jqE",
@@ -97,21 +98,42 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Handsome Dancer - Coincidance",
                 captions: false,
                 provider: "youtube",
-                folder: "The Unfiltered Id of the Audience",
+                folder: UserSubmittedFolderName,
             },
             {
                 src: "yE5DiniY45w",
                 title: "Pop Danthology 2012 - Mashup of 50+ Pop Songs",
                 captions: false,
                 provider: "youtube",
-                folder: "The Unfiltered Id of the Audience",
+                folder: UserSubmittedFolderName,
             },
             {
                 src: "3L7VJl76i9U",
                 title: "Crybaby Learns to Swim",
                 captions: false,
                 provider: "youtube",
-                folder: "The Unfiltered Id of the Audience",
+                folder: UserSubmittedFolderName,
+            },
+            {
+                captions: false,
+                provider: "youtube",
+                src: "4Rr-ra5Sobk",
+                title: "small woof",
+                folder: UserSubmittedFolderName,
+            },
+            {
+                captions: false,
+                provider: "youtube",
+                src: "VuE4qxOcluk",
+                title: "75 Big Mouth Billy Bass fish sing Bee Gees' 'Stayin Alive,' Talking Heads' 'Once in a Lifetime'",
+                folder: UserSubmittedFolderName,
+            },
+            {
+                captions: false,
+                provider: "youtube",
+                src: "guMbC8Gig6I",
+                title: "Taskmaster’s Most Romantic Moments",
+                folder: UserSubmittedFolderName,
             },
         ])
         .onConflict()
