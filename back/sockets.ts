@@ -226,6 +226,7 @@ class Theater {
 
     constructor(io: SocketServer) {
         io.on("connection", (socket: Socket) => {
+            // TODO: most of this should logically be in initializeMember()
             const newMember = new AudienceMember(socket);
             newMember.emit("id_set", socket.id);
             getPlaylist().then((playlist) => {
@@ -408,26 +409,39 @@ class Theater {
     }
 
     async monitorSynchronization(member: AudienceMember) {
+        let toldThemToPlay = 0;
+        // the frontend is programmed to emit a "state_report" every 5 seconds
         member.on("state_report", (memberState: PlayerState) => {
             if (memberState) {
                 const difference = Math.abs(
                     memberState.currentTimeMs - this.currentState.currentTimeMs
                 );
-                if (difference > 1000) {
+                // priorities here: first try to ensure that they are watching the
+                // right video; then make sure that they are playing/paused just like
+                // the server, telling them to manually hit play if it seems to be
+                // necessary; then make sure they are seeked to the right time.
+                if (
+                    memberState.currentVideoIndex !=
+                    this.currentState.currentVideoIndex
+                ) {
                     member.emit("state_set", this.currentState);
-                    if (difference > 3000) {
-                        if (memberState.playing == this.currentState.playing) {
-                            member.emit("alert", "MitchBot is syncing you up");
-                        } else if (
-                            this.currentState.playing &&
-                            !memberState.playing
-                        ) {
+                } else if (memberState.playing != this.currentState.playing) {
+                    member.emit("state_set", this.currentState);
+                    if (!memberState.playing && this.currentState.playing) {
+                        toldThemToPlay++;
+                        if (toldThemToPlay > 2) {
                             member.emit(
                                 "alert",
                                 "Your browser is blocking autoplay;" +
                                     " press play to sync up with MitchBot"
                             );
+                            toldThemToPlay = 0;
                         }
+                    }
+                } else if (difference > 1000) {
+                    member.emit("state_set", this.currentState);
+                    if (difference > 3000) {
+                        member.emit("alert", "MitchBot is syncing you up");
                     }
                 }
             }
