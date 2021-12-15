@@ -20,6 +20,9 @@
 html {
     min-height: 100%;
     display: flex;
+    @media (max-width: 450px) {
+        font-size: 0.75em;
+    }
 }
 
 body {
@@ -69,9 +72,6 @@ body {
     animation-delay: 0.5s;
     margin-bottom: 20px;
     margin-top: 10px;
-    @media (max-width: 600px) {
-        margin-left: 10%;
-    }
 }
 
 #video-title {
@@ -82,7 +82,7 @@ body {
     color: vars.$mitchbot-blue;
     text-align: center;
     padding: 1px;
-    font-size: 1.4em;
+    font-size: 1.4rem;
     padding: 5px 10px;
     font-weight: bold;
 }

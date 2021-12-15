@@ -191,6 +191,9 @@ export default defineComponent({
 
 #playlist-header {
     padding: 10px 20px;
+    @media (max-width: 450px) {
+        padding: 5px 10px;
+    }
     margin: 0 auto;
     background-image: url("../../assets/images/fun-square.svg");
     background-repeat: no-repeat;
@@ -246,12 +249,18 @@ export default defineComponent({
     & input[type="text"] {
         margin-right: 3px;
         width: 100%;
+        border: none;
     }
+    padding-left: 3px;
 }
 
 .add-video-button {
     margin-left: auto;
     width: 20px;
     height: 20px;
+    padding: 0;
+    svg {
+        transform: scale(0.5);
+    }
 }
 </style>

@@ -19,19 +19,22 @@
                     id="chat-window-minimize"
                     aria-label="Minimize"
                     title="Minimize"
-                    @click="minimized = true"
+                    @click.stop="minimized = true"
+                    @touchstart.stop
                 ></button>
                 <button
                     id="chat-window-log-out"
                     aria-label="Log Out"
                     title="Log Out"
-                    @click="logout"
+                    @click.stop="logout"
+                    @touchstart.stop
                 ></button>
                 <button
                     id="chat-window-maximize"
                     aria-label="Maximize"
                     title="Maximize"
-                    @click="maximize"
+                    @click.stop="maximize"
+                    @touchstart.stop
                 ></button>
             </div>
         </div>

@@ -38,7 +38,6 @@ async function loadUIComponents() {
     // load full-page styles
     await import(/* webpackChunkName: "index.scss" */ "./scss/index.scss");
     // dismiss initial heart loading spinner
-    console.log(document.querySelector("#initial-loading-spinner"));
     document.querySelector("#initial-loading-spinner")?.remove();
     const container = document.querySelector(
         "#container-container"
