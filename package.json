@@ -1,6 +1,6 @@
 {
   "name": "mitchbot-streams",
-  "version": "0.75.0",
+  "version": "0.9.0",
   "description": "watch videos in sync with your fellow mitchbot enterprises customers.",
   "author": "toBeOfUse <mitchjacov@gmail.com>",
   "license": "MIT",
@@ -21,6 +21,7 @@
     "@types/vimeo__player": "^2.10.1",
     "@types/youtube": "^0.0.46",
     "@vimeo/player": "^2.16.2",
+    "clean-webpack-plugin": "^4.0.0",
     "compression": "^1.7.4",
     "css-loader": "^6.2.0",
     "css-minimizer-webpack-plugin": "^3.2.0",

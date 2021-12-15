@@ -42,7 +42,8 @@ type ClientSentEvent =
     | "wrote_message"
     | "disconnect"
     | "error_report"
-    | "state_report";
+    | "state_report"
+    | "state_update_request";
 
 interface ConnectionStatus {
     chatName: string;
@@ -284,6 +285,11 @@ class Theater {
         this.audience.push(member);
         this.monitorSynchronization(member);
         member.emit("audience_info_set", this.allUserInfo);
+
+        member.on("state_update_request", async () => {
+            member.emit("state_set", this.currentState);
+            member.emit("playlist_set", await getPlaylist());
+        });
 
         member.on("state_change_request", (newState: StateChangeRequest) => {
             if (newState.whichElement == StateElements.playing) {

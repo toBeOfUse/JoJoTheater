@@ -6,6 +6,7 @@ const svgToMiniDataURI = require("mini-svg-data-uri");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const HtmlWebpackInlineSVGPlugin = require("html-webpack-inline-svg-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 function getConfig(_: any, options: any) {
     const mode = options.mode;
@@ -54,6 +55,7 @@ function getConfig(_: any, options: any) {
                     exclude: /node_modules/,
                     options: {
                         appendTsSuffixTo: [/\.vue$/],
+                        configFile: "tsconfig.webpack.json",
                         ignoreDiagnostics: [7006, 2363, 2365], // deal with weird problem with vue-loader
                     },
                 },
@@ -73,6 +75,7 @@ function getConfig(_: any, options: any) {
                 paths: [path.resolve(__dirname, "back")],
             }),
             new HtmlWebpackInlineSVGPlugin(),
+            new CleanWebpackPlugin(),
         ],
         optimization: {
             minimizer: [new CssMinimizerPlugin(), "..."],

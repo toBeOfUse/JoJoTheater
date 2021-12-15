@@ -473,6 +473,8 @@ export default defineComponent({
 });
 </script>
 
+<style scoped lang="css" src="xp.css/dist/XP.css"></style>
+
 <style scoped lang="scss">
 @use "../scss/vars";
 
