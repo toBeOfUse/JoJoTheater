@@ -18,13 +18,12 @@ export async function up(knex: Knex): Promise<void> {
     if (!(await knex.schema.hasTable("playlist"))) {
         await knex.schema.createTable("playlist", (table) => {
             table.increments().index();
-            table.string("src").notNullable();
+            table.string("src").notNullable().unique();
             table.string("title").notNullable();
             table.boolean("captions").notNullable();
             table.string("provider"); // only for youtube and vimeo
             table.string("type"); // only for local files
             table.integer("size"); // only for local files
-            table.string("folder").notNullable().index("folders");
         });
     }
 }
