@@ -140,7 +140,6 @@ export default defineComponent({
     align-items: baseline;
     flex-wrap: wrap;
     margin: 10px auto;
-    padding: 10px;
     border: 3px solid black;
     border-radius: 10px;
     background-image: url("/assets/images/chairs/background.svg");
@@ -149,7 +148,7 @@ export default defineComponent({
 }
 .chair-container {
     position: relative;
-    margin: 0 10px;
+    margin: 0 5px;
     &.flipped {
         transform: scaleX(-1);
     }
@@ -158,7 +157,7 @@ image {
     background-color: white;
 }
 svg {
-    height: 100px;
+    height: 150px;
     @media (max-width: 450px) {
         height: 60px;
     }
