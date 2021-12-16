@@ -23,8 +23,10 @@ import {
     onMounted,
     PropType,
 } from "vue";
-import type { ChatUserInfo } from "../../types";
+import { ChatUserInfo, Subscription } from "../../types";
 import type { Socket } from "socket.io-client";
+// TODO: these should probably be async components, also these should be renamed to
+// .vue.svg files with a corresponding webpack rule
 import BlueChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
 import GameChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/gamechairopt.svg";
 import GreyCouch from "!vue-loader!vue-svg-loader!../../assets/images/chairs/greycouchopt.svg";
@@ -122,6 +124,8 @@ export default defineComponent({
             }
             return groups;
         });
+
+        props.socket.emit("ready_for", Subscription.audience);
 
         return { getChair, users, groupedUsers, usersPerRow };
     },

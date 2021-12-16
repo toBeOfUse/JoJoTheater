@@ -17,6 +17,7 @@ interface Video {
     captions: boolean;
     folder: string;
 }
+
 interface VideoState {
     playing: boolean;
     currentVideoID: number;
@@ -45,6 +46,12 @@ interface ChatUserInfo {
 
 const UserSubmittedFolderName = "The Unrestrained Id of the Audience";
 
+enum Subscription {
+    audience,
+    playlist,
+    chat,
+}
+
 export {
     ChatMessage,
     Video,
@@ -53,4 +60,5 @@ export {
     StateChangeRequest,
     ChatUserInfo,
     UserSubmittedFolderName,
+    Subscription,
 };

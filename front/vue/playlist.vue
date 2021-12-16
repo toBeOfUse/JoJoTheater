@@ -70,6 +70,7 @@ import {
     StateChangeRequest,
     StateElements,
     UserSubmittedFolderName,
+    Subscription,
 } from "../../types";
 import { defineComponent, PropType, ref } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
@@ -150,6 +151,8 @@ export default defineComponent({
             props.socket.emit("add_video", url);
             videoURL.value = "";
         };
+
+        props.socket.emit("ready_for", Subscription.playlist);
 
         return {
             shown,

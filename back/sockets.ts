@@ -18,6 +18,7 @@ import {
     StateElements,
     ChatUserInfo,
     UserSubmittedFolderName,
+    Subscription,
 } from "../types";
 import logger from "./logger";
 
@@ -43,7 +44,8 @@ type ClientSentEvent =
     | "disconnect"
     | "error_report"
     | "state_report"
-    | "state_update_request";
+    | "state_update_request"
+    | "ready_for";
 
 interface ConnectionStatus {
     chatName: string;
@@ -62,6 +64,7 @@ class AudienceMember {
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
+    subscriptions: Set<Subscription> = new Set();
     lastClientState: (PlayerState & { receivedTimeISO: string }) | undefined =
         undefined;
 
@@ -131,6 +134,9 @@ class AudienceMember {
                 ...state,
                 receivedTimeISO: new Date().toISOString(),
             };
+        });
+        this.socket.on("ready_for", (sub: Subscription) => {
+            this.subscriptions.add(sub);
         });
         this.socket.on("user_info_set", (info: ChatUserInfo) => {
             info.name = info.name.trim();
@@ -270,25 +276,54 @@ class Theater {
 
     sendToChat(message: ChatMessage) {
         addMessage(message);
+        const receivers = this.audience.filter((a) =>
+            a.subscriptions.has(Subscription.chat)
+        );
         if (message.isAnnouncement) {
             logger.debug("emitting chat annoucement:");
             logger.debug(JSON.stringify(message));
-            this.emitAll("chat_announcement", message.messageHTML);
+            receivers.forEach((a) =>
+                a.emit("chat_announcement", message.messageHTML)
+            );
         } else {
             logger.debug("emitting chat message:");
             logger.debug(JSON.stringify(message));
-            this.emitAll("chat_message", message);
+            receivers.forEach((a) => a.emit("chat_message", message));
         }
     }
 
     initializeMember(member: AudienceMember) {
         this.audience.push(member);
         this.monitorSynchronization(member);
-        member.emit("audience_info_set", this.allUserInfo);
+
+        member.on("ready_for", (sub: Subscription) => {
+            if (sub == Subscription.chat) {
+                getRecentMessages().then((messages) =>
+                    messages.forEach((m) => {
+                        member.emit(
+                            m.isAnnouncement
+                                ? "chat_announcement"
+                                : "chat_message",
+                            m.isAnnouncement ? m.messageHTML : m
+                        );
+                    })
+                );
+            } else if (sub == Subscription.audience) {
+                member.emit("audience_info_set", this.allUserInfo);
+            } else if (sub == Subscription.playlist) {
+                getPlaylist().then((playlist) => {
+                    member.emit("playlist_set", playlist);
+                });
+            }
+        });
 
         member.on("state_update_request", async () => {
-            member.emit("state_set", this.currentState);
+            // we emit playlist_set to everyone regardless of whether they have
+            // Subscription.playlist in their subscriptions because the playlist is
+            // also awkwardly used by the base video player to obtain the video
+            // source
             member.emit("playlist_set", await getPlaylist());
+            member.emit("state_set", this.currentState);
         });
 
         member.on("state_change_request", (newState: StateChangeRequest) => {
@@ -359,6 +394,10 @@ class Theater {
                     captions: true,
                     folder: UserSubmittedFolderName,
                 });
+                // we emit playlist_set to everyone regardless of whether they have
+                // Subscription.playlist in their subscriptions because the playlist
+                // is also awkwardly used by the base video player to obtain the
+                // video source
                 this.emitAll("playlist_set", await getPlaylist());
             } catch (e) {
                 logger.warn("could not get video from url " + url);
@@ -407,18 +446,11 @@ class Theater {
             }
         });
 
-        getRecentMessages().then((messages) =>
-            messages.forEach((m) => {
-                member.emit(
-                    m.isAnnouncement ? "chat_announcement" : "chat_message",
-                    m.isAnnouncement ? m.messageHTML : m
-                );
-            })
-        );
-
         member.on("disconnect", () => {
             this.removeMember(member);
-            this.emitAll("audience_info_set", this.allUserInfo);
+            this.audience
+                .filter((a) => a.subscriptions.has(Subscription.audience))
+                .forEach((a) => a.emit("audience_info_set", this.allUserInfo));
         });
     }
 

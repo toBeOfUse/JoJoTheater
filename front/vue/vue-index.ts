@@ -16,6 +16,5 @@ export default async function (socket: Socket) {
         Vue.createApp(Audience.default, { socket }).mount(
             "#audience-container"
         );
-        socket.emit("state_update_request");
     });
 }

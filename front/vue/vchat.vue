@@ -148,7 +148,7 @@
 </template>
 
 <script lang="ts">
-import type { ChatMessage } from "../../types";
+import { ChatMessage, Subscription } from "../../types";
 import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType } from "vue";
 export default defineComponent({
@@ -446,6 +446,9 @@ export default defineComponent({
             await nextTick();
             scrollMessagePanelToBottom();
         });
+
+        socket.emit("ready_for", Subscription.chat);
+
         return {
             minimized,
             messagePanel,
