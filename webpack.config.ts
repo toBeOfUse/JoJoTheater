@@ -50,6 +50,20 @@ function getConfig(_: any, options: any) {
                     },
                 },
                 {
+                    test: /\.vue\.svg$/i,
+                    use: [
+                        "vue-loader",
+                        {
+                            loader: "vue-svg-loader",
+                            options: {
+                                svgo: {
+                                    plugins: [{ prefixIds: true }],
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
                     test: /\.tsx?$/,
                     loader: "ts-loader",
                     exclude: /node_modules/,
@@ -79,7 +93,7 @@ function getConfig(_: any, options: any) {
         ],
         optimization: {
             minimizer: [new CssMinimizerPlugin(), "..."],
-            realContentHash: false,
+            // realContentHash: false,
         },
     };
     return config;

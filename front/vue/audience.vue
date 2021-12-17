@@ -22,16 +22,31 @@ import {
     computed,
     onMounted,
     PropType,
+    defineAsyncComponent,
 } from "vue";
 import { ChatUserInfo, Subscription } from "../../types";
 import type { Socket } from "socket.io-client";
-// TODO: these should probably be async components, also these should be renamed to
-// .vue.svg files with a corresponding webpack rule
-import BlueChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/bluechairopt.svg";
-import GameChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/gamechairopt.svg";
-import GreyCouch from "!vue-loader!vue-svg-loader!../../assets/images/chairs/greycouchopt.svg";
-import TanChair from "!vue-loader!vue-svg-loader!../../assets/images/chairs/tanchairopt.svg";
-import ShoppingCart from "!vue-loader!vue-svg-loader!../../assets/images/chairs/shoppingcartopt.svg";
+
+const chairComponents = {
+    "blue-chair": defineAsyncComponent(
+        () => import("../../assets/images/chairs/blue-chair.vue.svg")
+    ),
+    tub: defineAsyncComponent(
+        () => import("../../assets/images/chairs/clawfoot-tub.vue.svg")
+    ),
+    "game-chair": defineAsyncComponent(
+        () => import("../../assets/images/chairs/game-chair.vue.svg")
+    ),
+    "grey-couch": defineAsyncComponent(
+        () => import("../../assets/images/chairs/grey-couch.vue.svg")
+    ),
+    "shopping-cart": defineAsyncComponent(
+        () => import("../../assets/images/chairs/shopping-cart.vue.svg")
+    ),
+    "tan-chair": defineAsyncComponent(
+        () => import("../../assets/images/chairs/tan-chair.vue.svg")
+    ),
+};
 
 export default defineComponent({
     props: {
@@ -40,6 +55,7 @@ export default defineComponent({
             type: Object as PropType<Socket>,
         },
     },
+    components: chairComponents,
     directives: {
         "hijack-svg-image"(
             el: SVGElement,
@@ -53,30 +69,24 @@ export default defineComponent({
         },
     },
     setup(props) {
-        const chairs = [
-            BlueChair,
-            GreyCouch,
-            ShoppingCart,
-            GameChair,
-            TanChair,
-        ];
+        const chairs = Object.keys(chairComponents);
         const getChair = (i: number) => chairs[i % chairs.length];
         // test data
         // const users = ref<ChatUserInfo[]>([
         //     {
-        //         avatarURL: "/images/avatars/facingright/strongseal.png",
+        //         avatarURL: "/images/avatars/facingright/strongseal.jpg",
         //         name: "fake selki",
         //         id: "1",
         //         resumed: false,
         //     },
         //     {
-        //         avatarURL: "/images/avatars/facingright/bad.png",
+        //         avatarURL: "/images/avatars/facingright/bad.jpg",
         //         name: "fake erica",
         //         id: "2",
         //         resumed: false,
         //     },
         //     {
-        //         avatarURL: "/images/avatars/facingright/scream.png",
+        //         avatarURL: "/images/avatars/facingright/scream.jpg",
         //         name: "fake dorian",
         //         id: "3",
         //         resumed: false,
@@ -85,6 +95,24 @@ export default defineComponent({
         //         avatarURL: "/images/avatars/facingright/purpleface.png",
         //         name: "fake mickey",
         //         id: "4",
+        //         resumed: false,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/facingright/fear.jpg",
+        //         name: "fake melissa",
+        //         id: "5",
+        //         resumed: false,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/facingright/coop.jpg",
+        //         name: "fake coop fan",
+        //         id: "6",
+        //         resumed: false,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/facingright/rosie.jpg",
+        //         name: "fake rosie",
+        //         id: "7",
         //         resumed: false,
         //     },
         // ]);
