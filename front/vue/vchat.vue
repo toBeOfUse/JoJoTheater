@@ -324,18 +324,18 @@ export default defineComponent({
         const loggedIn = ref(false);
 
         const avatars = [
-            "nymface.png",
+            "nymface.jpg",
             "purpleface.png",
-            "bogchamp.png",
-            "coop.png",
+            "bogchamp.jpg",
+            "coop.jpg",
             "gayknife.png",
-            "scream.png",
-            "rosie.png",
-            "nonut.png",
-            "strongseal.png",
-            "doittoem.png",
+            "scream.jpg",
+            "rosie.jpg",
+            "nonut.jpg",
+            "strongseal.jpg",
+            "fear.jpg",
             "yeehaw.png",
-            "sparklewink.png",
+            "sparklewink.jpg",
         ].map((a) => "/images/avatars/" + a);
         const selectedAvatar = ref("");
         const avatarRow = (which: number) => {
