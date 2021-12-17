@@ -1,13 +1,13 @@
 <template>
     <div class="chair-space" v-for="(group, i) in groupedUsers" :key="i">
         <div
-            v-for="(user, j) in group"
+            v-for="user in group"
             class="chair-container"
             :key="user.id"
             :title="user.name"
         >
             <component
-                :is="getChair(j + groupedUsers[0].length * i)"
+                :is="getChair(user.id)"
                 v-hijack-svg-image="user.avatarURL"
             ></component>
         </div>
@@ -70,7 +70,13 @@ export default defineComponent({
     },
     setup(props) {
         const chairs = Object.keys(chairComponents);
-        const getChair = (i: number) => chairs[i % chairs.length];
+        const getChair = (userID: string) => {
+            let acc = 0;
+            for (let i = 0; i < userID.length; i++) {
+                acc += userID.charCodeAt(i);
+            }
+            return chairs[acc % chairs.length];
+        };
         // test data
         // const users = ref<ChatUserInfo[]>([
         //     {
@@ -146,7 +152,6 @@ export default defineComponent({
                 usersPerRow.value != -1 &&
                 !isNaN(usersPerRow.value)
             ) {
-                console.log("creating users row");
                 groups.push(users.value.slice(i, i + usersPerRow.value));
                 i += usersPerRow.value;
             }
