@@ -46,6 +46,12 @@ const chairComponents = {
     "tan-chair": defineAsyncComponent(
         () => import("../../assets/images/chairs/tan-chair.vue.svg")
     ),
+    "arm-chair": defineAsyncComponent(
+        () => import("../../assets/images/chairs/arm-chair.vue.svg")
+    ),
+    "little-car": defineAsyncComponent(
+        () => import("../../assets/images/chairs/little-car.vue.svg")
+    ),
 };
 
 export default defineComponent({
@@ -70,11 +76,14 @@ export default defineComponent({
     },
     setup(props) {
         const chairs = Object.keys(chairComponents);
+        // const testSalt = ref(0);
+        // setInterval(() => testSalt.value++, 2000);
         const getChair = (userID: string) => {
             let acc = 0;
             for (let i = 0; i < userID.length; i++) {
                 acc += userID.charCodeAt(i);
             }
+            //return chairs[(acc + testSalt.value) % chairs.length];
             return chairs[acc % chairs.length];
         };
         // test data
