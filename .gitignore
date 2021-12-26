@@ -3,6 +3,7 @@
 *.db
 uploads/*
 !uploads/.gitkeep
+back/secrets.ts
 
 
 # Logs

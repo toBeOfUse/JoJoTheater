@@ -3,9 +3,9 @@ import http from "http";
 import express from "express";
 import compression from "compression";
 import handlebars from "express-handlebars";
-import formidable from "formidable";
 
-import init from "./sockets";
+import initSockets from "./sockets";
+import initUploads from "./upload";
 import logger from "./logger";
 
 import webpackConfig from "../webpack.config";
@@ -72,43 +72,8 @@ app.engine("hbs", renderer.engine);
 app.set("view engine", "hbs");
 app.set("views", path.resolve(process.cwd(), "front/views/"));
 
-app.get("/upload", (_req, res) => {
-    res.sendFile(path.resolve(__dirname, "../front/html/upload.html"));
-});
-
-app.post("/api/upload", (req, res) => {
-    const form = formidable({
-        multiples: false,
-        keepExtensions: true,
-        maxFileSize: 4294967296,
-    });
-
-    form.on("fileBegin", (_formName, file) => {
-        const filePath = path.resolve(
-            __dirname,
-            "../uploads/",
-            file.originalFilename ||
-                String(new Date().getTime()) +
-                    (file.mimetype?.split("/")[1] || "")
-        );
-        file.filepath = filePath;
-    });
-
-    form.on("file", (_formName, file) => {
-        logger.info("received file " + file.filepath);
-    });
-
-    form.parse(req, (err) => {
-        if (err) {
-            res.status(400);
-        } else {
-            res.status(200);
-        }
-        res.end();
-    });
-});
-
 const server = http.createServer(app);
-init(server, app);
+initSockets(server, app);
+initUploads(app);
 
 server.listen(8080, () => logger.info("app running on 8080..."));

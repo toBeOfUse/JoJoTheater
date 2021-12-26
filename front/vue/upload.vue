@@ -30,7 +30,7 @@
             <template v-if="fullFormShown">
                 <input
                     type="text"
-                    v-model="videoName"
+                    v-model="videoTitle"
                     placeholder="Video name..."
                 />
                 <br />
@@ -40,7 +40,11 @@
                     placeholder="Video folder name..."
                 />
                 <p>Password for immediate video availability:</p>
-                <input type="password" placeholder="Password..." />
+                <input
+                    type="password"
+                    v-model="password"
+                    placeholder="Password..."
+                />
             </template>
         </div>
     </div>
@@ -61,8 +65,9 @@ export default defineComponent({
         };
 
         const fullFormShown = ref(false);
-        const videoName = ref("");
+        const videoTitle = ref("");
         const folder = ref("");
+        const password = ref("");
 
         const upload = () => {
             if (!fileInput.value?.files?.length) {
@@ -71,6 +76,15 @@ export default defineComponent({
             const file = fileInput.value.files[0];
             const fd = new FormData();
             fd.append("file", file, file.name);
+            if (videoTitle.value?.trim()) {
+                fd.append("title", videoTitle.value.trim());
+            }
+            if (folder.value?.trim()) {
+                fd.append("folder", folder.value.trim());
+            }
+            if (password.value) {
+                fd.append("password", password.value);
+            }
             const xhr = new XMLHttpRequest();
             xhr.upload.addEventListener("progress", (event) => {
                 progress.value = event.loaded / event.total;
@@ -78,6 +92,8 @@ export default defineComponent({
             xhr.upload.addEventListener("load", () => {
                 progress.value = 0;
                 if (fileInput.value) fileInput.value.value = "";
+                videoTitle.value = "";
+                folder.value = "";
                 uploadCompleted.value = true;
             });
             xhr.open("POST", "/api/upload");
@@ -89,10 +105,11 @@ export default defineComponent({
             progress,
             uploadCompleted,
             fullFormShown,
-            videoName,
+            videoTitle,
             folder,
             onFileChange,
             fileSelected,
+            password,
         };
     },
 });
