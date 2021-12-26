@@ -102,7 +102,23 @@ function getConfig(_: any, options: any) {
         ],
         optimization: {
             minimizer: [new CssMinimizerPlugin(), "..."],
-            // realContentHash: false,
+            splitChunks: {
+                cacheGroups: {
+                    indexCSS: {
+                        type: "css/mini-extract",
+                        name: "index_css",
+                        chunks: (chunk) => chunk.name == "index",
+                        enforce: true,
+                    },
+                    uploadCSS: {
+                        type: "css/mini-extract",
+                        name: "upload_css",
+                        chunks: (chunk) => chunk.name == "upload",
+                        enforce: true,
+                    },
+                },
+            },
+            realContentHash: false,
         },
     };
     return config;

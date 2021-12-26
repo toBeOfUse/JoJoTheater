@@ -18,11 +18,5 @@ async function loadIndexComps(socket: Socket) {
         );
     });
 }
-async function loadUploadComps() {
-    import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
-        const Upload = await import(/* webpackMode: "eager" */ "./upload.vue");
-        Vue.createApp(Upload.default).mount("#upload-container");
-    });
-}
 
-export { loadIndexComps, loadUploadComps };
+export { loadIndexComps };
