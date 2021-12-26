@@ -14,11 +14,11 @@ function getConfig(_: any, options: any) {
         mode == "development" ? "style-loader" : MiniCssExtractPlugin.loader;
     const config: webpack.Configuration = {
         mode,
-        entry: "./front/index.ts",
+        entry: { index: "./front/index.ts", upload: "./front/upload.ts" },
         output: {
             filename: "[name].[contenthash].js",
             path: path.resolve(__dirname, "dist"),
-            publicPath: "./",
+            publicPath: "/",
         },
         resolve: {
             extensions: [".ts", ".js", ".json", ".vue"],
@@ -77,7 +77,16 @@ function getConfig(_: any, options: any) {
         },
         plugins: [
             new HtmlWebpackPlugin({
+                inject: true,
                 template: "./front/html/index.html",
+                chunks: ["index"],
+                filename: "index.html",
+            }),
+            new HtmlWebpackPlugin({
+                inject: true,
+                template: "./front/html/upload.html",
+                chunks: ["upload"],
+                filename: "upload/index.html",
             }),
             new webpack.DefinePlugin({
                 __VUE_PROD_DEVTOOLS__: false,

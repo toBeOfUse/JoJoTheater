@@ -72,24 +72,39 @@ app.engine("hbs", renderer.engine);
 app.set("view engine", "hbs");
 app.set("views", path.resolve(process.cwd(), "front/views/"));
 
-app.get("/upload", (req, res) => {
+app.get("/upload", (_req, res) => {
     res.sendFile(path.resolve(__dirname, "../front/html/upload.html"));
 });
 
-app.post("/api/upload", (req, res, next) => {
+app.post("/api/upload", (req, res) => {
     const form = formidable({
         multiples: false,
         keepExtensions: true,
         maxFileSize: 4294967296,
-        uploadDir: path.resolve(__dirname, "../uploads/"),
     });
 
-    form.parse(req, (err, fields, files) => {
+    form.on("fileBegin", (_formName, file) => {
+        const filePath = path.resolve(
+            __dirname,
+            "../uploads/",
+            file.originalFilename ||
+                String(new Date().getTime()) +
+                    (file.mimetype?.split("/")[1] || "")
+        );
+        file.filepath = filePath;
+    });
+
+    form.on("file", (_formName, file) => {
+        logger.info("received file " + file.filepath);
+    });
+
+    form.parse(req, (err) => {
         if (err) {
-            next(err);
-            return;
+            res.status(400);
+        } else {
+            res.status(200);
         }
-        res.json({ fields, files });
+        res.end();
     });
 });
 

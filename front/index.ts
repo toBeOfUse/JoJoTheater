@@ -43,9 +43,9 @@ async function loadUIComponents() {
         "#container-container"
     ) as HTMLElement;
     container.style.display = "initial";
-    (await import(/*webpackChunkName: "vue-comps"*/ "./vue/vue-index")).default(
-        socket
-    );
+    (
+        await import(/*webpackChunkName: "vue-comps"*/ "./vue/vue-index")
+    ).loadIndexComps(socket);
 }
 
 loadUIComponents();

@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io-client";
 
-export default async function (socket: Socket) {
+async function loadIndexComps(socket: Socket) {
     import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
         const Chat = await import(/* webpackMode: "eager" */ "./vchat.vue");
         Vue.createApp(Chat.default, { socket }).mount("#chat-container");
@@ -18,3 +18,11 @@ export default async function (socket: Socket) {
         );
     });
 }
+async function loadUploadComps() {
+    import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
+        const Upload = await import(/* webpackMode: "eager" */ "./upload.vue");
+        Vue.createApp(Upload.default).mount("#upload-container");
+    });
+}
+
+export { loadIndexComps, loadUploadComps };
