@@ -238,33 +238,11 @@ class Theater {
             this.emitAll("playlist_set", await this.playlist.getVideos());
         });
         io.on("connection", (socket: Socket) => {
-            // TODO: most of this should logically be in initializeMember()
             const newMember = new AudienceMember(socket);
-            newMember.emit("id_set", socket.id);
-            this.playlist.getVideos().then((videos) => {
-                newMember.emit("playlist_set", videos);
-            });
-
-            newMember.emit("state_set", this.currentState);
             this.initializeMember(newMember);
             logger.info(
                 "new client added: " + this.audience.length + " total connected"
             );
-            newMember.on("disconnect", () => {
-                logger.info(
-                    "client disconnected: " +
-                        this.audience.length +
-                        " remaining"
-                );
-                if (this.audience.length === 0) {
-                    logger.debug("pausing video as no one is left to watch");
-                    this.lastKnownState = {
-                        ...this.currentState,
-                        playing: false,
-                    };
-                    this.lastKnownStateTimestamp = Date.now();
-                }
-            });
         });
     }
 
@@ -292,7 +270,15 @@ class Theater {
 
     initializeMember(member: AudienceMember) {
         this.audience.push(member);
+
         this.monitorSynchronization(member);
+
+        member.emit("id_set", member.id);
+        this.playlist.getVideos().then((videos) => {
+            member.emit("playlist_set", videos);
+        });
+
+        member.emit("state_set", this.currentState);
 
         member.on("ready_for", (sub: Subscription) => {
             if (sub == Subscription.chat) {
@@ -404,6 +390,17 @@ class Theater {
             this.audience
                 .filter((a) => a.subscriptions.has(Subscription.audience))
                 .forEach((a) => a.emit("audience_info_set", this.allUserInfo));
+            logger.info(
+                "client disconnected: " + this.audience.length + " remaining"
+            );
+            if (this.audience.length === 0) {
+                logger.debug("pausing video as no one is left to watch");
+                this.lastKnownState = {
+                    ...this.currentState,
+                    playing: false,
+                };
+                this.lastKnownStateTimestamp = Date.now();
+            }
         });
     }
 
