@@ -1,23 +1,16 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import URL from "url";
 import type { Express } from "express";
 import escapeHTML from "escape-html";
 
-import {
-    getPlaylist,
-    addToPlaylist,
-    getRecentMessages,
-    addMessage,
-} from "./queries";
+import { Playlist, playlist, getRecentMessages, addMessage } from "./queries";
 import {
     ChatMessage,
     VideoState as PlayerState,
     StateChangeRequest,
     StateElements,
     ChatUserInfo,
-    UserSubmittedFolderName,
     Subscription,
 } from "../types";
 import logger from "./logger";
@@ -205,6 +198,7 @@ class AudienceMember {
 
 class Theater {
     audience: AudienceMember[] = [];
+    playlist: Playlist;
     lastKnownState: PlayerState = {
         playing: false,
         currentVideoID: 0,
@@ -232,19 +226,23 @@ class Theater {
         return info;
     }
 
-    constructor(io: SocketServer) {
-        getPlaylist().then((playlist) => {
-            this.lastKnownState.currentVideoID = playlist[0].id;
+    constructor(io: SocketServer, playlist: Playlist) {
+        this.playlist = playlist;
+        this.playlist.getVideos().then((videos) => {
+            this.lastKnownState.currentVideoID = videos[0].id;
             this.audience.forEach((a) =>
                 a.emit("state_set", this.currentState)
             );
+        });
+        this.playlist.on("video_added", async () => {
+            this.emitAll("playlist_set", await this.playlist.getVideos());
         });
         io.on("connection", (socket: Socket) => {
             // TODO: most of this should logically be in initializeMember()
             const newMember = new AudienceMember(socket);
             newMember.emit("id_set", socket.id);
-            getPlaylist().then((playlist) => {
-                newMember.emit("playlist_set", playlist);
+            this.playlist.getVideos().then((videos) => {
+                newMember.emit("playlist_set", videos);
             });
 
             newMember.emit("state_set", this.currentState);
@@ -311,8 +309,8 @@ class Theater {
             } else if (sub == Subscription.audience) {
                 member.emit("audience_info_set", this.allUserInfo);
             } else if (sub == Subscription.playlist) {
-                getPlaylist().then((playlist) => {
-                    member.emit("playlist_set", playlist);
+                this.playlist.getVideos().then((videos) => {
+                    member.emit("playlist_set", videos);
                 });
             }
         });
@@ -322,7 +320,7 @@ class Theater {
             // Subscription.playlist in their subscriptions because the playlist is
             // also awkwardly used by the base video player to obtain the video
             // source
-            member.emit("playlist_set", await getPlaylist());
+            member.emit("playlist_set", await this.playlist.getVideos());
             member.emit("state_set", this.currentState);
         });
 
@@ -349,56 +347,11 @@ class Theater {
         });
 
         member.on("add_video", async (url: string) => {
-            // TODO: most of this should go... somewhere else
             logger.debug(
                 "attempting to add video with url " + url + " to playlist"
             );
             try {
-                new URL.URL(url); // will throw an error if url is invalid
-                if (
-                    !url.toLowerCase().includes("youtube.com") &&
-                    !url.toLowerCase().includes("vimeo.com")
-                ) {
-                    throw new Error("url was not a vimeo or youtube url");
-                }
-                let provider, videoDataURL, videoID;
-                if (url.toLowerCase().includes("youtube")) {
-                    provider = "youtube";
-                    videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
-                    // from https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url
-                    const videoIDMatch = url.match(
-                        /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/
-                    );
-                    if (videoIDMatch && videoIDMatch[1]) {
-                        videoID = videoIDMatch[1];
-                    } else {
-                        throw new Error("could not get video id from " + url);
-                    }
-                } else {
-                    provider = "vimeo";
-                    videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
-                    const uri = new URL.URL(url).pathname;
-                    const idMatch = uri.match(/\d+$/);
-                    if (idMatch) {
-                        videoID = idMatch[0];
-                    } else {
-                        throw new Error("could not get video id from " + url);
-                    }
-                }
-                const videoData = await (await fetch(videoDataURL)).json();
-                const title = videoData.title;
-                await addToPlaylist({
-                    provider,
-                    src: videoID,
-                    title,
-                    captions: true,
-                    folder: UserSubmittedFolderName,
-                });
-                // we emit playlist_set to everyone regardless of whether they have
-                // Subscription.playlist in their subscriptions because the playlist
-                // is also awkwardly used by the base video player to obtain the
-                // video source
-                this.emitAll("playlist_set", await getPlaylist());
+                this.playlist.addFromURL(url);
             } catch (e) {
                 logger.warn("could not get video from url " + url);
                 logger.warn(e);
@@ -504,7 +457,7 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const theater = new Theater(io);
+    const theater = new Theater(io, playlist);
     app.get("/stats", async (_, res) => {
         logger.debug("rendering stats page");
         res.render("connections", {

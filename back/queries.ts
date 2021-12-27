@@ -1,6 +1,10 @@
-import knex from "knex";
+import EventEmitter from "events";
+import URL from "url";
+
+import knex, { Knex } from "knex";
+
 import logger from "./logger";
-import { ChatMessage, Video } from "../types";
+import { ChatMessage, Video, UserSubmittedFolderName } from "../types";
 
 const streamsDB = knex({
     client: "sqlite3",
@@ -9,42 +13,101 @@ const streamsDB = knex({
     },
 });
 
-async function getPlaylist(): Promise<Video[]> {
-    return await streamsDB
-        .select([
-            "id",
-            "src",
-            "title",
-            "captions",
-            "type",
-            "provider",
-            "size",
-            "folder",
-        ])
-        .from<Video>("playlist")
-        .orderBy("folder", "id");
-}
+/**
+ * Simple database wrapper that also emits a "video_added" event when a new video is
+ * successfully added.
+ */
+class Playlist extends EventEmitter {
+    connection: Knex;
+    constructor(dbConnection: Knex) {
+        super();
+        this.connection = dbConnection;
+    }
+    async getVideos(): Promise<Video[]> {
+        return await this.connection
+            .select([
+                "id",
+                "src",
+                "title",
+                "captions",
+                "type",
+                "provider",
+                "size",
+                "folder",
+            ])
+            .from<Video>("playlist")
+            .orderBy("folder", "id");
+    }
 
-async function addToPlaylist(v: Omit<Video, "id">) {
-    const existingCount = Number(
-        (await streamsDB.table("playlist").count({ count: "*" }))[0].count
-    );
-    const alreadyHaveVideo = (
-        await streamsDB
-            .table("playlist")
-            .count({ count: "*" })
-            .where("src", v.src)
-    )[0].count;
-    if (existingCount < 100 || alreadyHaveVideo) {
-        if (alreadyHaveVideo) {
-            logger.debug("deleting and replacing video with src " + v.src);
-            await streamsDB.table("playlist").where("src", v.src).del();
-        } else {
-            logger.debug(
-                "playlist has " + existingCount + " videos; adding one more"
-            );
+    async addFromURL(url: string) {
+        new URL.URL(url);
+        if (
+            !url.toLowerCase().includes("youtube.com") &&
+            !url.toLowerCase().includes("vimeo.com")
+        ) {
+            throw new Error("url was not a vimeo or youtube url");
         }
-        await streamsDB.table<Video>("playlist").insert(v);
+        let provider, videoDataURL, videoID;
+        if (url.toLowerCase().includes("youtube")) {
+            provider = "youtube";
+            videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
+            // from https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url
+            const videoIDMatch = url.match(
+                /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/
+            );
+            if (videoIDMatch && videoIDMatch[1]) {
+                videoID = videoIDMatch[1];
+            } else {
+                throw new Error("could not get video id from " + url);
+            }
+        } else {
+            provider = "vimeo";
+            videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
+            const uri = new URL.URL(url).pathname;
+            const idMatch = uri.match(/\d+$/);
+            if (idMatch) {
+                videoID = idMatch[0];
+            } else {
+                throw new Error("could not get video id from " + url);
+            }
+        }
+        const videoData = await (await fetch(videoDataURL)).json();
+        const title = videoData.title;
+        await this.addRawVideo({
+            provider,
+            src: videoID,
+            title,
+            captions: true,
+            folder: UserSubmittedFolderName,
+        });
+    }
+
+    async addRawVideo(v: Omit<Video, "id">) {
+        const existingCount = Number(
+            (await this.connection.table("playlist").count({ count: "*" }))[0]
+                .count
+        );
+        const alreadyHaveVideo = (
+            await this.connection
+                .table("playlist")
+                .count({ count: "*" })
+                .where("src", v.src)
+        )[0].count;
+        if (existingCount < 100 || alreadyHaveVideo) {
+            if (alreadyHaveVideo) {
+                logger.debug("deleting and replacing video with src " + v.src);
+                await this.connection
+                    .table("playlist")
+                    .where("src", v.src)
+                    .del();
+            } else {
+                logger.debug(
+                    "playlist has " + existingCount + " videos; adding one more"
+                );
+            }
+            await this.connection.table<Video>("playlist").insert(v);
+            this.emit("video_added");
+        }
     }
 }
 
@@ -70,4 +133,10 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
     ).reverse();
 }
 
-export { getPlaylist, addToPlaylist, getRecentMessages, addMessage };
+/**
+ * Serves as the global singleton playlist object at the moment. Could be divided up
+ * into multiple instances of the playlist class later.
+ */
+const playlist = new Playlist(streamsDB);
+
+export { Playlist, playlist, getRecentMessages, addMessage };

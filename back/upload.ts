@@ -5,7 +5,7 @@ import path from "path";
 import type { Express } from "express";
 
 import logger from "./logger";
-import { addToPlaylist } from "./queries";
+import { playlist } from "./queries";
 import secrets from "./secrets";
 import { UserSubmittedFolderName } from "../types";
 
@@ -14,7 +14,7 @@ export default function (app: Express) {
         const form = formidable({
             multiples: false,
             keepExtensions: true,
-            maxFileSize: 4294967296,
+            maxFileSize: 4294967296, // 4gb
         });
 
         form.on("fileBegin", (_formName, file) => {
@@ -53,7 +53,7 @@ export default function (app: Express) {
                         file.filepath,
                         path.resolve("./assets/videos/", filename)
                     );
-                    addToPlaylist({
+                    playlist.addRawVideo({
                         captions: false,
                         folder: fields.folder || UserSubmittedFolderName,
                         src: "/videos/" + file.originalFilename,

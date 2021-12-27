@@ -4,7 +4,7 @@ import express from "express";
 import compression from "compression";
 import handlebars from "express-handlebars";
 
-import initSockets from "./sockets";
+import initTheater from "./theater";
 import initUploads from "./upload";
 import logger from "./logger";
 
@@ -73,7 +73,7 @@ app.set("view engine", "hbs");
 app.set("views", path.resolve(process.cwd(), "front/views/"));
 
 const server = http.createServer(app);
-initSockets(server, app);
+initTheater(server, app);
 initUploads(app);
 
 server.listen(8080, () => logger.info("app running on 8080..."));
