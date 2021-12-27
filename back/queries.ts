@@ -2,6 +2,7 @@ import EventEmitter from "events";
 import URL from "url";
 
 import knex, { Knex } from "knex";
+import fetch from "node-fetch";
 
 import logger from "./logger";
 import { ChatMessage, Video, UserSubmittedFolderName } from "../types";
