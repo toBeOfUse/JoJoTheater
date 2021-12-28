@@ -281,7 +281,7 @@ class Theater {
             a.subscriptions.has(Subscription.chat)
         );
         if (message.isAnnouncement) {
-            logger.debug("emitting chat annoucement:");
+            logger.debug("emitting chat announcement:");
             logger.debug(JSON.stringify(message));
             receivers.forEach((a) =>
                 a.emit("chat_announcement", message.messageHTML)
