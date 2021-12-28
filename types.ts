@@ -10,12 +10,24 @@ interface ChatMessage {
 interface Video {
     id: number;
     src: string;
-    type?: string; // only for local files
-    size?: number; // only for local files
+    /**
+     * only for local files; currently unused anyway
+     */
+    type?: string;
+    /**
+     * only for local files; currently unused anyway
+     */
+    size?: number;
     title: string;
-    provider?: string; // only for youtube/vimeo
+    /**
+     * only for youtube/vimeo
+     */
+    provider?: string;
     captions: boolean;
     folder: string;
+    /**
+     * in seconds
+     */
     duration: number;
 }
 

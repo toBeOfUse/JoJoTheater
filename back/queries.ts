@@ -45,7 +45,10 @@ class Playlist extends EventEmitter {
             .orderBy("folder", "id");
     }
 
-    async getNextVideo(v: Video): Promise<Video | undefined> {
+    async getNextVideo(v: Video | null): Promise<Video | undefined> {
+        if (!v) {
+            return undefined;
+        }
         return (
             await this.connection
                 .select("*")

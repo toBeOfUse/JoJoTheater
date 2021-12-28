@@ -199,20 +199,40 @@ class AudienceMember {
 class Theater {
     audience: AudienceMember[] = [];
     playlist: Playlist;
-    lastKnownState: PlayerState = {
+
+    _baseState: PlayerState = {
         playing: false,
         video: null,
         currentTimeMs: 0,
-    };
-    lastKnownStateTimestamp: number = Date.now();
+    } as const;
+    /**
+     * What the Theater looked like the last time the video state was explicitly set.
+     * Use `currentState` to get a version of this with an up-to-date currentTimeMs.
+     * Must be replaced rather than mutated in order to trigger the setter and update
+     * the last-modified timestamp.
+     */
+    get baseState(): Readonly<PlayerState> {
+        return this._baseState;
+    }
+    set baseState(newValue: PlayerState) {
+        this._baseState = newValue;
+        this.baseStateTimestamp = Date.now();
+    }
+    /**
+     * The time at which the video state was last explicitly set. Automatically kept
+     * up to date by the baseState setter.
+     */
+    baseStateTimestamp: number = Date.now();
+
+    nextVideoTimer: NodeJS.Timeout | null = null;
 
     get currentState(): PlayerState {
         return {
-            ...this.lastKnownState,
-            currentTimeMs: this.lastKnownState.playing
-                ? this.lastKnownState.currentTimeMs +
-                  (Date.now() - this.lastKnownStateTimestamp)
-                : this.lastKnownState.currentTimeMs,
+            ...this.baseState,
+            currentTimeMs: this.baseState.playing
+                ? this.baseState.currentTimeMs +
+                  (Date.now() - this.baseStateTimestamp)
+                : this.baseState.currentTimeMs,
         };
     }
 
@@ -229,7 +249,7 @@ class Theater {
     constructor(io: SocketServer, playlist: Playlist) {
         this.playlist = playlist;
         this.playlist.getVideos().then((videos) => {
-            this.lastKnownState.video = videos[0];
+            this.baseState = { ...this.currentState, video: videos[0] };
             this.audience.forEach((a) =>
                 a.emit("state_set", this.currentState)
             );
@@ -309,22 +329,21 @@ class Theater {
 
         member.on(
             "state_change_request",
-            async (newState: StateChangeRequest) => {
-                if (newState.whichElement == StateElements.playing) {
-                    this.lastKnownState.currentTimeMs =
-                        this.currentState.currentTimeMs;
-                    this.lastKnownState.playing = newState.newValue as boolean;
-                } else if (newState.whichElement == StateElements.time) {
-                    this.lastKnownState.playing = false;
-                    this.lastKnownState.currentTimeMs =
-                        newState.newValue as number;
-                } else if (newState.whichElement == StateElements.videoID) {
-                    const newVideoID = newState.newValue as number;
+            async (change: StateChangeRequest) => {
+                const newState: any = {};
+                if (change.whichElement == StateElements.playing) {
+                    newState.currentTimeMs = this.currentState.currentTimeMs;
+                    newState.playing = change.newValue as boolean;
+                } else if (change.whichElement == StateElements.time) {
+                    newState.playing = false;
+                    newState.currentTimeMs = change.newValue as number;
+                } else if (change.whichElement == StateElements.videoID) {
+                    const newVideoID = change.newValue as number;
                     const newVideo = await this.playlist.getVideoByID(
                         newVideoID
                     );
                     if (newVideo) {
-                        this.lastKnownState.video = newVideo;
+                        newState.video = newVideo;
                     } else {
                         logger.warn(
                             "client requested video with unknown id" +
@@ -332,15 +351,13 @@ class Theater {
                         );
                         return;
                     }
-                    this.lastKnownState.currentTimeMs = 0;
-                    this.lastKnownState.playing = false;
+                    newState.currentTimeMs = 0;
+                    newState.playing = false;
                 }
-                this.lastKnownStateTimestamp = Date.now();
-                logger.debug("emitting accepted player state:");
-                logger.debug(JSON.stringify(this.lastKnownState));
-                this.audience.forEach((a) =>
-                    a.emit("state_set", this.lastKnownState)
-                );
+                this.baseState = { ...this.currentState, ...newState };
+                this.broadcastState();
+
+                this.setNextVideoTimer();
             }
         );
 
@@ -407,13 +424,51 @@ class Theater {
             );
             if (this.audience.length === 0) {
                 logger.debug("pausing video as no one is left to watch");
-                this.lastKnownState = {
+                this.baseState = {
                     ...this.currentState,
                     playing: false,
                 };
-                this.lastKnownStateTimestamp = Date.now();
             }
         });
+    }
+
+    setNextVideoTimer() {
+        if (this.nextVideoTimer) {
+            clearTimeout(this.nextVideoTimer);
+        }
+        if (this.baseState.video && this.baseState.playing) {
+            const timeUntil = Math.max(
+                this.baseState.video.duration * 1000 -
+                    this.currentState.currentTimeMs,
+                0
+            );
+            logger.debug(
+                "setting timer to switch to next video in " + timeUntil + "ms"
+            );
+            this.nextVideoTimer = setTimeout(async () => {
+                const nextVideo = await this.playlist.getNextVideo(
+                    this.baseState.video
+                );
+                if (nextVideo) {
+                    this.baseState = {
+                        video: nextVideo,
+                        currentTimeMs: 0,
+                        playing: false,
+                    };
+                    this.broadcastState();
+                    this.setNextVideoTimer();
+                } else {
+                    this.baseState = { ...this.currentState, playing: false };
+                    this.broadcastState();
+                }
+            }, timeUntil);
+        }
+    }
+
+    async broadcastState() {
+        logger.debug("emitting accepted player state:");
+        logger.debug(JSON.stringify(this.currentState));
+        this.emitAll("state_set", this.currentState);
     }
 
     async monitorSynchronization(member: AudienceMember) {
@@ -445,7 +500,8 @@ class Theater {
                     }
                 } else if (difference > 1000) {
                     logger.debug(
-                        `correcting currentTime for player ${member.id}, who is off by ${difference} ms`
+                        `correcting currentTime for player ${member.id}, ` +
+                            `who is off by ${difference} ms`
                     );
                     member.emit("state_set", this.currentState);
                     if (difference > 3000) {
