@@ -2,12 +2,15 @@ import { Socket } from "socket.io-client";
 import fscreen from "fscreen";
 import VimeoPlayer from "@vimeo/player";
 import { Video, VideoState, StateChangeRequest, StateElements } from "../types";
+interface ActionableVideoState extends Omit<VideoState, "video"> {
+    video: Video;
+}
 
 function secondsToHMS(seconds: number) {
     if (seconds < 3600) {
-        return new Date(seconds * 1000).toISOString().substr(14, 5);
+        return new Date(seconds * 1000).toISOString().substring(14, 14 + 5);
     } else {
-        return new Date(seconds * 1000).toISOString().substr(11, 8);
+        return new Date(seconds * 1000).toISOString().substring(11, 11 + 8);
     }
 }
 
@@ -139,10 +142,13 @@ abstract class VideoController {
     abstract videoElement: HTMLElement;
     abstract get currentTimeMs(): number;
     abstract get durationMs(): number;
-    abstract setState(source: Video, v: VideoState): void;
+    abstract setState(v: ActionableVideoState): void;
     abstract isPlaying(): Promise<boolean>;
     abstract remove(): void;
-    // called directly from onclick listener to signal user intent to autoplay blockers
+    /**
+     * called directly from onclick listener to signal user intent to autoplay
+     * blockers
+     * */
     abstract manuallyPressPlay(): void;
     abstract videoReady: Promise<void>;
 }
@@ -157,7 +163,7 @@ class HTML5VideoController extends VideoController {
     get durationMs(): number {
         return this.videoElement?.duration * 1000 || 0;
     }
-    constructor(source: Video, state: VideoState) {
+    constructor(state: ActionableVideoState) {
         super();
         const video = document.createElement("video");
         video.src = "";
@@ -193,15 +199,17 @@ class HTML5VideoController extends VideoController {
         this.videoElement.addEventListener("waiting", showSmallSpinner);
         this.videoElement.addEventListener("canplay", hideSmallSpinner);
         this.videoElement.volume = 1;
-        this.setState(source, state);
+        if (state.video) {
+            this.setState(state as ActionableVideoState);
+        }
     }
 
-    setState(currentSource: Video, v: VideoState) {
-        if (currentSource.src != this.prevSrc) {
+    setState(v: ActionableVideoState) {
+        if (v.video?.src != this.prevSrc) {
             console.log("changing <video> src");
             setSeekDisplay(0);
-            this.videoElement.src = currentSource.src;
-            this.prevSrc = currentSource.src;
+            this.videoElement.src = v.video.src;
+            this.prevSrc = v.video.src;
         }
         console.log("setting video current time to", v.currentTimeMs / 1000);
         if (
@@ -257,7 +265,7 @@ class YoutubeVideoController extends VideoController {
     prevSrc: string;
     timeUpdate: NodeJS.Timeout | undefined;
 
-    constructor(currentSource: Video, state: VideoState) {
+    constructor(state: ActionableVideoState) {
         super();
         this.videoElement = document.createElement("div");
         this.videoElement.id = "youtube-embed-location";
@@ -273,10 +281,10 @@ class YoutubeVideoController extends VideoController {
             this.YTPlayer = new YT.Player("youtube-embed-location", {
                 height: "100%",
                 width: "100%",
-                videoId: currentSource.src,
+                videoId: state.video.src,
                 playerVars: {
                     playsinline: 1,
-                    cc_load_policy: currentSource.captions ? 1 : 0,
+                    cc_load_policy: state.video.captions ? 1 : 0,
                     controls: 0,
                     enablejsapi: 1,
                     modestbranding: 1,
@@ -324,8 +332,8 @@ class YoutubeVideoController extends VideoController {
                 }
             }, 500);
         });
-        this.prevSrc = currentSource.src;
-        this.setState(currentSource, state);
+        this.prevSrc = state.video.src;
+        this.setState(state);
     }
 
     get currentTimeMs(): number {
@@ -362,17 +370,17 @@ class YoutubeVideoController extends VideoController {
         }
     }
 
-    async setState(currentSource: Video, v: VideoState) {
+    async setState(v: ActionableVideoState) {
         await this.videoReady;
         if (!this.YTPlayer) {
             return; // something went terribly wrong in the constructor
         }
-        if (currentSource.src != this.prevSrc) {
-            this.prevSrc = currentSource.src;
+        if (v.video.src != this.prevSrc) {
+            this.prevSrc = v.video.src;
 
             console.log("changing source for YT.Player");
             await this.videoReady;
-            this.YTPlayer?.cueVideoById(currentSource.src);
+            this.YTPlayer?.cueVideoById(v.video.src);
         }
         this.YTPlayer.setVolume(100);
         if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
@@ -412,7 +420,7 @@ class VimeoVideoController extends VideoController {
     cachedCurrentTimeMs: number = 0;
     videoReady: Promise<void>;
 
-    constructor(currentSource: Video, state: VideoState) {
+    constructor(state: ActionableVideoState) {
         super();
         this.videoElement = document.createElement("div");
         this.videoElement.id = "vimeo-embed-location";
@@ -423,7 +431,7 @@ class VimeoVideoController extends VideoController {
             container.prepend(this.videoElement);
         }
         this.vimeoPlayer = new VimeoPlayer("vimeo-embed-location", {
-            id: Number(currentSource.src),
+            id: Number(state.video.src),
             controls: false,
             responsive: true,
             loop: false,
@@ -442,7 +450,7 @@ class VimeoVideoController extends VideoController {
         this.videoReady = new Promise<void>((resolve) => {
             this.vimeoPlayer.on("loaded", resolve);
         });
-        this.setState(currentSource, state);
+        this.setState(state);
     }
 
     get durationMs(): number {
@@ -463,10 +471,10 @@ class VimeoVideoController extends VideoController {
         }
     }
 
-    async setState(currentSource: Video, v: VideoState) {
-        if (currentSource.src != this.prevSrc) {
-            this.prevSrc = currentSource.src;
-            this.vimeoPlayer.loadVideo(Number(currentSource.src));
+    async setState(v: ActionableVideoState) {
+        if (v.video.src != this.prevSrc) {
+            this.prevSrc = v.video.src;
+            this.vimeoPlayer.loadVideo(Number(v.video.src));
         }
         const isPaused = await this.vimeoPlayer.getPaused();
         const isEnded = await this.vimeoPlayer.getEnded();
@@ -604,22 +612,18 @@ function initializePlayerInterface(io: Socket, player: Player) {
  * server to the controller and resetting the DOM when we are "between controllers."
  */
 class Player {
-    private playlist: Video[] = []; // use getter/setter
-    playlistShown: boolean = false;
     state: VideoState = {
         playing: false,
-        currentVideoID: -1,
+        video: null,
         currentTimeMs: 0,
     };
     controller: VideoController | null = null;
-    get currentVideo(): Video | undefined {
-        // TODO: optimize with a lookup object like Record<number, Video>
-        return this.playlist.find((v) => v.id == this.state.currentVideoID);
+    get currentVideo(): Video | null {
+        return this.state.video;
     }
     constructor(io: Socket) {
         io.on("state_set", (new_state: VideoState) => {
-            const sourceChanged =
-                this.state.currentVideoID != new_state.currentVideoID;
+            const sourceChanged = this.state.video?.id != new_state.video?.id;
             this.state = new_state;
             if (sourceChanged) {
                 setTimeAndSeek(0, 0);
@@ -629,24 +633,13 @@ class Player {
             this.updateController(sourceChanged);
         });
     }
-    setPlaylist(newPlaylist: Video[]) {
-        const oldSource = this.currentVideo;
-        this.playlist = newPlaylist;
-        const newSource = this.currentVideo;
-        if (oldSource?.src != newSource?.src) {
-            this.updateController(true);
-        }
-    }
-    getPlaylist(): Video[] {
-        return this.playlist;
-    }
     updateController(sourceChanged: boolean) {
-        const currentSource = this.currentVideo;
-        if (!currentSource) {
+        if (!this.state.video) {
             return;
         }
+        const currentState = this.state as ActionableVideoState;
         if (sourceChanged) {
-            const currentProvider = currentSource.provider;
+            const currentProvider = currentState.video.provider;
             const controllerTypes = {
                 youtube: YoutubeVideoController,
                 vimeo: VimeoVideoController,
@@ -661,14 +654,11 @@ class Player {
                 if (this.controller) {
                     this.controller.remove();
                 }
-                this.controller = new NeededController(
-                    currentSource,
-                    this.state
-                );
+                this.controller = new NeededController(currentState);
                 this.controller.videoReady.then(hideBigSpinner);
             }
         }
-        this.controller?.setState(currentSource, this.state);
+        this.controller?.setState(currentState);
     }
 }
 
@@ -683,7 +673,7 @@ function initVideo(io: Socket): Player {
             state = {
                 playing: await player.controller.isPlaying(),
                 currentTimeMs: player.controller.currentTimeMs,
-                currentVideoID: player.state.currentVideoID,
+                video: player.state.video,
             };
         }
         io.emit("state_report", state);

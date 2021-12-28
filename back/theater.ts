@@ -201,7 +201,7 @@ class Theater {
     playlist: Playlist;
     lastKnownState: PlayerState = {
         playing: false,
-        currentVideoID: 0,
+        video: null,
         currentTimeMs: 0,
     };
     lastKnownStateTimestamp: number = Date.now();
@@ -229,13 +229,18 @@ class Theater {
     constructor(io: SocketServer, playlist: Playlist) {
         this.playlist = playlist;
         this.playlist.getVideos().then((videos) => {
-            this.lastKnownState.currentVideoID = videos[0].id;
+            this.lastKnownState.video = videos[0];
             this.audience.forEach((a) =>
                 a.emit("state_set", this.currentState)
             );
         });
         this.playlist.on("video_added", async () => {
-            this.emitAll("playlist_set", await this.playlist.getVideos());
+            const receivers = this.audience.filter((a) =>
+                a.subscriptions.has(Subscription.playlist)
+            );
+            receivers.forEach(async (r) =>
+                r.emit("playlist_set", await this.playlist.getVideos())
+            );
         });
         io.on("connection", (socket: Socket) => {
             const newMember = new AudienceMember(socket);
@@ -274,9 +279,6 @@ class Theater {
         this.monitorSynchronization(member);
 
         member.emit("id_set", member.id);
-        this.playlist.getVideos().then((videos) => {
-            member.emit("playlist_set", videos);
-        });
 
         member.emit("state_set", this.currentState);
 
@@ -302,35 +304,45 @@ class Theater {
         });
 
         member.on("state_update_request", async () => {
-            // we emit playlist_set to everyone regardless of whether they have
-            // Subscription.playlist in their subscriptions because the playlist is
-            // also awkwardly used by the base video player to obtain the video
-            // source
-            member.emit("playlist_set", await this.playlist.getVideos());
             member.emit("state_set", this.currentState);
         });
 
-        member.on("state_change_request", (newState: StateChangeRequest) => {
-            if (newState.whichElement == StateElements.playing) {
-                this.lastKnownState.currentTimeMs =
-                    this.currentState.currentTimeMs;
-                this.lastKnownState.playing = newState.newValue as boolean;
-            } else if (newState.whichElement == StateElements.time) {
-                this.lastKnownState.playing = false;
-                this.lastKnownState.currentTimeMs = newState.newValue as number;
-            } else if (newState.whichElement == StateElements.videoID) {
-                this.lastKnownState.currentVideoID =
-                    newState.newValue as number;
-                this.lastKnownState.currentTimeMs = 0;
-                this.lastKnownState.playing = false;
+        member.on(
+            "state_change_request",
+            async (newState: StateChangeRequest) => {
+                if (newState.whichElement == StateElements.playing) {
+                    this.lastKnownState.currentTimeMs =
+                        this.currentState.currentTimeMs;
+                    this.lastKnownState.playing = newState.newValue as boolean;
+                } else if (newState.whichElement == StateElements.time) {
+                    this.lastKnownState.playing = false;
+                    this.lastKnownState.currentTimeMs =
+                        newState.newValue as number;
+                } else if (newState.whichElement == StateElements.videoID) {
+                    const newVideoID = newState.newValue as number;
+                    const newVideo = await this.playlist.getVideoByID(
+                        newVideoID
+                    );
+                    if (newVideo) {
+                        this.lastKnownState.video = newVideo;
+                    } else {
+                        logger.warn(
+                            "client requested video with unknown id" +
+                                newVideoID
+                        );
+                        return;
+                    }
+                    this.lastKnownState.currentTimeMs = 0;
+                    this.lastKnownState.playing = false;
+                }
+                this.lastKnownStateTimestamp = Date.now();
+                logger.debug("emitting accepted player state:");
+                logger.debug(JSON.stringify(this.lastKnownState));
+                this.audience.forEach((a) =>
+                    a.emit("state_set", this.lastKnownState)
+                );
             }
-            this.lastKnownStateTimestamp = Date.now();
-            logger.debug("emitting accepted player state:");
-            logger.debug(JSON.stringify(this.lastKnownState));
-            this.audience.forEach((a) =>
-                a.emit("state_set", this.lastKnownState)
-            );
-        });
+        );
 
         member.on("add_video", async (url: string) => {
             logger.debug(
@@ -416,10 +428,7 @@ class Theater {
                 // right video; then make sure that they are playing/paused just like
                 // the server, telling them to manually hit play if it seems to be
                 // necessary; then make sure they are seeked to the right time.
-                if (
-                    memberState.currentVideoID !=
-                    this.currentState.currentVideoID
-                ) {
+                if (memberState.video?.id != this.currentState.video?.id) {
                     member.emit("state_set", this.currentState);
                 } else if (memberState.playing != this.currentState.playing) {
                     member.emit("state_set", this.currentState);
@@ -456,7 +465,6 @@ export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const theater = new Theater(io, playlist);
     app.get("/stats", async (_, res) => {
-        logger.debug("rendering stats page");
         res.render("connections", {
             connections: theater.audience.map((a) => a.getConnectionInfo()),
             theaterState: theater.currentState,

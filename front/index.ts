@@ -18,7 +18,6 @@ window.onerror = (event) => {
 const player = initVideo(socket);
 
 socket.on("playlist_set", (newPlaylist: Video[]) => {
-    player.setPlaylist(newPlaylist);
     renderTitle();
 });
 

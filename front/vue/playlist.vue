@@ -17,7 +17,7 @@
                     class="playlist-item"
                     v-for="video in folder.videos"
                     :key="video.src"
-                    :class="{ active: currentVideo == video.id }"
+                    :class="{ active: currentVideoID == video.id }"
                     @click="changeVideo(video.id)"
                 >
                     <img
@@ -101,7 +101,7 @@ export default defineComponent({
         }
 
         const playlist = ref<Folder[]>();
-        const currentVideo = ref(-1);
+        const currentVideoID = ref(-1);
         const openFolders = ref(new Set<string>());
 
         const toggleOpen = (folderName: string) => {
@@ -136,7 +136,7 @@ export default defineComponent({
         props.socket.on(
             "state_set",
             (newState: VideoState) =>
-                (currentVideo.value = newState.currentVideoID)
+                (currentVideoID.value = newState.video?.id || -1)
         );
 
         const changeVideo = (newID: number) => {
@@ -161,7 +161,7 @@ export default defineComponent({
             addVideo,
             changeVideo,
             playlist,
-            currentVideo,
+            currentVideoID,
             openFolders,
             UserSubmittedFolderName,
             toggleOpen,

@@ -21,7 +21,7 @@ interface Video {
 
 interface VideoState {
     playing: boolean;
-    currentVideoID: number;
+    video: Video | null;
     currentTimeMs: number;
 }
 

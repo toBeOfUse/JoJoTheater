@@ -47,7 +47,7 @@
                         <td style="text-align: left; font-size: small;">
                             Playing: {{this.playerState.playing}}<br>
                             Current Time: {{msToHMS this.playerState.currentTimeMs}}<br>
-                            Video: {{this.playerState.currentVideoIndex}}
+                            Video: {{this.playerState.video.title}}<br>
                             Last Update Time: {{this.playerState.receivedTimeISO}}
                         </td>
                         <td>{{this.latestPing}} ms</td>
@@ -61,7 +61,7 @@
         <p>Current server state:
             Playing: {{theaterState.playing}},
             current time: {{msToHMS theaterState.currentTimeMs}},
-            current video index: {{theaterState.currentVideoIndex}}
+            current video: {{theaterState.video.title}}
         </p>
         <script>
             const inject = `{{{stringify connections}}}`;

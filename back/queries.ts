@@ -29,6 +29,15 @@ class Playlist extends EventEmitter {
         this.connection = dbConnection;
     }
 
+    async getVideoByID(id: number): Promise<Video | undefined> {
+        return (
+            await this.connection
+                .select("*")
+                .from<Video>("playlist")
+                .where({ id })
+        )[0];
+    }
+
     async getVideos(): Promise<Video[]> {
         return await this.connection
             .select("*")
