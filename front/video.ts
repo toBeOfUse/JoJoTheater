@@ -245,16 +245,12 @@ class HTML5VideoController extends VideoController {
     }
 }
 
+let injectedYoutubeScript = false;
 const youtubeAPIReady = new Promise<void>((resolve, reject) => {
     (<any>window).onYouTubeIframeAPIReady = () => {
         console.log("youtube api ready");
         resolve();
     };
-    // from https://developers.google.com/youtube/iframe_api_reference
-    let tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    let firstScriptTag = document.getElementsByTagName("script")[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 });
 
 class YoutubeVideoController extends VideoController {
@@ -276,6 +272,14 @@ class YoutubeVideoController extends VideoController {
             container.prepend(this.videoElement);
         }
         console.log("creating new YT.Player");
+        if (!injectedYoutubeScript) {
+            injectedYoutubeScript = true;
+            // from https://developers.google.com/youtube/iframe_api_reference
+            let tag = document.createElement("script");
+            tag.src = "https://www.youtube.com/iframe_api";
+            let firstScriptTag = document.getElementsByTagName("script")[0];
+            firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        }
         this.videoReady = new Promise(async (resolve) => {
             await youtubeAPIReady;
             this.YTPlayer = new YT.Player("youtube-embed-location", {
@@ -506,6 +510,10 @@ class VimeoVideoController extends VideoController {
         }
     }
 }
+
+// class DailymotionVideoController extends VideoController {
+
+// }
 
 /**
  * Function that creates listeners for events that occur on the DOMControls elements,
