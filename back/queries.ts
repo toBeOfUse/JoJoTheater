@@ -1,11 +1,14 @@
 import EventEmitter from "events";
 import URL from "url";
+import path from "path";
 
 import knex, { Knex } from "knex";
 import fetch from "node-fetch";
+import execa from "execa";
 
 import logger from "./logger";
 import { ChatMessage, Video, UserSubmittedFolderName } from "../types";
+import { youtubeAPIKey } from "./secrets";
 
 const streamsDB = knex({
     client: "sqlite3",
@@ -15,29 +18,33 @@ const streamsDB = knex({
 });
 
 /**
- * Simple database wrapper that also emits a "video_added" event when a new video is
- * successfully added.
+ * Simple database table wrapper that also emits a "video_added" event when a new
+ * video is successfully added.
  */
 class Playlist extends EventEmitter {
     connection: Knex;
+
     constructor(dbConnection: Knex) {
         super();
         this.connection = dbConnection;
     }
+
     async getVideos(): Promise<Video[]> {
         return await this.connection
-            .select([
-                "id",
-                "src",
-                "title",
-                "captions",
-                "type",
-                "provider",
-                "size",
-                "folder",
-            ])
+            .select("*")
             .from<Video>("playlist")
             .orderBy("folder", "id");
+    }
+
+    async getNextVideo(v: Video): Promise<Video | undefined> {
+        return (
+            await this.connection
+                .select("*")
+                .from<Video>("playlist")
+                .where({ folder: v.folder })
+                .andWhere("id", ">", v.id)
+                .limit(1)
+        )[0];
     }
 
     async addFromURL(url: string) {
@@ -74,13 +81,15 @@ class Playlist extends EventEmitter {
         }
         const videoData = await (await fetch(videoDataURL)).json();
         const title = videoData.title;
-        await this.addRawVideo({
+        const rawVideo: Omit<Video, "id" | "duration"> = {
             provider,
             src: videoID,
             title,
             captions: true,
             folder: UserSubmittedFolderName,
-        });
+        };
+        const duration = await Playlist.getVideoDuration(rawVideo);
+        await this.addRawVideo({ ...rawVideo, duration });
     }
 
     async addRawVideo(v: Omit<Video, "id">) {
@@ -108,6 +117,47 @@ class Playlist extends EventEmitter {
             }
             await this.connection.table<Video>("playlist").insert(v);
             this.emit("video_added");
+        }
+    }
+    /**
+     * Gets video length in seconds
+     */
+    static async getVideoDuration(
+        video: Pick<Video, "src" | "provider">
+    ): Promise<number> {
+        if (!video.provider) {
+            const location = path.join(__dirname, "../assets/", video.src);
+            const subproccess = await execa("ffprobe", [
+                "-v",
+                "quiet",
+                "-print_format",
+                "json",
+                "-show_format",
+                location,
+            ]);
+            const info = JSON.parse(subproccess.stdout);
+            return Number(info.format.duration);
+        } else if (video.provider == "youtube") {
+            const apiCall =
+                `https://youtube.googleapis.com/youtube/v3/videos?` +
+                `part=contentDetails&id=${video.src}&key=${youtubeAPIKey}`;
+            const data = await (await fetch(apiCall)).json();
+            const durationString = data.items[0].contentDetails
+                .duration as string;
+            const comps = Array.from(durationString.matchAll(/\d+/g)).reverse();
+            let result = 0;
+            let acc = 1;
+            for (const comp of comps) {
+                result += Number(comp) * acc;
+                acc *= 60;
+            }
+            return result;
+        } else if (video.provider == "vimeo") {
+            const apiCall = `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${video.src}`;
+            const data = await (await fetch(apiCall)).json();
+            return data.duration;
+        } else {
+            throw new Error("unrecognized video provider");
         }
     }
 }

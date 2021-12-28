@@ -16,6 +16,7 @@ interface Video {
     provider?: string; // only for youtube/vimeo
     captions: boolean;
     folder: string;
+    duration: number;
 }
 
 interface VideoState {

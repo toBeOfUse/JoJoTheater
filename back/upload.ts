@@ -5,8 +5,8 @@ import path from "path";
 import type { Express } from "express";
 
 import logger from "./logger";
-import { playlist } from "./queries";
-import secrets from "./secrets";
+import { Playlist, playlist } from "./queries";
+import { password } from "./secrets";
 import { UserSubmittedFolderName } from "../types";
 
 export default function (app: Express) {
@@ -31,7 +31,7 @@ export default function (app: Express) {
             logger.info("received file " + file.filepath);
         });
 
-        form.parse(req, (err, fields, files) => {
+        form.parse(req, async (err, fields, files) => {
             res.setHeader("Content-Type", "text/plain");
             if (err || Array.isArray(files.file)) {
                 res.status(400);
@@ -44,7 +44,7 @@ export default function (app: Express) {
                     () => null
                 );
                 if (
-                    fields.password == secrets.password &&
+                    fields.password == password &&
                     !Array.isArray(fields.folder) &&
                     !Array.isArray(fields.title)
                 ) {
@@ -53,7 +53,7 @@ export default function (app: Express) {
                         file.filepath,
                         path.resolve("./assets/videos/", filename)
                     );
-                    playlist.addRawVideo({
+                    const rawVideo = {
                         captions: false,
                         folder: fields.folder || UserSubmittedFolderName,
                         src: "/videos/" + file.originalFilename,
@@ -61,7 +61,9 @@ export default function (app: Express) {
                             fields.title ||
                             file.originalFilename ||
                             "mystery video",
-                    });
+                    };
+                    const duration = await Playlist.getVideoDuration(rawVideo);
+                    playlist.addRawVideo({ ...rawVideo, duration });
                 }
             }
             res.end();
