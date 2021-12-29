@@ -1,10 +1,10 @@
 import EventEmitter from "events";
-import URL from "url";
 import path from "path";
 
 import knex, { Knex } from "knex";
 import fetch from "node-fetch";
 import execa from "execa";
+import getVideoID from "get-video-id";
 
 import logger from "./logger";
 import { ChatMessage, Video, UserSubmittedFolderName } from "../types";
@@ -60,42 +60,27 @@ class Playlist extends EventEmitter {
     }
 
     async addFromURL(url: string) {
-        new URL.URL(url);
-        if (
-            !url.toLowerCase().includes("youtube.com") &&
-            !url.toLowerCase().includes("vimeo.com")
-        ) {
-            throw new Error("url was not a vimeo or youtube url");
-        }
-        let provider, videoDataURL, videoID;
-        if (url.toLowerCase().includes("youtube")) {
-            provider = "youtube";
-            videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
-            // from https://stackoverflow.com/questions/3452546/how-do-i-get-the-youtube-video-id-from-a-url
-            const videoIDMatch = url.match(
-                /.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=)([^#\&\?]*).*/
+        const metadata = getVideoID(url);
+        if (!metadata.service || !metadata.id) {
+            throw new Error(
+                "url was not parseable by npm package get-video-id"
             );
-            if (videoIDMatch && videoIDMatch[1]) {
-                videoID = videoIDMatch[1];
-            } else {
-                throw new Error("could not get video id from " + url);
-            }
-        } else {
-            provider = "vimeo";
+        }
+        // TODO: unify fetching video title (currently here) and video duration
+        // (currently in getVideoDuration) ideally into one API request
+        let videoDataURL;
+        if (metadata.service == "youtube") {
+            videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
+        } else if (metadata.service == "vimeo") {
             videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
-            const uri = new URL.URL(url).pathname;
-            const idMatch = uri.match(/\d+$/);
-            if (idMatch) {
-                videoID = idMatch[0];
-            } else {
-                throw new Error("could not get video id from " + url);
-            }
+        } else {
+            throw new Error("url was not a vimeo, youtube, or dailymotion url");
         }
         const videoData = await (await fetch(videoDataURL)).json();
         const title = videoData.title;
         const rawVideo: Omit<Video, "id" | "duration"> = {
-            provider,
-            src: videoID,
+            provider: metadata.service,
+            src: metadata.id,
             title,
             captions: true,
             folder: UserSubmittedFolderName,
