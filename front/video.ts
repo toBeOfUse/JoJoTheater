@@ -550,6 +550,7 @@ class DailymotionVideoController extends VideoController {
             (window as any).dmcheat = this.dailymotionPlayer;
             this.dailymotionPlayer.on(dailymotion.events.VIDEO_PLAYING, () => {
                 playButtonIcon("pause");
+                hideSmallSpinner();
             });
             this.dailymotionPlayer.on(dailymotion.events.VIDEO_PAUSE, () => {
                 playButtonIcon("play");
@@ -557,6 +558,10 @@ class DailymotionVideoController extends VideoController {
             this.dailymotionPlayer.on(dailymotion.events.VIDEO_END, () => {
                 playButtonIcon("play");
             });
+            this.dailymotionPlayer.on(
+                dailymotion.events.VIDEO_BUFFERING,
+                showSmallSpinner
+            );
             this.dailymotionPlayer.on(
                 dailymotion.events.VIDEO_DURATIONCHANGE,
                 (state: DMState) => {
