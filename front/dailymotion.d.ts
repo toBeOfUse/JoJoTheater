@@ -1,7 +1,12 @@
+/**
+ * Extremely Incomplete
+ */
+
 interface DMState {
     videoTime: number;
     videoDuration: number;
     playerIsPlaying: boolean;
+    playerIsMuted: boolean;
 }
 
 interface DMPlayer {

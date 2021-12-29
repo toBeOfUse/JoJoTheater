@@ -634,6 +634,14 @@ class DailymotionVideoController extends VideoController {
             console.log("pausing dailymotion");
             this.dailymotionPlayer.pause();
         }
+        if ((await this.dailymotionPlayer.getState()).playerIsMuted) {
+            // the dailymotion player mutes itself in order to be able to play
+            // without user interaction initiating it; if this is happening, we need
+            // to ensure the video is paused, provoking the player into interacting
+            // with it, which will allow the call to setMute at the beginning of this
+            // method to actually work
+            this.dailymotionPlayer.pause();
+        }
     }
 
     remove(): void {
