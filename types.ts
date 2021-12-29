@@ -20,7 +20,7 @@ interface Video {
     size?: number;
     title: string;
     /**
-     * only for youtube/vimeo
+     * only for youtube/vimeo/dailymotion
      */
     provider?: string;
     captions: boolean;
