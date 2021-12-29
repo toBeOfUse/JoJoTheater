@@ -114,6 +114,18 @@ export default defineComponent({
             }
         };
 
+        function openCurrentFolder() {
+            if (playlist.value) {
+                for (const folder of playlist.value) {
+                    if (
+                        folder.videos.some((v) => v.id == currentVideoID.value)
+                    ) {
+                        openFolders.value.add(folder.name);
+                    }
+                }
+            }
+        }
+
         props.socket.on("playlist_set", (newPlaylist: Video[]) => {
             const foldersObj: Record<string, Video[]> = {};
             const submissionsFolder: Video[] = [];
@@ -133,13 +145,18 @@ export default defineComponent({
             playlist.value = folders.concat([
                 { name: UserSubmittedFolderName, videos: submissionsFolder },
             ]);
+            if (openFolders.value.size == 0) {
+                openCurrentFolder();
+            }
         });
 
-        props.socket.on(
-            "state_set",
-            (newState: VideoState) =>
-                (currentVideoID.value = newState.video?.id || -1)
-        );
+        props.socket.on("state_set", (newState: VideoState) => {
+            const oldID = currentVideoID.value;
+            currentVideoID.value = newState.video?.id || -1;
+            if (oldID != currentVideoID.value) {
+                openCurrentFolder();
+            }
+        });
 
         const changeVideo = (newID: number) => {
             const req: StateChangeRequest = {
