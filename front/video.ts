@@ -379,14 +379,11 @@ class YoutubeVideoController extends VideoController {
         if (!this.YTPlayer) {
             return; // something went terribly wrong in the constructor
         }
+        this.YTPlayer.setVolume(100); // TODO: volume controls?
         if (v.video.src != this.prevSrc) {
             this.prevSrc = v.video.src;
-
-            console.log("changing source for YT.Player");
-            await this.videoReady;
             this.YTPlayer?.cueVideoById(v.video.src);
         }
-        this.YTPlayer.setVolume(100);
         if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
             this.YTPlayer.seekTo(v.currentTimeMs / 1000, true);
         }
@@ -511,9 +508,143 @@ class VimeoVideoController extends VideoController {
     }
 }
 
-// class DailymotionVideoController extends VideoController {
+let injectedDailymotionScript = false;
+class DailymotionVideoController extends VideoController {
+    videoElement: HTMLElement;
+    videoReady: Promise<void>;
+    dailymotionPlayer: DMPlayer | null = null;
+    prevSrc: string;
 
-// }
+    cachedCurrentTimeMs: number = 0;
+    cachedDurationMs: number = 0;
+
+    constructor(initialState: ActionableVideoState) {
+        super();
+        this.prevSrc = initialState.video.src;
+        this.videoElement = document.createElement("div");
+        this.videoElement.id = "dailymotion-embed-location";
+        const container = document.querySelector("#video-container");
+        if (!container) {
+            throw new Error("could not select video container");
+        } else {
+            container.prepend(this.videoElement);
+        }
+        playButtonIcon("play");
+        const apiReady = new Promise<void>((resolve) => {
+            if (!injectedDailymotionScript) {
+                const scriptElement = document.createElement("script");
+                scriptElement.onload = () => resolve();
+                scriptElement.src =
+                    "https://geo.dailymotion.com/libs/player/x73cp.js";
+                document.head.prepend(scriptElement);
+            } else {
+                resolve();
+            }
+        });
+        this.videoReady = new Promise(async (resolve) => {
+            await apiReady;
+            this.dailymotionPlayer = await dailymotion.createPlayer(
+                "dailymotion-embed-location",
+                { video: initialState.video.src, autostart: "off" }
+            );
+            (window as any).dmcheat = this.dailymotionPlayer;
+            this.dailymotionPlayer.on(dailymotion.events.VIDEO_PLAYING, () => {
+                playButtonIcon("pause");
+            });
+            this.dailymotionPlayer.on(dailymotion.events.VIDEO_PAUSE, () => {
+                playButtonIcon("play");
+            });
+            this.dailymotionPlayer.on(dailymotion.events.VIDEO_END, () => {
+                playButtonIcon("play");
+            });
+            this.dailymotionPlayer.on(
+                dailymotion.events.VIDEO_DURATIONCHANGE,
+                (state: DMState) => {
+                    setTimeAndSeek(state.videoTime, state.videoDuration);
+                    this.cachedDurationMs = state.videoDuration * 1000;
+                }
+            );
+            this.dailymotionPlayer.on(
+                dailymotion.events.VIDEO_TIMECHANGE,
+                (state: DMState) => {
+                    setTimeAndSeek(state.videoTime, state.videoDuration);
+                    this.cachedCurrentTimeMs = state.videoTime * 1000;
+                }
+            );
+            resolve();
+        });
+        this.setState(initialState);
+    }
+
+    get currentTimeMs(): number {
+        if (!this.dailymotionPlayer) {
+            return 0;
+        } else {
+            return this.cachedCurrentTimeMs;
+        }
+    }
+
+    get durationMs(): number {
+        if (!this.dailymotionPlayer) {
+            return 0;
+        } else {
+            return this.cachedDurationMs;
+        }
+    }
+
+    async isPlaying(): Promise<boolean> {
+        return (
+            this.dailymotionPlayer !== null &&
+            (await this.dailymotionPlayer.getState()).playerIsPlaying
+        );
+    }
+
+    manuallyPressPlay(): void {
+        if (this.dailymotionPlayer) {
+            this.dailymotionPlayer.play();
+            this.dailymotionPlayer.setMute(false);
+        }
+    }
+
+    async setState(v: ActionableVideoState) {
+        await this.videoReady;
+        if (!this.dailymotionPlayer) {
+            return;
+        }
+        this.dailymotionPlayer.setVolume(1);
+        this.dailymotionPlayer.setMute(false);
+        if (v.video.src != this.prevSrc) {
+            console.log("changing dailymotion source");
+            this.prevSrc = v.video.src;
+            this.dailymotionPlayer.loadContent({ video: v.video.src });
+        }
+        console.log(
+            "determining whether to seek. server, local:",
+            v.currentTimeMs,
+            this.currentTimeMs
+        );
+        if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
+            console.log("seeking dailymotion");
+            this.dailymotionPlayer.seek(v.currentTimeMs / 1000);
+        }
+        if (v.playing && !(await this.isPlaying())) {
+            console.log("playing dailymotion");
+            this.dailymotionPlayer.play();
+        } else if (!v.playing && (await this.isPlaying())) {
+            console.log("pausing dailymotion");
+            this.dailymotionPlayer.pause();
+        }
+    }
+
+    remove(): void {
+        if (this.videoElement) {
+            this.videoElement.remove();
+        }
+        if (this.dailymotionPlayer) {
+            this.dailymotionPlayer.destroy();
+        }
+    }
+}
 
 /**
  * Function that creates listeners for events that occur on the DOMControls elements,
@@ -651,6 +782,7 @@ class Player {
             const controllerTypes = {
                 youtube: YoutubeVideoController,
                 vimeo: VimeoVideoController,
+                dailymotion: DailymotionVideoController,
             };
             const NeededController =
                 controllerTypes[

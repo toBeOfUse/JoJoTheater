@@ -71,6 +71,11 @@ video#player {
     @include playerElement;
 }
 
+#dailymotion-embed-location {
+    @include playerElement;
+    position: absolute !important;
+}
+
 #controls-overlay {
     position: absolute;
     top: 0;
