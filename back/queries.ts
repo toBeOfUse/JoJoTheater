@@ -73,6 +73,8 @@ class Playlist extends EventEmitter {
             videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
         } else if (metadata.service == "vimeo") {
             videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
+        } else if (metadata.service == "dailymotion") {
+            videoDataURL = `https://www.dailymotion.com/services/oembed?url=${url}`;
         } else {
             throw new Error("url was not a vimeo, youtube, or dailymotion url");
         }
@@ -151,6 +153,10 @@ class Playlist extends EventEmitter {
             return result;
         } else if (video.provider == "vimeo") {
             const apiCall = `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${video.src}`;
+            const data = await (await fetch(apiCall)).json();
+            return data.duration;
+        } else if (video.provider == "dailymotion") {
+            const apiCall = `https://api.dailymotion.com/video/${video.src}&fields=duration`;
             const data = await (await fetch(apiCall)).json();
             return data.duration;
         } else {
