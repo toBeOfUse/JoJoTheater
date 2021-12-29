@@ -31,7 +31,7 @@
                 >
                     <input
                         type="text"
-                        placeholder="Type a Youtube or Vimeo URL..."
+                        placeholder="Type a Youtube, Vimeo, or Dailymotion URL..."
                         v-model="videoURL"
                         @keydown.enter="addVideo(videoURL)"
                     />
@@ -87,9 +87,11 @@ export default defineComponent({
         const shown = ref(false);
         const getIcon = (provider: string) => {
             return (
-                { youtube: "/images/youtube.svg", vimeo: "/images/vimeo.svg" }[
-                    provider
-                ] || "/images/video-file.svg"
+                {
+                    youtube: "/images/youtube.svg",
+                    vimeo: "/images/vimeo.svg",
+                    dailymotion: "/images/dailymotion.svg",
+                }[provider] || "/images/video-file.svg"
             );
         };
 
