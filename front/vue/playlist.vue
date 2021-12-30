@@ -331,7 +331,7 @@ $playlist-item-margin: 3px;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: start;
+    justify-content: center;
 }
 
 .folder-open-close {
