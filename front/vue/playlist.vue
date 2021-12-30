@@ -1,6 +1,6 @@
 <template>
     <h2 @click="shown = !shown" id="playlist-header">
-        Playlists
+        Playlist
         <OpenCloseIcon class="folder-open-close" :class="{ open: shown }" />
     </h2>
     <template v-if="shown">
@@ -20,10 +20,19 @@
                     :class="{ active: currentVideoID == video.id }"
                     @click="changeVideo(video.id)"
                 >
-                    <img
-                        :src="getIcon(video.provider)"
-                        class="playlist-icon"
-                    />{{ video.title }}
+                    <div
+                        :style="{
+                            backgroundImage: `url(/images/thumbnails/${video.id}.jpg)`,
+                        }"
+                        class="video-thumbnail"
+                    />
+                    <div class="video-info-box">
+                        <img
+                            :src="getIcon(video.provider)"
+                            class="video-source-icon"
+                        />
+                        <p class="video-title">{{ video.title }}</p>
+                    </div>
                 </div>
                 <div
                     class="playlist-item playlist-input"
@@ -171,6 +180,8 @@ export default defineComponent({
             videoURL.value = "";
         };
 
+        // TODO: add listener for add_video_failed
+
         props.socket.emit("ready_for", Subscription.playlist);
 
         return {
@@ -191,12 +202,12 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @use "../scss/vars.scss";
+@use "sass:color";
 
 .playlist-item {
     background-color: white;
     color: black;
-    margin: 5px 0px;
-    padding: 5px 5px 5px 0;
+    margin: 3px;
     border: 1px solid black;
     border-radius: 3px;
     &.active {
@@ -206,9 +217,43 @@ export default defineComponent({
     &:not(.active) {
         cursor: pointer;
     }
+    width: calc(25% - 6px);
+    @media (max-width: 400px) {
+        width: calc(50% - 6px);
+    }
+    position: relative;
+}
+
+.video-info-box {
     display: flex;
-    flex-direction: row;
     align-items: center;
+    width: 100%;
+    border-radius: 3px;
+    height: 2.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.video-title {
+    color: black;
+    font-size: 85%;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.video-source-icon {
+    height: 1em;
+    margin: 0px 5px 0px 2px;
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%;
+    background-size: cover;
+    background-position: center;
 }
 
 #playlist-header {
@@ -236,8 +281,9 @@ export default defineComponent({
     cursor: pointer;
     font-weight: normal;
     color: vars.$mitchbot-blue;
-    margin: 0;
+    margin: 3px;
     text-shadow: 2px 0px 1px white;
+    width: 100%;
     .folder-open-close {
         margin: 0 2px;
         height: 10px;
@@ -252,6 +298,10 @@ export default defineComponent({
     border-radius: 5px;
     padding: 3px 5px;
     margin: 12px 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: start;
 }
 
 .folder-open-close {
@@ -262,18 +312,17 @@ export default defineComponent({
     }
 }
 
-.playlist-icon {
-    height: 1em;
-    margin: 0 5px;
-}
-
 .playlist-input {
     & input[type="text"] {
         margin-right: 3px;
         width: 100%;
         border: none;
     }
-    padding-left: 3px;
+    width: 100%;
+    display: flex;
+    height: fit-content;
+    align-items: center;
+    padding: 3px;
 }
 
 .add-video-button {
