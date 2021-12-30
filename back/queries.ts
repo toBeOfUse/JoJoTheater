@@ -64,9 +64,7 @@ class Playlist extends EventEmitter {
     async addFromURL(url: string) {
         const metadata = getVideoID(url);
         if (!metadata.service || !metadata.id) {
-            throw new Error(
-                "url was not parseable by npm package get-video-id"
-            );
+            throw "url was not parseable by npm package get-video-id";
         }
 
         const rawVideo: Omit<Video, "id" | "duration" | "title" | "thumbnail"> =
@@ -214,7 +212,7 @@ class Playlist extends EventEmitter {
                 thumbnail,
             };
         } else {
-            throw new Error("unrecognized video provider");
+            throw "unrecognized video provider";
         }
     }
 }

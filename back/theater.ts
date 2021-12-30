@@ -365,13 +365,11 @@ class Theater {
             logger.debug(
                 "attempting to add video with url " + url + " to playlist"
             );
-            try {
-                this.playlist.addFromURL(url);
-            } catch (e) {
+            this.playlist.addFromURL(url).catch((e) => {
                 logger.warn("could not get video from url " + url);
                 logger.warn(e);
                 member.emit("add_video_failed");
-            }
+            });
         });
 
         member.on("user_info_set", () => {
