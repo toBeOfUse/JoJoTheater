@@ -303,7 +303,22 @@ export default defineComponent({
 }
 
 .folder {
-    background-color: vars.$bg-blue;
+    background: linear-gradient(
+            vars.$bg-blue 0,
+            vars.$bg-blue 35px,
+            transparent 45px,
+            transparent 100%
+        ),
+        repeating-linear-gradient(
+            135deg,
+            white,
+            white 10px,
+            white 15px,
+            vars.$bg-blue 15px,
+            vars.$bg-blue 25px,
+            white 25px,
+            // white 30px
+        );
     color: vars.$mitchbot-blue;
     border: 1px solid vars.$mitchbot-blue;
     border-radius: 5px;
