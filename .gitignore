@@ -4,7 +4,7 @@
 uploads/*
 !uploads/.gitkeep
 back/secrets.ts
-assets/images/thumbnails/*.jpg
+assets/images/thumbnails/**/*.jpg
 
 
 # Logs
