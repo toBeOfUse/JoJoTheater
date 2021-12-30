@@ -11,8 +11,11 @@
                     class="folder-open-close"
                     :class="{ open: openFolders.has(folder.name) }"
                 />
+                <!-- TODO: add fun little icon if folder.name==activeFolder -->
             </h3>
-            <template v-if="openFolders.has(folder.name)">
+            <template
+                v-if="openFolders.has(folder.name) || playlist.length <= 2"
+            >
                 <div
                     class="playlist-item"
                     v-for="video in folder.videos"
@@ -70,6 +73,12 @@
                 </div>
             </template>
         </div>
+        <input
+            type="text"
+            v-model="search"
+            placeholder="Search..."
+            id="search"
+        />
     </template>
 </template>
 
@@ -83,7 +92,7 @@ import {
     UserSubmittedFolderName,
     Subscription,
 } from "../../types";
-import { defineComponent, PropType, ref } from "vue";
+import { defineComponent, PropType, ref, computed } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 
 export default defineComponent({
@@ -113,9 +122,11 @@ export default defineComponent({
             videos: Video[];
         }
 
-        const playlist = ref<Folder[]>();
+        const videos = ref<Video[]>([]);
         const currentVideoID = ref(-1);
         const openFolders = ref(new Set<string>());
+        const activeFolder = ref("");
+        const search = ref("");
 
         const toggleOpen = (folderName: string) => {
             if (!openFolders.value.has(folderName)) {
@@ -125,22 +136,28 @@ export default defineComponent({
             }
         };
 
-        function openCurrentFolder() {
-            if (playlist.value) {
-                for (const folder of playlist.value) {
-                    if (
-                        folder.videos.some((v) => v.id == currentVideoID.value)
-                    ) {
-                        openFolders.value.add(folder.name);
-                    }
-                }
+        props.socket.on("playlist_set", (newVideos: Video[]) => {
+            videos.value = newVideos;
+            if (openFolders.value.size == 0 && activeFolder.value) {
+                openFolders.value.add(activeFolder.value);
             }
-        }
+        });
 
-        props.socket.on("playlist_set", (newPlaylist: Video[]) => {
+        const playlist = computed<Folder[]>(() => {
+            if (!videos.value.length) {
+                return [];
+            }
             const foldersObj: Record<string, Video[]> = {};
             const submissionsFolder: Video[] = [];
-            for (const video of newPlaylist) {
+            for (const video of videos.value) {
+                const searchString = search.value.trim().toLowerCase();
+                if (
+                    searchString &&
+                    !video.title.toLowerCase().includes(searchString) &&
+                    !video.folder.toLowerCase().includes(searchString)
+                ) {
+                    continue;
+                }
                 if (video.folder == UserSubmittedFolderName) {
                     submissionsFolder.push(video);
                 } else if (video.folder in foldersObj) {
@@ -153,19 +170,17 @@ export default defineComponent({
                 name: folderName,
                 videos: foldersObj[folderName],
             }));
-            playlist.value = folders.concat([
+            return folders.concat([
                 { name: UserSubmittedFolderName, videos: submissionsFolder },
             ]);
-            if (openFolders.value.size == 0) {
-                openCurrentFolder();
-            }
         });
 
         props.socket.on("state_set", (newState: VideoState) => {
             const oldID = currentVideoID.value;
             currentVideoID.value = newState.video?.id || -1;
-            if (oldID != currentVideoID.value) {
-                openCurrentFolder();
+            if (oldID != currentVideoID.value && newState.video) {
+                activeFolder.value = newState.video.folder;
+                openFolders.value.add(newState.video.folder);
             }
         });
 
@@ -204,6 +219,8 @@ export default defineComponent({
             UserSubmittedFolderName,
             toggleOpen,
             placeholder,
+            search,
+            activeFolder,
         };
     },
 });
@@ -364,5 +381,11 @@ $playlist-item-margin: 3px;
     svg {
         transform: scale(0.5);
     }
+}
+
+#search {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
 }
 </style>
