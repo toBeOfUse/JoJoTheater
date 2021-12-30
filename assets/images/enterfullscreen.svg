@@ -1,10 +1,1 @@
-<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" width="20mm" height="20mm" viewBox="0 0 20 20" version="1.1" id="svg8">
-   <g id="layer1" transform="translate(0,-277)">
-      <path
-         style="opacity:1;fill:#3e7ee4;fill-opacity:1;stroke:#f4efef;stroke-width:0.76640916;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         d="m 19.11322,278.00291 -6.049234,0.0342 1.754191,1.73821 -4.660116,4.56729 2.615,2.615 4.60573,-4.60574 1.699769,1.69979 z" id="rect823" />
-      <path id="path824"
-         d="m 1.0452779,296.10109 6.0492339,-0.0342 -1.754191,-1.73821 4.6601162,-4.56729 -2.6150002,-2.615 -4.60573,4.60574 -1.6997689,-1.69979 z"
-         style="opacity:1;fill:#3e7ee4;fill-opacity:1;stroke:#f4efef;stroke-width:0.76640916;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-   </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="20mm" height="20mm" viewBox="0 0 20 20"><path style="opacity:1;fill:#3e7ee4;fill-opacity:1;stroke:#f4efef;stroke-width:.76640916;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" d="m19.113 278.003-6.049.034 1.754 1.738-4.66 4.568 2.615 2.615 4.606-4.606 1.7 1.7zM1.045 296.101l6.05-.034-1.755-1.738L10 289.76l-2.615-2.615-4.605 4.606-1.7-1.7z" transform="translate(0 -277)"/></svg>
