@@ -10,7 +10,6 @@
         id="chat-window"
         @mousedown="pointerDown"
         @touchstart="pointerDown"
-        @mousemove.stop
         ref="chatWindow"
     >
         <div id="chat-header" class="title-bar" ref="chatHeader">
