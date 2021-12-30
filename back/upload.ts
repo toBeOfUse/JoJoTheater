@@ -62,8 +62,13 @@ export default function (app: Express) {
                             file.originalFilename ||
                             "mystery video",
                     };
-                    const duration = await Playlist.getVideoDuration(rawVideo);
-                    playlist.addRawVideo({ ...rawVideo, duration });
+                    const { durationSeconds: duration } =
+                        await Playlist.getVideoMetadata(rawVideo);
+                    playlist.addRawVideo({
+                        ...rawVideo,
+                        duration,
+                        thumbnail: undefined,
+                    });
                 }
             }
             res.end();
