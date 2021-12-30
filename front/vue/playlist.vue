@@ -27,11 +27,12 @@
                         class="video-thumbnail"
                     />
                     <div class="video-info-box">
-                        <img
-                            :src="getIcon(video.provider)"
-                            class="video-source-icon"
-                        />
-                        <p class="video-title">{{ video.title }}</p>
+                        <p class="video-title">
+                            <img
+                                :src="getIcon(video.provider)"
+                                class="video-source-icon"
+                            />{{ video.title }}
+                        </p>
                     </div>
                 </div>
                 <div
@@ -40,7 +41,7 @@
                 >
                     <input
                         type="text"
-                        placeholder="Type a Youtube, Vimeo, or Dailymotion URL..."
+                        :placeholder="placeholder"
                         v-model="videoURL"
                         @keydown.enter="addVideo(videoURL)"
                     />
@@ -175,12 +176,18 @@ export default defineComponent({
             props.socket.emit("state_change_request", req);
         };
 
+        const defaultPlaceholder =
+            "Type a Youtube, Vimeo, or Dailymotion URL...";
+        const placeholder = ref(defaultPlaceholder);
+        props.socket.on("add_video_failed", () => {
+            placeholder.value = "I couldn't use that URL :(";
+        });
+
         const addVideo = (url: string) => {
             props.socket.emit("add_video", url);
             videoURL.value = "";
+            placeholder.value = defaultPlaceholder;
         };
-
-        // TODO: add listener for add_video_failed
 
         props.socket.emit("ready_for", Subscription.playlist);
 
@@ -195,6 +202,7 @@ export default defineComponent({
             openFolders,
             UserSubmittedFolderName,
             toggleOpen,
+            placeholder,
         };
     },
 });
@@ -232,6 +240,7 @@ export default defineComponent({
     height: 2.5em;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding: 2px;
 }
 
 .video-title {
@@ -244,8 +253,10 @@ export default defineComponent({
 }
 
 .video-source-icon {
-    height: 1em;
-    margin: 0px 5px 0px 2px;
+    height: 1.3em;
+    display: inline;
+    vertical-align: middle;
+    margin: 0 4px 0 2px;
 }
 
 .video-thumbnail {
