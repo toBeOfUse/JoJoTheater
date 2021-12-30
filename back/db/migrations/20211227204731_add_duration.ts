@@ -15,7 +15,8 @@ export async function up(knex: Knex): Promise<void> {
                 console.log(
                     `fetching duration for video ${video.title} with src ${video.src}`
                 );
-                const duration = await Playlist.getVideoDuration(video);
+                const { durationSeconds: duration } =
+                    await Playlist.getVideoMetadata(video);
                 console.log("it appears to be", duration, "seconds");
                 await knex("playlist")
                     .where({ id: video.id })

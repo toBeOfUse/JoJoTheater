@@ -1,5 +1,6 @@
 import EventEmitter from "events";
 import path from "path";
+import fs from "fs";
 
 import knex, { Knex } from "knex";
 import fetch from "node-fetch";
@@ -23,6 +24,7 @@ const streamsDB = knex({
  */
 class Playlist extends EventEmitter {
     connection: Knex;
+    static thumbnailPath = path.join(__dirname, "../assets/images/thumbnails/");
 
     constructor(dbConnection: Knex) {
         super();
@@ -66,32 +68,30 @@ class Playlist extends EventEmitter {
                 "url was not parseable by npm package get-video-id"
             );
         }
-        // TODO: unify fetching video title (currently here) and video duration
-        // (currently in getVideoDuration) ideally into one API request
-        let videoDataURL;
-        if (metadata.service == "youtube") {
-            videoDataURL = `https://youtube.com/oembed?url=${url}&format=json`;
-        } else if (metadata.service == "vimeo") {
-            videoDataURL = `https://vimeo.com/api/oembed.json?url=${url}`;
-        } else if (metadata.service == "dailymotion") {
-            videoDataURL = `https://www.dailymotion.com/services/oembed?url=${url}`;
-        } else {
-            throw new Error("url was not a vimeo, youtube, or dailymotion url");
-        }
-        const videoData = await (await fetch(videoDataURL)).json();
-        const title = videoData.title;
-        const rawVideo: Omit<Video, "id" | "duration"> = {
-            provider: metadata.service,
-            src: metadata.id,
+
+        const rawVideo: Omit<Video, "id" | "duration" | "title" | "thumbnail"> =
+            {
+                provider: metadata.service,
+                src: metadata.id,
+                captions: true,
+                folder: UserSubmittedFolderName,
+            };
+        const {
+            durationSeconds: duration,
             title,
-            captions: true,
-            folder: UserSubmittedFolderName,
-        };
-        const duration = await Playlist.getVideoDuration(rawVideo);
-        await this.addRawVideo({ ...rawVideo, duration });
+            thumbnail,
+        } = await Playlist.getVideoMetadata(rawVideo);
+        await this.addRawVideo({
+            ...rawVideo,
+            duration,
+            title: title || url,
+            thumbnail,
+        });
     }
 
-    async addRawVideo(v: Omit<Video, "id">) {
+    async addRawVideo(
+        v: Omit<Video, "id"> & { thumbnail: Buffer | undefined }
+    ) {
         const existingCount = Number(
             (await this.connection.table("playlist").count({ count: "*" }))[0]
                 .count
@@ -114,16 +114,41 @@ class Playlist extends EventEmitter {
                     "playlist has " + existingCount + " videos; adding one more"
                 );
             }
-            await this.connection.table<Video>("playlist").insert(v);
+            const { thumbnail, ...videoRecord } = v;
+            const ids = await this.connection
+                .table<Video>("playlist")
+                .insert(videoRecord);
+            if (thumbnail) {
+                Playlist.saveThumbnail(ids[0], thumbnail);
+            }
             this.emit("video_added");
         }
     }
-    /**
-     * Gets video length in seconds
-     */
-    static async getVideoDuration(
+
+    static saveThumbnail(videoID: number, thumbnail: Buffer): Promise<void> {
+        return new Promise((resolve, reject) =>
+            fs.writeFile(
+                path.join(this.thumbnailPath, String(videoID) + ".jpg"),
+                thumbnail,
+                (err) => {
+                    if (err) {
+                        logger.error(JSON.stringify(err));
+                        reject();
+                    } else {
+                        resolve();
+                    }
+                }
+            )
+        );
+    }
+
+    static async getVideoMetadata(
         video: Pick<Video, "src" | "provider">
-    ): Promise<number> {
+    ): Promise<{
+        durationSeconds: number;
+        thumbnail: Buffer | undefined;
+        title: string | undefined;
+    }> {
         if (!video.provider) {
             const location = path.join(__dirname, "../assets/", video.src);
             const subproccess = await execa("ffprobe", [
@@ -135,30 +160,59 @@ class Playlist extends EventEmitter {
                 location,
             ]);
             const info = JSON.parse(subproccess.stdout);
-            return Number(info.format.duration);
+            return {
+                durationSeconds: Number(info.format.duration),
+                thumbnail: undefined,
+                title: undefined,
+            };
         } else if (video.provider == "youtube") {
             const apiCall =
                 `https://youtube.googleapis.com/youtube/v3/videos?` +
-                `part=contentDetails&id=${video.src}&key=${youtubeAPIKey}`;
-            const data = await (await fetch(apiCall)).json();
-            const durationString = data.items[0].contentDetails
-                .duration as string;
+                `part=contentDetails&part=snippet&id=${video.src}&key=${youtubeAPIKey}`;
+            const data = (await (await fetch(apiCall)).json()).items[0];
+            const durationString = data.contentDetails.duration as string;
             const comps = Array.from(durationString.matchAll(/\d+/g)).reverse();
-            let result = 0;
+            let duration = 0;
             let acc = 1;
             for (const comp of comps) {
-                result += Number(comp) * acc;
+                duration += Number(comp) * acc;
                 acc *= 60;
             }
-            return result;
+            const thumbs = data.snippet.thumbnails;
+            let thumbnailURL;
+            if ("standard" in thumbs) {
+                thumbnailURL = thumbs.standard.url;
+            } else if ("high" in thumbs) {
+                thumbnailURL = thumbs.high.url;
+            } else {
+                thumbnailURL = thumbs[Object.keys(thumbs)[0]].url || "";
+            }
+            const thumbnail = await (await fetch(thumbnailURL)).buffer();
+            return {
+                durationSeconds: duration,
+                title: data.snippet.title,
+                thumbnail,
+            };
         } else if (video.provider == "vimeo") {
-            const apiCall = `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${video.src}`;
+            const apiCall = `http://vimeo.com/api/v2/video/${video.src}.json`;
             const data = await (await fetch(apiCall)).json();
-            return data.duration;
+            const thumbnailURL = data[0].thumbnail_large;
+            const thumbnail = await (await fetch(thumbnailURL)).buffer();
+            return {
+                durationSeconds: data[0].duration,
+                title: data[0].title,
+                thumbnail,
+            };
         } else if (video.provider == "dailymotion") {
-            const apiCall = `https://api.dailymotion.com/video/${video.src}&fields=duration`;
+            const apiCall = `https://api.dailymotion.com/video/${video.src}&fields=duration,title,thumbnail_480_url`;
             const data = await (await fetch(apiCall)).json();
-            return data.duration;
+            const thumbnailURL = data.thumbnail_480_url;
+            const thumbnail = await (await fetch(thumbnailURL)).buffer();
+            return {
+                durationSeconds: data.duration,
+                title: data.title,
+                thumbnail,
+            };
         } else {
             throw new Error("unrecognized video provider");
         }
