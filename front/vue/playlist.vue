@@ -19,6 +19,7 @@
                     :key="video.src"
                     :class="{ active: currentVideoID == video.id }"
                     @click="changeVideo(video.id)"
+                    :title="video.title"
                 >
                     <div
                         :style="{
