@@ -10,6 +10,7 @@ import logger from "./logger";
 
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
+import { existsSync } from "fs";
 const mode =
     process.env.NODE_ENV == "production" ? "production" : "development";
 logger.info("starting webpack in mode " + mode);
@@ -67,6 +68,14 @@ app.use(function (req, res, next) {
     next();
 });
 app.use(express.static("dist"));
+app.use((req, _res, next) => {
+    if (req.url.startsWith("/images/thumbnails/")) {
+        if (!existsSync("./assets" + req.url)) {
+            req.url = "/images/video-file.svg";
+        }
+    }
+    next();
+});
 app.use(express.static("assets"));
 app.engine("hbs", renderer.engine);
 app.set("view engine", "hbs");
