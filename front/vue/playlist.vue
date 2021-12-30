@@ -94,7 +94,7 @@ export default defineComponent({
     },
     components: { OpenCloseIcon },
     setup(props) {
-        const shown = ref(false);
+        const shown = ref(true);
         const getIcon = (provider: string) => {
             return (
                 {
