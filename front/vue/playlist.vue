@@ -212,10 +212,11 @@ export default defineComponent({
 @use "../scss/vars.scss";
 @use "sass:color";
 
+$playlist-item-margin: 3px;
 .playlist-item {
     background-color: white;
     color: black;
-    margin: 3px;
+    margin: $playlist-item-margin;
     border: 1px solid black;
     border-radius: 3px;
     &.active {
@@ -225,9 +226,12 @@ export default defineComponent({
     &:not(.active) {
         cursor: pointer;
     }
-    width: calc(25% - 6px);
-    @media (max-width: 400px) {
-        width: calc(50% - 6px);
+    width: calc(25% - #{$playlist-item-margin * 2});
+    @media (max-width: 750px) {
+        width: calc(33.3% - #{$playlist-item-margin * 2});
+    }
+    @media (max-width: 500px) {
+        width: calc(50% - #{$playlist-item-margin * 2});
     }
     position: relative;
 }
