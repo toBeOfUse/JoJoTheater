@@ -16,7 +16,8 @@ function getConfig(_: any, options: any) {
         mode,
         entry: { index: "./front/index.ts", upload: "./front/upload.ts" },
         output: {
-            filename: "[name].[contenthash].js",
+            filename:
+                mode == "production" ? "[name].[contenthash].js" : "[name].js",
             path: path.resolve(__dirname, "dist"),
             publicPath: "/",
         },

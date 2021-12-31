@@ -59,7 +59,11 @@ const renderer = handlebars.create({
 const app = express();
 app.use(compression());
 app.use(function (req, res, next) {
-    if (req.url == "/" || req.url.endsWith("/index.html")) {
+    if (
+        req.url == "/" ||
+        req.url.endsWith("/index.html") ||
+        mode == "development"
+    ) {
         res.setHeader(
             "Cache-Control",
             "no-cache, no-store, max-age=0, must-revalidate"
