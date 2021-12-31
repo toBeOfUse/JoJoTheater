@@ -2,7 +2,7 @@ import "normalize.css";
 
 import { io } from "socket.io-client";
 
-import { Video } from "../types";
+import { Video, VideoState } from "../types";
 import initVideo from "./video";
 const socket = io();
 
@@ -17,12 +17,14 @@ window.onerror = (event) => {
 
 const player = initVideo(socket);
 
-socket.on("playlist_set", (newPlaylist: Video[]) => {
+socket.on("playlist_set", () => {
     renderTitle();
 });
 
-socket.on("state_set", () => {
+let currentVideo: Video | undefined = undefined;
+socket.on("state_set", (v: VideoState) => {
     renderTitle();
+    currentVideo = v.video || undefined;
 });
 
 function renderTitle() {
@@ -44,7 +46,7 @@ async function loadUIComponents() {
     container.style.display = "initial";
     (
         await import(/*webpackChunkName: "vue-comps"*/ "./vue/vue-index")
-    ).loadIndexComps(socket);
+    ).loadIndexComps(socket, currentVideo);
 }
 
 loadUIComponents();

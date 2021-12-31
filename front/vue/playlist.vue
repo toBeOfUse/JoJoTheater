@@ -101,6 +101,10 @@ export default defineComponent({
             type: Object as PropType<Socket>,
             required: true,
         },
+        initialActiveVideo: {
+            type: Object as PropType<Video>,
+            required: false,
+        },
     },
     components: { OpenCloseIcon },
     setup(props) {
@@ -123,8 +127,14 @@ export default defineComponent({
         }
 
         const videos = ref<Video[]>([]);
-        const currentVideoID = ref(-1);
-        const openFolders = ref(new Set<string>());
+        const currentVideoID = ref<number>(props.initialActiveVideo?.id || -1);
+        const openFolders = ref(
+            new Set<string>(
+                props.initialActiveVideo
+                    ? [props.initialActiveVideo.folder]
+                    : []
+            )
+        );
         const activeFolder = ref("");
         const search = ref("");
         const searchResultsFolderName = "~~~~~SEARCH";
