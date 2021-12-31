@@ -51,14 +51,12 @@ class Playlist extends EventEmitter {
         if (!v) {
             return undefined;
         }
-        return (
-            await this.connection
-                .select("*")
-                .from<Video>("playlist")
-                .where({ folder: v.folder })
-                .andWhere("id", ">", v.id)
-                .limit(1)
-        )[0];
+        return await this.connection
+            .select("*")
+            .from<Video>("playlist")
+            .where({ folder: v.folder })
+            .andWhere("id", ">", v.id)
+            .first();
     }
 
     async addFromURL(url: string) {
