@@ -320,7 +320,7 @@ $playlist-item-margin: 3px;
         padding: 5px 10px;
     }
     margin: 0 auto;
-    background-image: url("../../assets/images/fun-square.svg");
+    background-image: url("../../assets/images/fun-square.inline.svg");
     background-repeat: no-repeat;
     background-size: contain;
     background-position: center;
