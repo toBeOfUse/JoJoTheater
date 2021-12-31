@@ -733,7 +733,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
     DOMControls.seek.addEventListener("mouseup", endSeek);
     DOMControls.seek.addEventListener("touchend", endSeek);
     let runningFadeoutTimer: NodeJS.Timeout | undefined = undefined;
-    DOMControls.videoContainer.addEventListener("mousemove", () => {
+    DOMControls.controlsContainer.addEventListener("mousemove", () => {
         if (runningFadeoutTimer) {
             clearTimeout(runningFadeoutTimer);
         }
