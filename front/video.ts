@@ -651,11 +651,11 @@ class DailymotionVideoController extends VideoController {
     }
 
     remove(): void {
-        if (this.videoElement) {
-            this.videoElement.remove();
-        }
         if (this.dailymotionPlayer) {
             this.dailymotionPlayer.destroy();
+        }
+        if (this.videoElement) {
+            this.videoElement.remove();
         }
     }
 }
