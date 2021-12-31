@@ -169,6 +169,7 @@ class HTML5VideoController extends VideoController {
         video.src = "";
         video.id = "player";
         video.controls = false;
+        video.setAttribute("playsinline", "");
         DOMControls.videoContainer.prepend(video);
         this.videoElement = video;
         this.videoElement.addEventListener("loadedmetadata", () => {
