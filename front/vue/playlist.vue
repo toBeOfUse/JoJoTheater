@@ -6,16 +6,22 @@
     <template v-if="shown">
         <div class="folder" v-for="folder in playlist" :key="folder.name">
             <h3 class="folder-header" @click="toggleOpen(folder.name)">
-                {{ folder.name }}
+                <input
+                    type="text"
+                    v-model="search"
+                    placeholder="Search..."
+                    id="search"
+                    v-if="folder.name == searchResultsFolderName"
+                    @click.stop
+                />
+                {{ folder.name == searchResultsFolderName ? "" : folder.name }}
                 <OpenCloseIcon
                     class="folder-open-close"
                     :class="{ open: openFolders.has(folder.name) }"
                 />
                 <!-- TODO: add fun little icon if folder.name==activeFolder -->
             </h3>
-            <template
-                v-if="openFolders.has(folder.name) || playlist.length <= 2"
-            >
+            <template v-if="openFolders.has(folder.name)">
                 <div
                     class="playlist-item"
                     v-for="video in folder.videos"
@@ -73,12 +79,6 @@
                 </div>
             </template>
         </div>
-        <input
-            type="text"
-            v-model="search"
-            placeholder="Search..."
-            id="search"
-        />
     </template>
 </template>
 
@@ -92,7 +92,7 @@ import {
     UserSubmittedFolderName,
     Subscription,
 } from "../../types";
-import { defineComponent, PropType, ref, computed } from "vue";
+import { defineComponent, PropType, ref, computed, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 
 export default defineComponent({
@@ -127,6 +127,18 @@ export default defineComponent({
         const openFolders = ref(new Set<string>());
         const activeFolder = ref("");
         const search = ref("");
+        const searchResultsFolderName = "~~~~~SEARCH";
+        watch(search, (newValue, oldValue) => {
+            if (newValue.trim()) {
+                if (
+                    oldValue.toLowerCase().trim() !=
+                    newValue.toLowerCase().trim()
+                )
+                    openFolders.value.add(searchResultsFolderName);
+            } else {
+                openFolders.value.delete(searchResultsFolderName);
+            }
+        });
 
         const toggleOpen = (folderName: string) => {
             if (!openFolders.value.has(folderName)) {
@@ -149,14 +161,15 @@ export default defineComponent({
             }
             const foldersObj: Record<string, Video[]> = {};
             const submissionsFolder: Video[] = [];
+            const searchResults: Video[] = [];
             for (const video of videos.value) {
                 const searchString = search.value.trim().toLowerCase();
                 if (
                     searchString &&
-                    !video.title.toLowerCase().includes(searchString) &&
-                    !video.folder.toLowerCase().includes(searchString)
+                    (video.title.toLowerCase().includes(searchString) ||
+                        video.folder.toLowerCase().includes(searchString))
                 ) {
-                    continue;
+                    searchResults.push(video);
                 }
                 if (video.folder == UserSubmittedFolderName) {
                     submissionsFolder.push(video);
@@ -172,6 +185,7 @@ export default defineComponent({
             }));
             return folders.concat([
                 { name: UserSubmittedFolderName, videos: submissionsFolder },
+                { name: searchResultsFolderName, videos: searchResults },
             ]);
         });
 
@@ -221,6 +235,7 @@ export default defineComponent({
             placeholder,
             search,
             activeFolder,
+            searchResultsFolderName,
         };
     },
 });
@@ -384,8 +399,6 @@ $playlist-item-margin: 3px;
 }
 
 #search {
-    position: relative;
-    left: 50%;
-    transform: translateX(-50%);
+    width: 35%;
 }
 </style>
