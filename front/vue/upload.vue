@@ -1,19 +1,14 @@
 <template>
     <div id="root">
         <div id="panel">
-            <div id="upload">
-                <input
-                    type="file"
-                    name="someFile"
-                    ref="fileInput"
-                    accept="video/mp4"
-                    @change="onFileChange"
-                    style="width: 100%"
-                />
-                <button @click="upload" :disabled="!fileSelected">
-                    Upload
-                </button>
-            </div>
+            <input
+                type="file"
+                name="someFile"
+                ref="fileInput"
+                accept="video/mp4"
+                @change="onFileChange"
+                style="width: 100%; max-width: 70vw"
+            />
             <progress
                 id="uploadProgress"
                 v-if="progress > 0"
@@ -25,7 +20,7 @@
                 style="display: block"
                 @click="fullFormShown = !fullFormShown"
             >
-                Detailed Mode
+                Toggle Detailed Mode
             </button>
             <template v-if="fullFormShown">
                 <input
@@ -46,6 +41,13 @@
                     placeholder="Password..."
                 />
             </template>
+            <button
+                @click="upload"
+                :disabled="!fileSelected"
+                id="upload-button"
+            >
+                UPLOAD
+            </button>
         </div>
     </div>
 </template>
@@ -143,5 +145,10 @@ export default defineComponent({
 #uploadProgress {
     display: block;
     margin: 2px auto;
+}
+#upload-button {
+    font-size: 300%;
+    display: block;
+    margin: 15px auto 5px auto;
 }
 </style>
