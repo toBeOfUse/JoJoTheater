@@ -44,10 +44,13 @@ body {
 }
 
 #container-container {
-    width: calc(100% - #{((vars.$chat-width * 2)+20)});
-    @media (max-aspect-ratio: 14/9) {
-        width: 95%;
+    width: calc(100% - #{((vars.$chat-width * 2)+20)}); // desktop mode
+    @media (max-width: 1000px) {
+        width: 95%; // mobile portrait mode
         margin-bottom: 200px; // leave space at bottom for chat window in vertical mode
+        @media (min-aspect-ratio: 16/8) {
+            width: 70%; // mobile landscape mode
+        }
     }
     text-align: center;
 }
