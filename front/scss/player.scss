@@ -7,11 +7,11 @@
     border: 3px solid vars.$mitchbot-blue;
     &.fullscreen {
         border: none;
+        background-color: black;
+        padding: 0 !important;
+        height: 100%;
     }
     background-color: vars.$mitchbot-blue;
-    &.fullscreen {
-        background-color: black;
-    }
     overflow: hidden;
     position: relative;
 }
