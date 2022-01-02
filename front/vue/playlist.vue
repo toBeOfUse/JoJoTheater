@@ -14,12 +14,16 @@
                     v-if="folder.name == searchResultsFolderName"
                     @click.stop
                 />
-                {{ folder.name == searchResultsFolderName ? "" : folder.name }}
+                {{ folder.name == searchResultsFolderName ? "" : folder.name
+                }}<img
+                    v-if="folder.name == activeFolder"
+                    src="/images/active-folder-indicator.svg"
+                    class="folder-active-icon"
+                />
                 <OpenCloseIcon
                     class="folder-open-close"
                     :class="{ open: openFolders.has(folder.name) }"
                 />
-                <!-- TODO: add fun little icon if folder.name==activeFolder -->
             </h3>
             <template v-if="openFolders.has(folder.name)">
                 <div
@@ -343,7 +347,7 @@ $playlist-item-margin: 3px;
     text-shadow: 2px 0px 1px white;
     width: 100%;
     .folder-open-close {
-        margin: 0 2px;
+        margin: 0 5px;
         height: 10px;
         width: 10px;
     }
@@ -383,6 +387,14 @@ $playlist-item-margin: 3px;
     &.open {
         transform: rotate(90deg);
     }
+}
+
+.folder-active-icon {
+    display: inline;
+    width: 17px;
+    height: 17px;
+    margin: 0 5px;
+    vertical-align: middle;
 }
 
 .playlist-input {
