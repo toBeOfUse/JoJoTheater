@@ -120,9 +120,7 @@
                                 :src="group[0].senderAvatarURL"
                             />
                             <div class="chat-section-text">
-                                <span class="in-chat-username">
-                                    {{ group[0].senderName }}
-                                </span>
+                                <span class="in-chat-username" v-html="group[0].senderName" />
                                 <div
                                     class="message"
                                     v-for="(message, j) in group"
