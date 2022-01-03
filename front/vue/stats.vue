@@ -26,11 +26,16 @@
                     </td>
                     <td style="text-align: left; font-size: small">
                         <template v-if="conn.playerState">
-                            Playing: {{ conn.playerState.playing }}<br />
-                            Current Time:
-                            {{ msToHMS(conn.playerState.currentTimeMs) }}<br />
-                            Video: {{ conn.playerState.video.title }}<br />
-                            Last Update Time:
+                            <strong>Playing: </strong
+                            >{{ conn.playerState.playing }}
+                            <br />
+                            <strong>Current Time:</strong>
+                            {{ msToHMS(conn.playerState.currentTimeMs) }}
+                            <br />
+                            <strong>Video: </strong
+                            >{{ conn.playerState.video.title }}
+                            <br />
+                            <strong>Last Update Time:</strong>
                             {{ conn.playerState.receivedTimeISO }}
                         </template>
                     </td>
