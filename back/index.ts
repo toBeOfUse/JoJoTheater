@@ -2,7 +2,6 @@ import path from "path";
 import http from "http";
 import express from "express";
 import compression from "compression";
-import handlebars from "express-handlebars";
 
 import initTheater from "./theater";
 import initUploads from "./upload";
@@ -38,24 +37,6 @@ if (mode == "development") {
     webpacker.run(webpackCallback);
 }
 
-const renderer = handlebars.create({
-    extname: "hbs",
-    defaultLayout: "",
-    helpers: {
-        round(n: number): string {
-            return n.toFixed(2);
-        },
-        msToSeconds(n: number): string {
-            return (n / 1000).toFixed(2);
-        },
-        msToHMS(n: number): string {
-            return new Date(n).toISOString().slice(11, 19);
-        },
-        stringify(o: object): string {
-            return JSON.stringify(o, null, 1);
-        },
-    },
-});
 const app = express();
 app.use(compression());
 app.use(function (req, res, next) {
@@ -81,9 +62,6 @@ app.use((req, _res, next) => {
     next();
 });
 app.use(express.static("assets"));
-app.engine("hbs", renderer.engine);
-app.set("view engine", "hbs");
-app.set("views", path.resolve(process.cwd(), "front/views/"));
 
 const server = http.createServer(app);
 initTheater(server, app);
