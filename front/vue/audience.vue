@@ -141,35 +141,41 @@ export default defineComponent({
                 ),
             }));
         });
-        const getUsersPerRow = () =>
+        const getMaxUsersPerRow = () =>
             Math.floor(
                 (document.querySelector("#container-container") as HTMLElement)
-                    .offsetWidth / (window.innerWidth > 450 ? 120 : 72)
+                    .offsetWidth / (window.innerWidth > 450 ? 160 : 80)
             );
-        const usersPerRow = ref(-1);
+        const maxUsersPerRow = ref(-1);
         window.addEventListener("resize", () => {
-            usersPerRow.value = getUsersPerRow();
+            maxUsersPerRow.value = getMaxUsersPerRow();
         });
         onMounted(() => {
-            usersPerRow.value = getUsersPerRow();
+            maxUsersPerRow.value = getMaxUsersPerRow();
         });
         const groupedUsers = computed(() => {
-            const groups = [];
+            const rowCount = Math.ceil(
+                users.value.length / maxUsersPerRow.value
+            );
+            const groups: ChatUserInfo[][] = [];
+            for (let j = 0; j < rowCount; j++) {
+                groups.push([]);
+            }
             let i = 0;
             while (
                 i < users.value.length &&
-                usersPerRow.value != -1 &&
-                !isNaN(usersPerRow.value)
+                maxUsersPerRow.value != -1 &&
+                !isNaN(maxUsersPerRow.value)
             ) {
-                groups.push(users.value.slice(i, i + usersPerRow.value));
-                i += usersPerRow.value;
+                groups[i % rowCount].push(users.value[i]);
+                i++;
             }
             return groups;
         });
 
         props.socket.emit("ready_for", Subscription.audience);
 
-        return { getChair, users, groupedUsers, usersPerRow };
+        return { getChair, users, groupedUsers, maxUsersPerRow };
     },
 });
 </script>
@@ -182,7 +188,7 @@ export default defineComponent({
     align-items: baseline;
     flex-wrap: wrap;
     margin: 10px auto;
-    border: 3px solid black;
+    border: 2px solid black;
     border-radius: 10px;
     background-image: url("/assets/images/chairs/background.svg");
     background-position: center;
@@ -191,9 +197,6 @@ export default defineComponent({
 .chair-container {
     position: relative;
     margin: 0 5px;
-    &.flipped {
-        transform: scaleX(-1);
-    }
 }
 image {
     background-color: white;
@@ -201,7 +204,7 @@ image {
 svg {
     height: 150px;
     @media (max-width: 450px) {
-        height: 60px;
+        height: 70px;
     }
     width: auto;
 }
