@@ -58,12 +58,13 @@
             {{ msToHMS(server.currentTimeMs) }}, current video:
             {{ server.video.title }}
         </p>
+        <p class="chat-history" v-html="messagesHTML"></p>
     </template>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, computed } from "vue";
-import type { ConnectionStatus, VideoState } from "../../types";
+import type { ConnectionStatus, VideoState, ChatMessage } from "../../types";
 import {
     Chart,
     LineController,
@@ -87,11 +88,13 @@ export default defineComponent({
     setup() {
         const players = ref<ConnectionStatus[]>([]);
         const server = ref<ConnectionStatus | null>(null);
+        const messages = ref<ChatMessage[]>([]);
         const authorized = ref(false);
         const storedPassword = localStorage.getItem("password");
         const password = ref(storedPassword ?? "");
-        const authorize = () => {
-            fetch("/api/stats", { headers: { Authorization: password.value } })
+        const authorize = async () => {
+            const headers = { headers: { Authorization: password.value } };
+            await fetch("/api/stats", headers)
                 .then(async (res) => {
                     const info = await res.json();
                     players.value = info.players;
@@ -103,6 +106,11 @@ export default defineComponent({
                     console.log(e);
                     password.value = "";
                 });
+            fetch("/api/messages", headers)
+                .then(async (res) => {
+                    messages.value = await res.json();
+                })
+                .catch((e) => console.log(e));
         };
         if (storedPassword) {
             authorize(); // will fail silently if stored password is out of date
@@ -138,6 +146,24 @@ export default defineComponent({
                 return msToHMS(state.currentTimeMs);
             }
         };
+        const messagesHTML = computed<string>(() => {
+            let result = "";
+            for (let i = 0; i < messages.value.length; i++) {
+                const message = messages.value[i];
+                if (i != 0) {
+                    result += "  ◦  ";
+                }
+                if (
+                    message.senderID &&
+                    (i == 0 ||
+                        messages.value[i - 1].senderID != message.senderID)
+                ) {
+                    result += message.senderName + ": ";
+                }
+                result += message.messageHTML;
+            }
+            return result;
+        });
         return {
             msToHMS,
             msToS,
@@ -148,6 +174,7 @@ export default defineComponent({
             authorize,
             charts,
             estimateProgress,
+            messagesHTML,
         };
     },
 });
@@ -162,6 +189,12 @@ body {
     border: 1px black solid;
     border-radius: 3px;
     padding: 5px;
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+    @media (max-width: 800px) {
+        max-width: 95%;
+    }
 }
 pre {
     display: inline;
@@ -191,5 +224,8 @@ table {
     border-collapse: collapse;
     letter-spacing: 1px;
     font-size: 0.8rem;
+}
+.chat-history {
+    white-space: break-spaces;
 }
 </style>

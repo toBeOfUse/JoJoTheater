@@ -1,7 +1,7 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import escapeHTML from "escape-html";
 
 import { Playlist, playlist, getRecentMessages, addMessage } from "./queries";
@@ -526,17 +526,25 @@ class Theater {
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const theater = new Theater(io, playlist);
-    app.get("/api/stats", async (req, res) => {
+    const auth: RequestHandler = (req, res, next) => {
         if (req.headers.authorization == password) {
-            res.status(200);
-            res.json({
-                players: theater.audience.map((a) => a.getConnectionInfo()),
-                server: theater.currentState,
-            });
-            res.end();
+            next();
         } else {
             res.status(403);
             res.end();
         }
+    };
+    app.get("/api/stats", auth, (_req, res) => {
+        res.status(200);
+        res.json({
+            players: theater.audience.map((a) => a.getConnectionInfo()),
+            server: theater.currentState,
+        });
+        res.end();
+    });
+    app.get("/api/messages", auth, async (_req, res) => {
+        res.status(200);
+        res.json(await getRecentMessages(50));
+        res.end();
     });
 }
