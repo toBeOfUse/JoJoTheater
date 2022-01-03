@@ -56,6 +56,20 @@ class Playlist extends EventEmitter {
             .from<Video>("playlist")
             .where({ folder: v.folder })
             .andWhere("id", ">", v.id)
+            .orderBy("id")
+            .first();
+    }
+
+    async getPrevVideo(v: Video | null): Promise<Video | undefined> {
+        if (!v){
+            return undefined;
+        }
+        return await this.connection
+            .select("*")
+            .from<Video>("playlist")
+            .where({ folder: v.folder })
+            .andWhere("id", "<", v.id)
+            .orderBy("id", "desc")
             .first();
     }
 

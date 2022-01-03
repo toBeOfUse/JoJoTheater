@@ -1,7 +1,7 @@
 import { Socket } from "socket.io-client";
 import fscreen from "fscreen";
 import VimeoPlayer from "@vimeo/player";
-import { Video, VideoState, StateChangeRequest, StateElements } from "../types";
+import { Video, VideoState, StateChangeRequest, ChangeTypes } from "../types";
 interface ActionableVideoState extends Omit<VideoState, "video"> {
     video: Video;
 }
@@ -37,6 +37,12 @@ const DOMControls = {
     playPauseImage: document.querySelector(
         "#play-pause-image"
     ) as HTMLImageElement,
+    nextVideo: document.querySelector(
+        "#next-video-button"
+    ) as HTMLButtonElement,
+    prevVideo: document.querySelector(
+        "#prev-video-button"
+    ) as HTMLButtonElement,
     seek: document.querySelector("#seek") as HTMLInputElement,
     timeDisplay: document.querySelector("#time-display") as HTMLSpanElement,
     fullscreen: document.querySelector(
@@ -682,7 +688,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
     io.on("alert", (message: string) => displayMessage(message));
     DOMControls.playPause.addEventListener("click", () => {
         const changeRequest: StateChangeRequest = {
-            whichElement: StateElements.playing,
+            changeType: ChangeTypes.playing,
             newValue: !player.state.playing,
         };
         io.emit("state_change_request", changeRequest);
@@ -690,6 +696,12 @@ function initializePlayerInterface(io: Socket, player: Player) {
         if (changeRequest.newValue && player.controller) {
             player.controller.manuallyPressPlay();
         }
+    });
+    DOMControls.nextVideo.addEventListener("click", () => {
+        io.emit("state_change_request", { changeType: ChangeTypes.nextVideo });
+    });
+    DOMControls.prevVideo.addEventListener("click", () => {
+        io.emit("state_change_request", { changeType: ChangeTypes.prevVideo });
     });
     document.addEventListener("keydown", (e) => {
         if (
@@ -707,7 +719,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
     const beginSeek = () => {
         userIsSeeking = true;
         const changeRequest: StateChangeRequest = {
-            whichElement: StateElements.playing,
+            changeType: ChangeTypes.playing,
             newValue: false,
         };
         io.emit("state_change_request", changeRequest);
@@ -718,7 +730,7 @@ function initializePlayerInterface(io: Socket, player: Player) {
                 (Number(DOMControls.seek.value) / 100) *
                 player.controller?.durationMs;
             const changeRequest: StateChangeRequest = {
-                whichElement: StateElements.time,
+                changeType: ChangeTypes.time,
                 newValue: newTimeMs,
             };
             io.emit("state_change_request", changeRequest);

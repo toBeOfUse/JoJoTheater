@@ -37,15 +37,20 @@ interface VideoState {
     currentTimeMs: number;
 }
 
-enum StateElements {
+enum ChangeTypes {
     playing,
     videoID,
     time,
+    nextVideo,
+    prevVideo,
 }
 
+/**
+ * `newValue` is required for `playing`, `videoID`, and `time` types
+ */
 interface StateChangeRequest {
-    whichElement: StateElements;
-    newValue: boolean | number;
+    changeType: ChangeTypes;
+    newValue?: boolean | number;
 }
 
 interface ChatUserInfo {
@@ -69,7 +74,7 @@ export {
     ChatMessage,
     Video,
     VideoState,
-    StateElements,
+    ChangeTypes,
     StateChangeRequest,
     ChatUserInfo,
     UserSubmittedFolderName,

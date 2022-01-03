@@ -92,7 +92,7 @@ import {
     Video,
     VideoState,
     StateChangeRequest,
-    StateElements,
+    ChangeTypes,
     UserSubmittedFolderName,
     Subscription,
 } from "../../types";
@@ -214,7 +214,7 @@ export default defineComponent({
 
         const changeVideo = (newID: number) => {
             const req: StateChangeRequest = {
-                whichElement: StateElements.videoID,
+                changeType: ChangeTypes.videoID,
                 newValue: newID,
             };
             props.socket.emit("state_change_request", req);

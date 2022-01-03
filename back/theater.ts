@@ -9,9 +9,10 @@ import {
     ChatMessage,
     VideoState as PlayerState,
     StateChangeRequest,
-    StateElements,
+    ChangeTypes,
     ChatUserInfo,
     Subscription,
+    Video,
 } from "../types";
 import logger from "./logger";
 
@@ -331,31 +332,38 @@ class Theater {
             "state_change_request",
             async (change: StateChangeRequest) => {
                 const newState: any = {};
-                if (change.whichElement == StateElements.playing) {
+                if (change.changeType == ChangeTypes.playing) {
                     newState.currentTimeMs = this.currentState.currentTimeMs;
                     newState.playing = change.newValue as boolean;
-                } else if (change.whichElement == StateElements.time) {
+                    this.baseState = { ...this.currentState, ...newState };
+                    this.broadcastState();
+                } else if (change.changeType == ChangeTypes.time) {
                     newState.playing = false;
                     newState.currentTimeMs = change.newValue as number;
-                } else if (change.whichElement == StateElements.videoID) {
+                    this.baseState = { ...this.currentState, ...newState };
+                    this.broadcastState();
+                } else if (change.changeType == ChangeTypes.videoID) {
                     const newVideoID = change.newValue as number;
                     const newVideo = await this.playlist.getVideoByID(
                         newVideoID
                     );
                     if (newVideo) {
-                        newState.video = newVideo;
+                        this.startNewVideo(newVideo);
                     } else {
                         logger.warn(
                             "client requested video with unknown id" +
                                 newVideoID
                         );
-                        return;
                     }
-                    newState.currentTimeMs = 0;
-                    newState.playing = false;
+                } else if (change.changeType == ChangeTypes.nextVideo) {
+                    this.startNewVideo(
+                        await this.playlist.getNextVideo(this.baseState.video)
+                    );
+                } else if (change.changeType == ChangeTypes.prevVideo) {
+                    this.startNewVideo(
+                        await this.playlist.getPrevVideo(this.baseState.video)
+                    );
                 }
-                this.baseState = { ...this.currentState, ...newState };
-                this.broadcastState();
 
                 this.setNextVideoTimer();
             }
@@ -448,18 +456,23 @@ class Theater {
                     this.baseState.video
                 );
                 if (nextVideo) {
-                    this.baseState = {
-                        video: nextVideo,
-                        currentTimeMs: 0,
-                        playing: false,
-                    };
-                    this.broadcastState();
-                    this.setNextVideoTimer();
+                    this.startNewVideo(nextVideo);
                 } else {
                     this.baseState = { ...this.currentState, playing: false };
                     this.broadcastState();
                 }
             }, timeUntil);
+        }
+    }
+
+    async startNewVideo(v: Video | undefined) {
+        if (v) {
+            this.baseState = {
+                video: v,
+                currentTimeMs: 0,
+                playing: false,
+            };
+            this.broadcastState();
         }
     }
 
