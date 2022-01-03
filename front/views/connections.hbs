@@ -25,44 +25,7 @@
         ></script>
     </head>
     <body>
-        <table>
-            <thead>
-                <tr>
-                    <th scope="col">Uptime</th>
-                    <th scope="col">Name in chat</th>
-                    <th scope="col">Reported player state</th>
-                    <th scope="col">Latest ping</th>
-                    <th scope="col">Average ping</th>
-                    <th scope="col">Ping distribution</th>
-                    <th scope="col">Approx. location</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#each connections}}
-                    <tr>
-                        <td>{{msToSeconds this.uptimeMs}} seconds</td>
-                        <td>{{this.chatName}}
-                            {{#unless this.chatName}}<em>not logged in</em>{{/unless}}
-                        </td>
-                        <td style="text-align: left; font-size: small;">
-                            Playing: {{this.playerState.playing}}<br>
-                            Current Time: {{msToHMS this.playerState.currentTimeMs}}<br>
-                            Video: {{this.playerState.video.title}}<br>
-                            Last Update Time: {{this.playerState.receivedTimeISO}}
-                        </td>
-                        <td>{{this.latestPing}} ms</td>
-                        <td>{{round this.avgPing}} ms</td>
-                        <td><canvas width="160" height="100" id="chart{{@index}}"></canvas></td>
-                        <td>{{this.location}}</td>
-                    </tr>
-                {{/each}}
-            </tbody>
-        </table>
-        <p>Current server state:
-            Playing: {{theaterState.playing}},
-            current time: {{msToHMS theaterState.currentTimeMs}},
-            current video: {{theaterState.video.title}}
-        </p>
+        
         <script>
             const inject = `{{{stringify connections}}}`;
             const data = JSON.parse(inject);

@@ -70,6 +70,16 @@ enum Subscription {
     chat,
 }
 
+interface ConnectionStatus {
+    chatName: string;
+    uptimeMs: number;
+    latestPing: number;
+    avgPing: number;
+    pingHistogram: [number[], string[]];
+    location: string;
+    playerState: VideoState | undefined;
+}
+
 export {
     ChatMessage,
     Video,
@@ -79,4 +89,5 @@ export {
     ChatUserInfo,
     UserSubmittedFolderName,
     Subscription,
+    ConnectionStatus,
 };

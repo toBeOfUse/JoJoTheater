@@ -13,8 +13,10 @@ import {
     ChatUserInfo,
     Subscription,
     Video,
+    ConnectionStatus,
 } from "../types";
 import logger from "./logger";
+import { password } from "./secrets";
 
 type ServerSentEvent =
     | "ping"
@@ -40,16 +42,6 @@ type ClientSentEvent =
     | "state_report"
     | "state_update_request"
     | "ready_for";
-
-interface ConnectionStatus {
-    chatName: string;
-    uptimeMs: number;
-    latestPing: number;
-    avgPing: number;
-    pingHistogram: [number[], string[]];
-    location: string;
-    playerState: PlayerState | undefined;
-}
 
 class AudienceMember {
     private socket: Socket;
@@ -531,10 +523,17 @@ class Theater {
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const theater = new Theater(io, playlist);
-    app.get("/stats", async (_, res) => {
-        res.render("connections", {
-            connections: theater.audience.map((a) => a.getConnectionInfo()),
-            theaterState: theater.currentState,
-        });
+    app.get("/api/stats", async (req, res) => {
+        if (req.headers.authorization == password) {
+            res.status(200);
+            res.json({
+                players: theater.audience.map((a) => a.getConnectionInfo()),
+                server: theater.currentState,
+            });
+            res.end();
+        } else {
+            res.status(403);
+            res.end();
+        }
     });
 }

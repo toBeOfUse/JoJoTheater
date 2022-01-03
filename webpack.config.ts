@@ -14,7 +14,11 @@ function getConfig(_: any, options: any) {
         mode == "development" ? "style-loader" : MiniCssExtractPlugin.loader;
     const config: webpack.Configuration = {
         mode,
-        entry: { index: "./front/index.ts", upload: "./front/upload.ts" },
+        entry: {
+            index: "./front/index.ts",
+            upload: "./front/upload.ts",
+            stats: "./front/stats.ts",
+        },
         output: {
             filename:
                 mode == "production" ? "[name].[contenthash].js" : "[name].js",
@@ -88,6 +92,12 @@ function getConfig(_: any, options: any) {
                 template: "./front/html/upload.html",
                 chunks: ["upload"],
                 filename: "upload/index.html",
+            }),
+            new HtmlWebpackPlugin({
+                inject: true,
+                template: "./front/html/stats.html",
+                chunks: ["stats"],
+                filename: "stats/index.html",
             }),
             new webpack.DefinePlugin({
                 __VUE_PROD_DEVTOOLS__: false,
