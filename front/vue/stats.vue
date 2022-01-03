@@ -10,6 +10,7 @@
                     <th scope="col">Uptime</th>
                     <th scope="col">Name in chat</th>
                     <th scope="col">Reported player state</th>
+                    <th scope="col">Estimated Video Progress</th>
                     <th scope="col">Latest ping</th>
                     <th scope="col">Average ping</th>
                     <th scope="col">Recent Pings</th>
@@ -19,7 +20,10 @@
             <tbody>
                 <tr v-for="(conn, i) in players" :key="i">
                     <td>{{ msToS(conn.uptimeMs) }} seconds</td>
-                    <td>{{ conn.chatName || "not logged in" }}</td>
+                    <td>
+                        <em v-if="!conn.chatName">not logged in</em>
+                        <template v-else>{{ conn.chatName }}</template>
+                    </td>
                     <td style="text-align: left; font-size: small">
                         <template v-if="conn.playerState">
                             Playing: {{ conn.playerState.playing }}<br />
@@ -30,6 +34,7 @@
                             {{ conn.playerState.receivedTimeISO }}
                         </template>
                     </td>
+                    <td>{{ estimateProgress(conn.playerState) }}</td>
                     <td>{{ conn.latestPing }} ms</td>
                     <td>{{ Math.round(conn.avgPing) }} ms</td>
                     <td>
@@ -53,7 +58,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed } from "vue";
-import type { ConnectionStatus } from "../../types";
+import type { ConnectionStatus, VideoState } from "../../types";
 import {
     Chart,
     LineController,
@@ -115,6 +120,19 @@ export default defineComponent({
         const msToHMS = (ms: number) =>
             new Date(ms).toISOString().slice(11, 19);
         const msToS = (ms: number) => Number(ms / 1000).toFixed(2);
+        const estimateProgress = (
+            state: VideoState & { receivedTimeISO: string }
+        ): string => {
+            if (state.playing) {
+                return msToHMS(
+                    state.currentTimeMs +
+                        (new Date().getTime() -
+                            new Date(state.receivedTimeISO).getTime())
+                );
+            } else {
+                return msToHMS(state.currentTimeMs);
+            }
+        };
         return {
             msToHMS,
             msToS,
@@ -124,6 +142,7 @@ export default defineComponent({
             server,
             authorize,
             charts,
+            estimateProgress,
         };
     },
 });

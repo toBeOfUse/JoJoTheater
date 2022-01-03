@@ -77,7 +77,7 @@ interface ConnectionStatus {
     avgPing: number;
     pingHistory: number[];
     location: string;
-    playerState: VideoState | undefined;
+    playerState: (VideoState & { receivedTimeISO: string }) | undefined;
 }
 
 export {
