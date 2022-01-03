@@ -53,11 +53,13 @@
                 </tr>
             </tbody>
         </table>
+        <h3>Current server state:</h3>
         <p>
-            Current server state: Playing: {{ server.playing }}, current time:
+            Playing: {{ server.playing }}, current time:
             {{ msToHMS(server.currentTimeMs) }}, current video:
             {{ server.video.title }}
         </p>
+        <h3>Chat history dump:</h3>
         <p class="chat-history" v-html="messagesHTML"></p>
     </template>
 </template>
@@ -195,6 +197,9 @@ body {
     @media (max-width: 800px) {
         max-width: 95%;
     }
+}
+h3 {
+    margin: 5px 0;
 }
 pre {
     display: inline;
