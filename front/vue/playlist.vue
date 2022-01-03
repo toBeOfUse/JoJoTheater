@@ -268,10 +268,17 @@ $playlist-item-margin: 3px;
     border-radius: 3px;
     &.active {
         font-style: italic;
-        color: gray;
+        color: #666;
+        border-color: #666 #bbb #bbb #666;
+        border-width: 2px;
+        & .video-thumbnail {
+            opacity: 0.7;
+        }
     }
     &:not(.active) {
         cursor: pointer;
+        color: black;
+        padding: 1px; // to substitute for the thicker border in &.active
     }
     width: calc(25% - #{$playlist-item-margin * 2});
     @media (max-width: 750px) {
@@ -295,7 +302,6 @@ $playlist-item-margin: 3px;
 }
 
 .video-title {
-    color: black;
     font-size: 85%;
     display: -webkit-box;
     -webkit-line-clamp: 2;
