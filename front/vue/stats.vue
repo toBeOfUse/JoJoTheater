@@ -12,7 +12,7 @@
                     <th scope="col">Reported player state</th>
                     <th scope="col">Latest ping</th>
                     <th scope="col">Average ping</th>
-                    <!-- <th scope="col">Ping distribution</th> -->
+                    <th scope="col">Recent Pings</th>
                     <th scope="col">Approx. location</th>
                 </tr>
             </thead>
@@ -32,13 +32,13 @@
                     </td>
                     <td>{{ conn.latestPing }} ms</td>
                     <td>{{ Math.round(conn.avgPing) }} ms</td>
-                    <!-- <td>
-                    <canvas
-                        width="160"
-                        height="100"
-                        id="charti"
-                    ></canvas>
-                </td> -->
+                    <td>
+                        <LineChart
+                            :chartData="charts[i]"
+                            :width="200"
+                            :height="100"
+                        />
+                    </td>
                     <td>{{ conn.location }}</td>
                 </tr>
             </tbody>
@@ -52,10 +52,28 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import type { ConnectionStatus } from "../../types";
+import {
+    Chart,
+    LineController,
+    LineElement,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    ChartData,
+} from "chart.js";
+Chart.register(
+    LineController,
+    LineElement,
+    CategoryScale,
+    LinearScale,
+    PointElement
+);
+import { LineChart } from "vue-chart-3";
 
 export default defineComponent({
+    components: { LineChart },
     setup() {
         const players = ref<ConnectionStatus[]>([]);
         const server = ref<ConnectionStatus | null>(null);
@@ -71,11 +89,29 @@ export default defineComponent({
                     authorized.value = true;
                     localStorage.setItem("password", password.value);
                 })
-                .catch((e) => console.log(e));
+                .catch((e) => {
+                    console.log(e);
+                    password.value = "";
+                });
         };
         if (storedPassword) {
             authorize(); // will fail silently if stored password is out of date
         }
+        const charts = computed(() => {
+            return players.value.map((p): ChartData => {
+                return {
+                    labels: Array(p.pingHistory.length).fill(""),
+                    datasets: [
+                        {
+                            data: p.pingHistory,
+                            borderColor: "rgb(0,0,0)",
+                            borderWidth: 1,
+                            pointRadius: 0,
+                        },
+                    ],
+                };
+            });
+        });
         const msToHMS = (ms: number) =>
             new Date(ms).toISOString().slice(11, 19);
         const msToS = (ms: number) => Number(ms / 1000).toFixed(2);
@@ -87,6 +123,7 @@ export default defineComponent({
             players,
             server,
             authorize,
+            charts,
         };
     },
 });
@@ -100,7 +137,7 @@ body {
     background-color: white;
     border: 1px black solid;
     border-radius: 3px;
-    padding: 3px;
+    padding: 5px;
 }
 pre {
     display: inline;

@@ -65,6 +65,9 @@ class AudienceMember {
         );
     }
 
+    /**
+     * currently unused, fun tho
+     */
     get latencyHistogram(): [number[], string[]] {
         if (this.lastLatencies.length < 2) {
             return [[], []];
@@ -100,7 +103,7 @@ class AudienceMember {
             uptimeMs: this.uptimeMs,
             latestPing: this.lastRecordedLatency,
             avgPing: this.meanLatency,
-            pingHistogram: this.latencyHistogram,
+            pingHistory: this.lastLatencies.slice(-10),
             location: this.location,
             playerState,
         };

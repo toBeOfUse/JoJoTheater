@@ -75,7 +75,7 @@ interface ConnectionStatus {
     uptimeMs: number;
     latestPing: number;
     avgPing: number;
-    pingHistogram: [number[], string[]];
+    pingHistory: number[];
     location: string;
     playerState: VideoState | undefined;
 }
