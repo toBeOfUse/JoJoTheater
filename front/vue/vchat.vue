@@ -372,6 +372,19 @@ export default defineComponent({
             "misspiggy.jpg",
             "gonzo.jpg",
             "timcurry.jpg",
+            // princess tutu
+            "ahiru.jpg",
+            "anteaterina.jpg",
+            "drosselmeyer.jpg",
+            "duck.jpg",
+            "edel.jpg",
+            "moon.jpg",
+            "fakir.jpg",
+            "mytho.jpg",
+            "neko.jpg",
+            "rue.jpg",
+            "shard.jpg",
+            "princess.jpg",
         ].map((a) => "/images/avatars/" + a);
         const selectedAvatar = ref("");
         const avatarPage = ref(0);
