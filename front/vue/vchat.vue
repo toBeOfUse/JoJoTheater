@@ -55,15 +55,36 @@
                 >
                     Choose your avatar:
                 </label>
-                <div class="avatar-row" v-for="row in 2" :key="row">
+                <div id="avatar-selection-area">
                     <img
-                        v-for="image in avatarRow(row)"
-                        :key="image"
-                        class="avatar-option"
-                        :class="image == selectedAvatar ? 'selected' : ''"
-                        :src="image"
-                        @click="selectedAvatar = image"
-                        @dblclick="attemptLogin"
+                        class="avatar-page-arrow"
+                        :class="{ unavailable: avatarPage == 0 }"
+                        @click="changePage(-1)"
+                        src="/images/page-change-arrow.svg"
+                        style="transform: scaleX(-1)"
+                        title="Previous Page"
+                    />
+                    <div>
+                        <div class="avatar-row" v-for="row in 2" :key="row">
+                            <img
+                                v-for="image in avatarRow(row)"
+                                :key="image"
+                                class="avatar-option"
+                                :class="
+                                    image == selectedAvatar ? 'selected' : ''
+                                "
+                                :src="image"
+                                @click="selectedAvatar = image"
+                                @dblclick="attemptLogin"
+                            />
+                        </div>
+                    </div>
+                    <img
+                        class="avatar-page-arrow"
+                        :class="{ unavailable: !nextPageAvailable }"
+                        @click="changePage(1)"
+                        src="/images/page-change-arrow.svg"
+                        title="Next Page"
                     />
                 </div>
                 <section class="field-row" style="margin-top: 5px; width: 100%">
@@ -120,7 +141,10 @@
                                 :src="group[0].senderAvatarURL"
                             />
                             <div class="chat-section-text">
-                                <span class="in-chat-username" v-html="group[0].senderName" />
+                                <span
+                                    class="in-chat-username"
+                                    v-html="group[0].senderName"
+                                />
                                 <div
                                     class="message"
                                     v-for="(message, j) in group"
@@ -148,7 +172,7 @@
 <script lang="ts">
 import { ChatMessage, Subscription } from "../../types";
 import type { Socket } from "socket.io-client";
-import { ref, nextTick, defineComponent, PropType } from "vue";
+import { ref, nextTick, defineComponent, PropType, computed } from "vue";
 export default defineComponent({
     props: {
         socket: {
@@ -322,6 +346,7 @@ export default defineComponent({
         const loggedIn = ref(false);
 
         const avatars = [
+            // server emojis
             "nymface.jpg",
             "purpleface.png",
             "bogchamp.jpg",
@@ -334,14 +359,41 @@ export default defineComponent({
             "fear.jpg",
             "yeehaw.png",
             "sparklewink.jpg",
+            // muppets
+            "kermit.jpg",
+            "rowlf.jpg",
+            "rizzo.jpg",
+            "scrooge.jpg",
+            "beaker.jpg",
+            "animal.jpg",
+            "scrunch.jpg",
+            "statler.jpg",
+            "waldorf.jpg",
+            "misspiggy.jpg",
+            "gonzo.jpg",
+            "timcurry.jpg",
         ].map((a) => "/images/avatars/" + a);
         const selectedAvatar = ref("");
-        const avatarRow = (which: number) => {
-            if (which == 1) {
-                return avatars.slice(0, Math.floor(avatars.length / 2));
-            } else {
-                return avatars.slice(Math.floor(avatars.length / 2));
+        const avatarPage = ref(0);
+        const avatarsPerRow = 6;
+        const rowsPerPage = 2;
+        const nextPageAvailable = computed<boolean>(() => {
+            return (
+                (avatarPage.value + 1) * avatarsPerRow * rowsPerPage <
+                avatars.length - 1
+            );
+        });
+        const changePage = (direction: 1 | -1) => {
+            if (direction == -1 && avatarPage.value > 0) {
+                avatarPage.value -= 1;
+            } else if (direction == 1 && nextPageAvailable.value) {
+                avatarPage.value += 1;
             }
+        };
+        const avatarRow = (which: number) => {
+            let offset = avatarsPerRow * rowsPerPage * avatarPage.value;
+            if (which == 2) offset += avatarsPerRow;
+            return avatars.slice(offset, offset + avatarsPerRow);
         };
 
         const nameInput = ref("");
@@ -472,6 +524,9 @@ export default defineComponent({
             send,
             groupedMessages,
             maximize,
+            avatarPage,
+            changePage,
+            nextPageAvailable,
         };
     },
 });
@@ -538,10 +593,24 @@ export default defineComponent({
     height: 100%;
 }
 
-.avatar-row {
+#avatar-selection-area {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-around;
     width: 100%;
+}
+
+.avatar-page-arrow {
+    cursor: pointer;
+    opacity: 0.7;
+    height: 30px;
+    width: auto;
+    &:hover {
+        opacity: 1;
+    }
+    &.unavailable {
+        visibility: hidden;
+    }
 }
 
 .avatar-option {
