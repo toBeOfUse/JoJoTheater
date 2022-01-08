@@ -349,7 +349,7 @@ export default defineComponent({
             // server emojis
             "nymface.jpg",
             "purpleface.png",
-            "bogchamp.jpg",
+            "yuuri.jpg",
             "coop.jpg",
             "gayknife.png",
             "scream.jpg",
