@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import path from "path";
 import sharp from "sharp";
+import sanitizeFilename from "sanitize-filename";
 import fs from "fs";
 import logger from "./logger";
 
@@ -47,7 +48,7 @@ function chooseFormat(accept: string | undefined, imagePath: string): Format {
  */
 export default function (
     config: { widths: number[] } = {
-        widths: [50, 100, 200, 500, 1000],
+        widths: [50, 100, 250, 500, 1000],
     }
 ): RequestHandler {
     return async (req, res, next) => {
@@ -72,16 +73,42 @@ export default function (
 
         if (checkParam("path", typeof req.query.path === "string")) return;
         let imagePath = path.join("./assets/", req.query.path as string);
+        const format = chooseFormat(req.headers.accept, imagePath);
+        res.setHeader("Content-Type", "image/" + format);
+        // TODO: set cache control headers to max caching
+
+        let cacheName = "";
+        for (const query in req.query) {
+            cacheName += query + "." + req.query[query] + ".";
+        }
+        cacheName += format;
+        cacheName = sanitizeFilename(cacheName);
+        const cachePath = path.resolve(__dirname, "../cache/" + cacheName);
+        if (fs.existsSync(cachePath)) {
+            res.sendFile(cachePath);
+            return;
+        }
+
         const imageStats = (await fs.promises
             .stat(imagePath)
             .catch(() => false)) as fs.Stats | false;
         if (!imageStats) {
             // fallback for non-existent thumbnails that... shouldn't... be needed
             // much longer
-            if (imagePath.startsWith("/images/thumbnails/")) {
+            if ((req.query.path as string).startsWith("/images/thumbnails/")) {
+                const thumbnailFallback = path.join(
+                    __dirname,
+                    "../assets/images/video-file.svg"
+                );
+                logger.warn(
+                    "missing thumbnail at path: " +
+                        req.query.path +
+                        " - serving " +
+                        thumbnailFallback +
+                        " instead"
+                );
                 res.status(200);
-                res.sendFile("./assets/images/video-file.svg");
-                res.end();
+                res.sendFile(thumbnailFallback);
                 return;
             } else {
                 checkParam("path", false);
@@ -89,15 +116,14 @@ export default function (
             }
         }
 
-        const minWidth = Number(req.query.width as string);
-        if (checkParam("width", !isNaN(minWidth))) return;
+        const requestedWidth =
+            req.query.width == "max"
+                ? Infinity
+                : Number(req.query.width as string);
+        if (checkParam("width", !isNaN(requestedWidth))) return;
 
         // will be clipped to source image width
-        let width = config.widths.find((n) => n > minWidth) || Infinity;
-
-        const format = chooseFormat(req.headers.accept, imagePath);
-        res.setHeader("Content-Type", "image/" + format);
-        // TODO: set cache control headers to max caching
+        let width = config.widths.find((n) => n > requestedWidth) || Infinity;
 
         let image = sharp(imagePath);
         let imageMeta;
@@ -135,7 +161,6 @@ export default function (
             const height = Math.round(width * (comps[1] / comps[0]));
             image = image.resize({ width, height });
         }
-        // TODO: cache results in files
         let result;
         try {
             result = await image.toBuffer();
@@ -159,5 +184,9 @@ export default function (
         );
         res.status(200);
         res.end(result);
+        fs.promises.writeFile(cachePath, result).catch((e) => {
+            logger.error(e);
+            logger.error("unable to write file to " + cachePath);
+        });
     };
 }
