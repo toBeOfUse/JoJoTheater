@@ -70,4 +70,4 @@ const avatars = [
     new Avatar("princess", forward),
 ];
 
-export { avatars };
+export { avatars, Direction };

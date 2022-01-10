@@ -25,6 +25,7 @@ import {
     defineAsyncComponent,
 } from "vue";
 import { ChatUserInfo, Subscription } from "../../types";
+import { avatars, Direction } from "./avatars";
 import type { Socket } from "socket.io-client";
 
 const chairComponents = {
@@ -69,8 +70,18 @@ export default defineComponent({
         ) {
             const image = el.querySelector("image") as SVGImageElement;
             if (image) {
-                image.setAttribute("href", replacement.value);
-                image.setAttribute("xlink:href", replacement.value);
+                // TODO: optimize with Record<string, Avatar> lookup?
+                const avatar = avatars.find((a) => a.path == replacement.value);
+                const flip = avatar && avatar.facing == Direction.left;
+                let cdnURL =
+                    "/imgopt?path=" + encodeURIComponent(replacement.value);
+                cdnURL += "&flip=" + flip;
+                cdnURL +=
+                    "&width=" +
+                    image.getBoundingClientRect().width *
+                        window.devicePixelRatio;
+                image.setAttribute("href", cdnURL);
+                image.setAttribute("xlink:href", cdnURL);
             }
         },
     },
@@ -133,13 +144,7 @@ export default defineComponent({
         // ]);
         const users = ref<ChatUserInfo[]>([]);
         props.socket.on("audience_info_set", (audience: ChatUserInfo[]) => {
-            users.value = audience.map((u) => ({
-                ...u,
-                avatarURL: u.avatarURL.replace(
-                    "/avatars",
-                    "/avatars/facingright"
-                ),
-            }));
+            users.value = audience;
         });
         const getMaxUsersPerRow = () =>
             Math.floor(
