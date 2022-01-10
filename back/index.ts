@@ -1,4 +1,3 @@
-import path from "path";
 import http from "http";
 import express from "express";
 import compression from "compression";
@@ -6,6 +5,7 @@ import compression from "compression";
 import initTheater from "./theater";
 import initUploads from "./upload";
 import logger from "./logger";
+import cdn from "./imagecdn";
 
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
@@ -62,6 +62,7 @@ app.use((req, _res, next) => {
     next();
 });
 app.use(express.static("assets"));
+app.use(cdn());
 
 const server = http.createServer(app);
 initTheater(server, app);
