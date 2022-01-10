@@ -77,9 +77,24 @@ export default function (
         res.setHeader("Content-Type", "image/" + format);
         // TODO: set cache control headers to max caching
 
+        const requestedWidth =
+            req.query.width == "max"
+                ? Infinity
+                : Number(req.query.width as string);
+        if (checkParam("width", !isNaN(requestedWidth))) return;
+
+        // will be clipped to source image width
+        let width = config.widths.find((n) => n > requestedWidth) || Infinity;
+
         let cacheName = "";
         for (const query in req.query) {
-            cacheName += query + "." + req.query[query] + ".";
+            if (query == "width") {
+                // use final width instead of requested width to reduce
+                // variability/increase cache hits
+                cacheName += "width." + width + ".";
+            } else {
+                cacheName += query + "." + req.query[query] + ".";
+            }
         }
         cacheName += format;
         cacheName = sanitizeFilename(cacheName);
@@ -115,15 +130,6 @@ export default function (
                 return;
             }
         }
-
-        const requestedWidth =
-            req.query.width == "max"
-                ? Infinity
-                : Number(req.query.width as string);
-        if (checkParam("width", !isNaN(requestedWidth))) return;
-
-        // will be clipped to source image width
-        let width = config.widths.find((n) => n > requestedWidth) || Infinity;
 
         let image = sharp(imagePath);
         let imageMeta;
