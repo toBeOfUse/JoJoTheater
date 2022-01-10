@@ -120,7 +120,7 @@ export default function (
 
         const flipped = req.query.flip == "true";
         if (flipped) {
-            image = image.flip();
+            image = image.flop();
         }
 
         const aspectRatio = req.query.ratio;
