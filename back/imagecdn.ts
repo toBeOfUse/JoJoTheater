@@ -132,8 +132,8 @@ export default function (
             if (checkParam("ratio", validity)) {
                 return;
             }
-            const height = width * (comps[1] / comps[0]);
-            image = image.resize({ height });
+            const height = Math.round(width * (comps[1] / comps[0]));
+            image = image.resize({ width, height });
         }
         // TODO: cache results in files
         let result;
