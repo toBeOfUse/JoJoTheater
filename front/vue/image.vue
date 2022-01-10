@@ -16,6 +16,10 @@ export default defineComponent({
             type: Boolean,
             default: false,
         },
+        aspectRatio: {
+            required: false,
+            type: String,
+        },
     },
     setup(props) {
         const img = ref<HTMLImageElement | null>(null);
@@ -25,7 +29,14 @@ export default defineComponent({
                 const width =
                     img.value.offsetWidth * (window.devicePixelRatio || 1);
                 const path = encodeURIComponent(props.path);
-                cdnURL.value = `/imgopt?width=${width}&path=${path}&flip=${props.flipped}`;
+                let url = `/imgopt?width=${width}&path=${path}`;
+                if (props.flipped) {
+                    url += "&flip=true";
+                }
+                if (props.aspectRatio) {
+                    url += `&ratio=${props.aspectRatio}`;
+                }
+                cdnURL.value = url;
             }
         });
         return { img, cdnURL };

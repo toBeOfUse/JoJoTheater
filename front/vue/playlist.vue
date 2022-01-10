@@ -34,10 +34,9 @@
                     @click="changeVideo(video.id)"
                     :title="video.title"
                 >
-                    <div
-                        :style="{
-                            backgroundImage: `url(/images/thumbnails/${video.id}.jpg)`,
-                        }"
+                    <opt-image
+                        :path="`/images/thumbnails/${video.id}.jpg`"
+                        aspectRatio="16:9"
                         class="video-thumbnail"
                     />
                     <div class="video-info-box">
@@ -98,6 +97,7 @@ import {
 } from "../../types";
 import { defineComponent, PropType, ref, computed, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
+import OptImage from "./image.vue";
 
 export default defineComponent({
     props: {
@@ -110,7 +110,7 @@ export default defineComponent({
             required: false,
         },
     },
-    components: { OpenCloseIcon },
+    components: { OpenCloseIcon, OptImage },
     setup(props) {
         const shown = ref(true);
         const getIcon = (provider: string) => {
@@ -319,10 +319,6 @@ $playlist-item-margin: 3px;
 
 .video-thumbnail {
     width: 100%;
-    height: 0;
-    padding-bottom: 56.25%;
-    background-size: cover;
-    background-position: center;
 }
 
 #playlist-header {
