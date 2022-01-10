@@ -96,6 +96,7 @@ export default function (
                 cacheName += query + "." + req.query[query] + ".";
             }
         }
+        cacheName += "2.";
         cacheName += format;
         cacheName = sanitizeFilename(cacheName);
         const cachePath = path.resolve(__dirname, "../cache/" + cacheName);
@@ -148,7 +149,9 @@ export default function (
             return;
         }
         width = Math.min(imageMeta.width as number, width);
-        image = image.resize(width)[format]();
+        image = image
+            .resize(width)
+            .toFormat(format, { quality: format == "avif" ? 70 : 85 });
 
         const flipped = req.query.flip == "true";
         if (flipped) {
