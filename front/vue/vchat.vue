@@ -66,14 +66,14 @@
                     />
                     <div>
                         <div class="avatar-row" v-for="row in 2" :key="row">
-                            <img
+                            <opt-image
                                 v-for="image in avatarRow(row)"
                                 :key="image"
                                 class="avatar-option"
                                 :class="
                                     image == selectedAvatar ? 'selected' : ''
                                 "
-                                :src="image"
+                                :path="image"
                                 @click="selectedAvatar = image"
                                 @dblclick="attemptLogin"
                             />
@@ -136,9 +136,9 @@
                             v-html="group[0].messageHTML"
                         ></div>
                         <template v-else>
-                            <img
+                            <opt-image
                                 class="in-chat-avatar"
-                                :src="group[0].senderAvatarURL"
+                                :path="group[0].senderAvatarURL"
                             />
                             <div class="chat-section-text">
                                 <span
@@ -171,6 +171,8 @@
 
 <script lang="ts">
 import { ChatMessage, Subscription } from "../../types";
+import { avatars } from "./avatars";
+import OptImage from "./image.vue";
 import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType, computed } from "vue";
 export default defineComponent({
@@ -180,7 +182,8 @@ export default defineComponent({
             required: true,
         },
     },
-    setup(props, context) {
+    components: { OptImage },
+    setup(props) {
         const socket = props.socket;
         // positioning logic:
         const minimized = ref(true);
