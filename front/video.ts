@@ -176,10 +176,6 @@ class HTML5VideoController extends VideoController {
         video.id = "player";
         video.controls = false;
         video.setAttribute("playsinline", "");
-        video.setAttribute(
-            "poster",
-            "/images/thumbnails/" + state.video.id + ".jpg"
-        );
         DOMControls.videoContainer.prepend(video);
         this.videoElement = video;
         this.videoElement.addEventListener("loadedmetadata", () => {
@@ -222,7 +218,10 @@ class HTML5VideoController extends VideoController {
             this.videoElement.src = v.video.src;
             this.videoElement.setAttribute(
                 "poster",
-                "/images/thumbnails/" + v.video.id + ".jpg"
+                "/imgopt?width=max&path=" +
+                    encodeURIComponent(
+                        "/images/thumbnails/" + v.video.id + ".jpg"
+                    )
             );
             this.prevSrc = v.video.src;
         }
