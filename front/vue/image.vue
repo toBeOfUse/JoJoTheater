@@ -23,7 +23,12 @@ export default defineComponent({
     },
     setup(props) {
         const img = ref<HTMLImageElement | null>(null);
-        const cdnURL = ref("");
+        // image is initially a single transparent png pixel (if the src starts out
+        // blank, chrome (and others?) won't give the image a width)
+        const cdnURL = ref(
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcS" +
+                "JAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg=="
+        );
         onMounted(() => {
             if (img.value) {
                 const width =
