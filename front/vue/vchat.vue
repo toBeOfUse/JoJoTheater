@@ -345,47 +345,6 @@ export default defineComponent({
         // login session logic:
         const loggedIn = ref(false);
 
-        const avatars = [
-            // server emojis
-            "nymface.jpg",
-            "purpleface.png",
-            "yuuri.jpg",
-            "coop.jpg",
-            "gayknife.png",
-            "scream.jpg",
-            "rosie.jpg",
-            "nonut.jpg",
-            "strongseal.jpg",
-            "fear.jpg",
-            "yeehaw.png",
-            "sparklewink.jpg",
-            // muppets
-            "kermit.jpg",
-            "rowlf.jpg",
-            "rizzo.jpg",
-            "scrooge.jpg",
-            "beaker.jpg",
-            "animal.jpg",
-            "scrunch.jpg",
-            "statler.jpg",
-            "waldorf.jpg",
-            "misspiggy.jpg",
-            "gonzo.jpg",
-            "timcurry.jpg",
-            // princess tutu
-            "ahiru.jpg",
-            "anteaterina.jpg",
-            "drosselmeyer.jpg",
-            "duck.jpg",
-            "edel.jpg",
-            "moon.jpg",
-            "fakir.jpg",
-            "mytho.jpg",
-            "neko.jpg",
-            "rue.jpg",
-            "shard.jpg",
-            "princess.jpg",
-        ].map((a) => "/images/avatars/" + a);
         const selectedAvatar = ref("");
         const avatarPage = ref(0);
         const avatarsPerRow = 6;
@@ -406,7 +365,9 @@ export default defineComponent({
         const avatarRow = (which: number) => {
             let offset = avatarsPerRow * rowsPerPage * avatarPage.value;
             if (which == 2) offset += avatarsPerRow;
-            return avatars.slice(offset, offset + avatarsPerRow);
+            return avatars
+                .slice(offset, offset + avatarsPerRow)
+                .map((a) => a.path);
         };
 
         const nameInput = ref("");
