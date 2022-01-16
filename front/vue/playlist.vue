@@ -9,12 +9,11 @@
                 <input
                     type="text"
                     v-model="search"
-                    placeholder="Search..."
+                    placeholder="Search these videos..."
                     id="search"
                     v-if="folder.name == searchResultsFolderName"
                     @click.stop
-                />
-                {{ folder.name == searchResultsFolderName ? "" : folder.name
+                />{{ getFolderLabel(folder.name)
                 }}<img
                     v-if="folder.name == activeFolder"
                     src="/images/active-folder-indicator.svg"
@@ -220,6 +219,16 @@ export default defineComponent({
             props.socket.emit("state_change_request", req);
         };
 
+        const getFolderLabel = (folderName: string) => {
+            if (folderName == searchResultsFolderName) {
+                return "";
+            } else if (folderName == UserSubmittedFolderName) {
+                return folderName + " (add videos here)";
+            } else {
+                return folderName;
+            }
+        };
+
         const defaultPlaceholder =
             "Type a Youtube, Vimeo, or Dailymotion URL...";
         const placeholder = ref(defaultPlaceholder);
@@ -250,6 +259,7 @@ export default defineComponent({
             search,
             activeFolder,
             searchResultsFolderName,
+            getFolderLabel,
         };
     },
 });
