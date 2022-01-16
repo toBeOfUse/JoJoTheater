@@ -15,21 +15,18 @@ window.onerror = (event) => {
     socket.emit("error_report", event.toString() + " - " + new Error().stack);
 };
 
-const player = initVideo(socket);
-
-socket.on("playlist_set", () => {
-    renderTitle();
-});
+initVideo(socket);
 
 let currentVideo: Video | undefined = undefined;
 socket.on("state_set", (v: VideoState) => {
-    renderTitle();
     currentVideo = v.video || undefined;
+    if (currentVideo) {
+        renderTitle();
+    }
 });
 
 function renderTitle() {
     let title;
-    let currentVideo = player.currentVideo;
     if (currentVideo && (title = document.querySelector("#video-title"))) {
         title.innerHTML = currentVideo.title;
     }
