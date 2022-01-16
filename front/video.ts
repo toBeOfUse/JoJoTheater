@@ -14,6 +14,10 @@ function secondsToHMS(seconds: number) {
     }
 }
 
+// the following functions, variables, and objects that represent the controls in the
+// DOM should probably be wrapped into a single object called like userInterface or
+// something along with initializePlayerInterface
+
 let userIsSeeking = false;
 
 let popupTimer: NodeJS.Timeout | undefined = undefined;
