@@ -22,7 +22,7 @@
                     <td>{{ msToS(conn.uptimeMs) }} seconds</td>
                     <td>
                         <em v-if="!conn.chatName">not logged in</em>
-                        <template v-else>{{ conn.chatName }}</template>
+                        <span v-else v-html="conn.chatName" />
                     </td>
                     <td style="text-align: left; font-size: small">
                         <template v-if="conn.playerState">
