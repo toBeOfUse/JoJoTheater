@@ -680,10 +680,10 @@ class DailymotionVideoController extends VideoController {
  * player to play sometimes so that autoplay blocking will see that the user is
  * specifically trying to play the video.
  * @param io Socket.io client used for communicating with the server
- * @param player instance of Player used to determine the current player state, so
+ * @param coordinator instance of Coordinator used to determine the current player state, so
  * we have a basis for our modifications
  */
-function initializePlayerInterface(io: Socket, player: Player) {
+function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
     io.on("alert", (message: string) => displayMessage(message));
     DOMControls.playPause.addEventListener("click", () => {
         const changeRequest: StateChangeRequest = {
@@ -692,8 +692,8 @@ function initializePlayerInterface(io: Socket, player: Player) {
         };
         io.emit("state_change_request", changeRequest);
         // signal direct user intent to autoplay blockers
-        if (changeRequest.newValue && player.controller) {
-            player.controller.manuallyPressPlay();
+        if (changeRequest.newValue && coordinator.controller) {
+            coordinator.controller.manuallyPressPlay();
         }
     });
     DOMControls.nextVideo.addEventListener("click", () => {
@@ -724,10 +724,10 @@ function initializePlayerInterface(io: Socket, player: Player) {
         io.emit("state_change_request", changeRequest);
     };
     const performSeek = () => {
-        if (userIsSeeking && player.controller) {
+        if (userIsSeeking && coordinator.controller) {
             const newTimeMs =
                 (Number(DOMControls.seek.value) / 100) *
-                player.controller?.durationMs;
+                coordinator.controller?.durationMs;
             const changeRequest: StateChangeRequest = {
                 changeType: ChangeTypes.time,
                 newValue: newTimeMs,
@@ -779,11 +779,11 @@ function initializePlayerInterface(io: Socket, player: Player) {
 }
 
 /**
- * Responsible for holding the current state of the video being played and the
- * controller that's playing it, as well as passing state updates from the
- * server to the controller and resetting the DOM when we are "between controllers."
+ * Responsible for holding the current intended state of the video being played and
+ * the controller that's playing it, as well as passing state updates from the server
+ * to the controller and resetting the DOM when we are "between controllers."
  */
-class Player {
+class Coordinator {
     state: VideoState = {
         playing: false,
         video: null,
@@ -835,25 +835,24 @@ class Player {
     }
 }
 
-function initVideo(io: Socket): Player {
-    const player = new Player(io);
-    initializePlayerInterface(io, player);
+function initVideo(io: Socket): void {
+    const coord = new Coordinator(io);
+    initializePlayerInterface(io, coord);
     const createStateReport = async () => {
         let state: VideoState | undefined;
-        if (!player.controller) {
+        if (!coord.controller) {
             state = undefined;
         } else {
             state = {
-                playing: await player.controller.isPlaying(),
-                currentTimeMs: player.controller.currentTimeMs,
-                video: player.state.video,
+                playing: await coord.controller.isPlaying(),
+                currentTimeMs: coord.controller.currentTimeMs,
+                video: coord.state.video,
             };
         }
         io.emit("state_report", state);
     };
     io.on("request_state_report", createStateReport);
     setInterval(createStateReport, 5000);
-    return player;
 }
 
 export default initVideo;
