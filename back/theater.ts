@@ -128,11 +128,25 @@ class AudienceMember {
             this.subscriptions.add(sub);
         });
         this.socket.on("user_info_set", (info: ChatUserInfo) => {
-            info.name = info.name.trim();
             if (
-                info.avatarURL.startsWith("/images/avatars/") &&
-                info.name.length < 30
+                this.chatInfo &&
+                this.chatInfo.avatarURL == info.avatarURL &&
+                this.chatInfo.name == info.name &&
+                this.chatInfo.id == info.id
             ) {
+                logger.warn(
+                    "user re-logging in with identical info; " +
+                        "possible front-end glitch"
+                );
+                // kind of a hack, but in the case of a duplicate login we are
+                // marking the second one as resuming a session so that an
+                // announcement doesn't get sent out announcing a new one
+                info.resumed = true;
+            } else if (
+                info.avatarURL.startsWith("/images/avatars/") &&
+                info.name.trim().length < 30
+            ) {
+                info.name = info.name.trim();
                 info.name = escapeHTML(info.name);
                 this.chatInfo = { ...info, id: this.id };
                 logger.debug(
@@ -141,8 +155,8 @@ class AudienceMember {
                 logger.debug(JSON.stringify(info));
                 this.emit("chat_login_successful");
             } else {
-                logger.debug("chat info rejected:");
-                logger.debug(JSON.stringify(info).substring(0, 1000));
+                logger.warn("chat info rejected:");
+                logger.warn(JSON.stringify(info).substring(0, 1000));
             }
         });
         this.socket.on("user_info_clear", () => {
