@@ -139,6 +139,7 @@ export default defineComponent({
                 videoTitle.value = "";
                 folder.value = "";
                 uploadCompleted.value = true;
+                clearThumbnail();
             });
             xhr.open("POST", "/api/upload");
             xhr.send(fd);

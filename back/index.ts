@@ -3,7 +3,7 @@ import express from "express";
 import compression from "compression";
 
 import initTheater from "./theater";
-import initUploads from "./upload";
+import uploads from "./upload";
 import logger from "./logger";
 import cdn from "./imagecdn";
 
@@ -63,9 +63,9 @@ app.use((req, _res, next) => {
 });
 app.use(express.static("assets"));
 app.use(cdn());
+app.use(uploads());
 
 const server = http.createServer(app);
 initTheater(server, app);
-initUploads(app);
 
 server.listen(8080, () => logger.info("app running on 8080..."));

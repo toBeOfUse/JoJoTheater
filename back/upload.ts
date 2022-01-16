@@ -1,20 +1,24 @@
 import formidable from "formidable";
-import { writeFile, renameSync } from "fs";
+import { promises as asyncFS } from "fs";
 import path from "path";
 
-import type { Express } from "express";
+import type { RequestHandler } from "express";
 
 import logger from "./logger";
-import { Playlist, playlist } from "./queries";
+import { playlist } from "./queries";
 import { password } from "./secrets";
 import { UserSubmittedFolderName } from "../types";
 
-export default function (app: Express) {
-    app.post("/api/upload", (req, res) => {
+export default function (options: { maxSizeBytes?: number } = {}) {
+    const handler: RequestHandler = (req, res, next) => {
+        if (req.url != "/api/upload") {
+            next();
+            return;
+        }
         const form = formidable({
-            multiples: false,
+            multiples: true,
             keepExtensions: true,
-            maxFileSize: 4294967296, // 4gb
+            maxFileSize: options.maxSizeBytes || 4294967296, // 4gb
         });
 
         form.on("fileBegin", (_formName, file) => {
@@ -33,45 +37,48 @@ export default function (app: Express) {
 
         form.parse(req, async (err, fields, files) => {
             res.setHeader("Content-Type", "text/plain");
-            if (err || Array.isArray(files.file)) {
+            if (err) {
                 res.status(400);
             } else {
-                const file = files.file; // sigh
+                const videoFile = files.video as formidable.File;
+                const thumbnailFile = files.thumbnail as formidable.File;
+                let thumbnail;
+                if (thumbnailFile) {
+                    thumbnail = await asyncFS.readFile(thumbnailFile.filepath);
+                }
                 res.status(200);
-                writeFile(
-                    path.resolve("./uploads/", file.originalFilename + ".json"),
-                    JSON.stringify({ file, fields }, null, 4),
-                    () => null
+                await asyncFS.writeFile(
+                    path.resolve(
+                        "./uploads/",
+                        videoFile.originalFilename + ".meta.json"
+                    ),
+                    JSON.stringify({ videoFile, fields }, null, 4)
                 );
                 if (
                     fields.password == password &&
                     !Array.isArray(fields.folder) &&
                     !Array.isArray(fields.title)
                 ) {
-                    const filename = path.basename(file.filepath);
-                    renameSync(
-                        file.filepath,
+                    const filename = path.basename(videoFile.filepath);
+                    await asyncFS.rename(
+                        videoFile.filepath,
                         path.resolve("./assets/videos/", filename)
                     );
-                    const rawVideo = {
-                        captions: false,
-                        folder: fields.folder || UserSubmittedFolderName,
-                        src: "/videos/" + file.originalFilename,
-                        title:
-                            fields.title ||
-                            file.originalFilename ||
-                            "mystery video",
-                    };
-                    const { durationSeconds: duration } =
-                        await Playlist.getVideoMetadata(rawVideo);
-                    playlist.addRawVideo({
-                        ...rawVideo,
-                        duration,
-                        thumbnail: undefined,
-                    });
+                    await playlist.addFromFile(
+                        {
+                            src: "/videos/" + videoFile.originalFilename,
+                            title:
+                                fields.title ||
+                                videoFile.originalFilename ||
+                                "mystery video",
+                            folder: fields.folder || UserSubmittedFolderName,
+                        },
+                        thumbnail
+                    );
                 }
             }
             res.end();
         });
-    });
+    };
+    return handler;
 }
