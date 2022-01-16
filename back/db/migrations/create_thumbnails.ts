@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { Playlist, playlist } from "../../queries";
 
 /**
@@ -13,36 +11,9 @@ async function addThumbnails() {
     const videos = await playlist.getVideos();
     for (const video of videos) {
         console.log("updating thumbnail for " + video.title);
-        if (video.provider) {
-            const injectionSource = path.join(
-                Playlist.thumbnailPath,
-                "/injected/",
-                video.src + ".jpg"
-            );
-            if (fs.existsSync(injectionSource)) {
-                fs.copyFileSync(
-                    injectionSource,
-                    path.join(Playlist.thumbnailPath, video.id + ".jpg")
-                );
-            } else {
-                const { thumbnail } = await Playlist.getVideoMetadata(video);
-                if (thumbnail) {
-                    await Playlist.saveThumbnail(video.id, thumbnail);
-                }
-            }
-        } else {
-            const filename = path.parse(video.src).name;
-            const thumbnailSource = path.join(
-                Playlist.thumbnailPath,
-                "/injected/",
-                filename + ".jpg"
-            );
-            if (fs.existsSync(thumbnailSource)) {
-                fs.copyFileSync(
-                    thumbnailSource,
-                    path.join(Playlist.thumbnailPath, video.id + ".jpg")
-                );
-            }
+        const { thumbnail } = await Playlist.getVideoMetadata(video);
+        if (thumbnail) {
+            await Playlist.saveThumbnail(video.id, thumbnail);
         }
     }
 }

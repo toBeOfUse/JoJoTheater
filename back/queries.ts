@@ -19,8 +19,9 @@ const streamsDB = knex({
 });
 
 /**
- * Simple database table wrapper that also emits a "video_added" event when a new
- * video is successfully added.
+ * Database table wrapper that automatically fills in the metadata for any urls or
+ * files that you wish to add and also emits a "video_added" event when a new video
+ * is successfully added.
  */
 class Playlist extends EventEmitter {
     connection: Knex;
@@ -61,7 +62,7 @@ class Playlist extends EventEmitter {
     }
 
     async getPrevVideo(v: Video | null): Promise<Video | undefined> {
-        if (!v){
+        if (!v) {
             return undefined;
         }
         return await this.connection
@@ -74,15 +75,15 @@ class Playlist extends EventEmitter {
     }
 
     async addFromURL(url: string) {
-        const metadata = getVideoID(url);
-        if (!metadata.service || !metadata.id) {
+        const providerInfo = getVideoID(url);
+        if (!providerInfo.service || !providerInfo.id) {
             throw "url was not parseable by npm package get-video-id";
         }
 
         const rawVideo: Omit<Video, "id" | "duration" | "title" | "thumbnail"> =
             {
-                provider: metadata.service,
-                src: metadata.id,
+                provider: providerInfo.service,
+                src: providerInfo.id,
                 captions: true,
                 folder: UserSubmittedFolderName,
             };
@@ -96,6 +97,22 @@ class Playlist extends EventEmitter {
             duration,
             title: title || url,
             thumbnail,
+        });
+    }
+
+    async addFromFile(
+        video: Pick<Video, "src" | "title" | "folder">,
+        thumbnail: Buffer | undefined = undefined
+    ) {
+        const metadata = await Playlist.getVideoMetadata({
+            src: video.src,
+            provider: undefined,
+        });
+        await this.addRawVideo({
+            ...video,
+            captions: false,
+            duration: metadata.durationSeconds,
+            thumbnail: thumbnail || metadata.thumbnail,
         });
     }
 
@@ -159,6 +176,15 @@ class Playlist extends EventEmitter {
         thumbnail: Buffer | undefined;
         title: string | undefined;
     }> {
+        let injectedThumbnail: Buffer | undefined = undefined;
+        const injectionSource = path.join(
+            Playlist.thumbnailPath,
+            "/injected/",
+            video.src + ".jpg"
+        );
+        if (fs.existsSync(injectionSource)) {
+            injectedThumbnail = fs.readFileSync(injectionSource);
+        }
         if (!video.provider) {
             const location = path.join(__dirname, "../assets/", video.src);
             const subproccess = await execa("ffprobe", [
@@ -172,7 +198,7 @@ class Playlist extends EventEmitter {
             const info = JSON.parse(subproccess.stdout);
             return {
                 durationSeconds: Number(info.format.duration),
-                thumbnail: undefined,
+                thumbnail: injectedThumbnail,
                 title: undefined,
             };
         } else if (video.provider == "youtube") {
@@ -188,16 +214,19 @@ class Playlist extends EventEmitter {
                 duration += Number(comp) * acc;
                 acc *= 60;
             }
-            const thumbs = data.snippet.thumbnails;
-            let thumbnailURL;
-            if ("standard" in thumbs) {
-                thumbnailURL = thumbs.standard.url;
-            } else if ("high" in thumbs) {
-                thumbnailURL = thumbs.high.url;
-            } else {
-                thumbnailURL = thumbs[Object.keys(thumbs)[0]].url || "";
+            let thumbnail = injectedThumbnail;
+            if (!thumbnail) {
+                const thumbs = data.snippet.thumbnails;
+                let thumbnailURL;
+                if ("standard" in thumbs) {
+                    thumbnailURL = thumbs.standard.url;
+                } else if ("high" in thumbs) {
+                    thumbnailURL = thumbs.high.url;
+                } else {
+                    thumbnailURL = thumbs[Object.keys(thumbs)[0]].url || "";
+                }
+                thumbnail = await (await fetch(thumbnailURL)).buffer();
             }
-            const thumbnail = await (await fetch(thumbnailURL)).buffer();
             return {
                 durationSeconds: duration,
                 title: data.snippet.title,
@@ -206,8 +235,11 @@ class Playlist extends EventEmitter {
         } else if (video.provider == "vimeo") {
             const apiCall = `http://vimeo.com/api/v2/video/${video.src}.json`;
             const data = await (await fetch(apiCall)).json();
-            const thumbnailURL = data[0].thumbnail_large;
-            const thumbnail = await (await fetch(thumbnailURL)).buffer();
+            let thumbnail = injectedThumbnail;
+            if (!thumbnail) {
+                const thumbnailURL = data[0].thumbnail_large;
+                thumbnail = await (await fetch(thumbnailURL)).buffer();
+            }
             return {
                 durationSeconds: data[0].duration,
                 title: data[0].title,
@@ -216,8 +248,11 @@ class Playlist extends EventEmitter {
         } else if (video.provider == "dailymotion") {
             const apiCall = `https://api.dailymotion.com/video/${video.src}&fields=duration,title,thumbnail_480_url`;
             const data = await (await fetch(apiCall)).json();
-            const thumbnailURL = data.thumbnail_480_url;
-            const thumbnail = await (await fetch(thumbnailURL)).buffer();
+            let thumbnail = injectedThumbnail;
+            if (!thumbnail) {
+                const thumbnailURL = data.thumbnail_480_url;
+                thumbnail = await (await fetch(thumbnailURL)).buffer();
+            }
             return {
                 durationSeconds: data.duration,
                 title: data.title,
