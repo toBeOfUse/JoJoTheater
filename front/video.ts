@@ -685,10 +685,13 @@ class DailymotionVideoController extends VideoController {
  */
 function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
     io.on("alert", (message: string) => displayMessage(message));
-    DOMControls.playPause.addEventListener("click", () => {
+    DOMControls.playPause.addEventListener("click", async () => {
+        const alreadyPlaying =
+            coordinator.controller &&
+            (await coordinator.controller.isPlaying());
         const changeRequest: StateChangeRequest = {
             changeType: ChangeTypes.playing,
-            newValue: !player.state.playing,
+            newValue: !alreadyPlaying,
         };
         io.emit("state_change_request", changeRequest);
         // signal direct user intent to autoplay blockers
