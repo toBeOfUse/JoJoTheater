@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90">
+   <rect y="29" x="77" height="32" width="6" fill="#b6b6b6" />
+   <rect y="42" x="64" height="6" width="32" fill="#b6b6b6" />
+   <text y="80" x="80" font-size="8" text-anchor="middle" font-family="sans-serif">click here to thumbnail</text>
+</svg>

@@ -14,13 +14,13 @@
                 v-if="progress > 0"
                 :value="progress"
                 max="1"
-            ></progress>
+            />
             <p id="success" v-if="uploadCompleted">Upload successful!</p>
             <button
                 style="display: block"
                 @click="fullFormShown = !fullFormShown"
             >
-                Toggle Detailed Mode
+                View Optional Data Form
             </button>
             <template v-if="fullFormShown">
                 <input
@@ -33,6 +33,28 @@
                     type="text"
                     v-model="folder"
                     placeholder="Video folder name..."
+                />
+                <br />
+                <div id="thumbnail-container">
+                    <div
+                        id="thumbnail"
+                        :style="{ backgroundImage: `url(${thumbnail})` }"
+                        @click="thumbnailInput && thumbnailInput.click()"
+                    />
+                    <div
+                        id="thumbnail-clear"
+                        v-if="thumbnail != thumbnailPlaceholderImage"
+                        @click="clearThumbnail"
+                    >
+                        x
+                    </div>
+                </div>
+                <input
+                    type="file"
+                    style="display: none"
+                    id="thumbnailFile"
+                    @change="showThumbnail"
+                    ref="thumbnailInput"
                 />
                 <p>Password for immediate video availability:</p>
                 <input
@@ -69,6 +91,22 @@ export default defineComponent({
         const fullFormShown = ref(false);
         const videoTitle = ref("");
         const folder = ref("");
+        const thumbnailInput = ref<HTMLInputElement | null>(null);
+        const thumbnailPlaceholderImage = "/images/upload-plus.svg";
+        const thumbnail = ref(thumbnailPlaceholderImage);
+        const showThumbnail = () => {
+            if (thumbnailInput.value?.files?.length) {
+                thumbnail.value = URL.createObjectURL(
+                    thumbnailInput.value.files[0]
+                );
+            }
+        };
+        const clearThumbnail = () => {
+            thumbnail.value = thumbnailPlaceholderImage;
+            if (thumbnailInput.value) {
+                thumbnailInput.value.value = "";
+            }
+        };
         const password = ref("");
 
         const upload = () => {
@@ -77,7 +115,11 @@ export default defineComponent({
             }
             const file = fileInput.value.files[0];
             const fd = new FormData();
-            fd.append("file", file, file.name);
+            fd.append("video", file, file.name);
+            if (thumbnailInput.value?.files?.length) {
+                const thumbnailFile = thumbnailInput.value.files[0];
+                fd.append("thumbnail", thumbnailFile, thumbnailFile.name);
+            }
             if (videoTitle.value?.trim()) {
                 fd.append("title", videoTitle.value.trim());
             }
@@ -112,6 +154,11 @@ export default defineComponent({
             onFileChange,
             fileSelected,
             password,
+            thumbnail,
+            thumbnailInput,
+            showThumbnail,
+            clearThumbnail,
+            thumbnailPlaceholderImage,
         };
     },
 });
@@ -125,12 +172,17 @@ export default defineComponent({
     justify-content: center;
 }
 #panel {
+    text-align: center;
+    width: 500px;
     background-color: white;
     border: 1px solid black;
     border-radius: 5px;
     padding: 4px;
     & > * {
         margin: 3px 2px;
+    }
+    & > input[type="text"] {
+        width: 70%;
     }
 }
 #upload {
@@ -145,6 +197,34 @@ export default defineComponent({
 #uploadProgress {
     display: block;
     margin: 2px auto;
+}
+#thumbnail-container {
+    width: 200px;
+    position: relative;
+    margin: 0 auto;
+}
+#thumbnail {
+    height: 0;
+    padding-top: 56.25%;
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 2px;
+    background-size: cover;
+    background-position: center center;
+    overflow: hidden;
+}
+#thumbnail-clear {
+    font-family: sans-serif;
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    cursor: pointer;
+    color: white;
+    background-color: black;
+    border-radius: 50%;
+    height: 20px;
+    width: 20px;
+    text-align: center;
 }
 #upload-button {
     font-size: 300%;
