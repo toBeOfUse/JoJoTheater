@@ -60,7 +60,7 @@
                         class="avatar-page-arrow"
                         :class="{ unavailable: avatarPage == 0 }"
                         @click="changePage(-1)"
-                        src="/images/page-change-arrow.svg"
+                        src="/images/page-change-arrow.png"
                         style="transform: scaleX(-1)"
                         title="Previous Page"
                     />
@@ -83,7 +83,7 @@
                         class="avatar-page-arrow"
                         :class="{ unavailable: !nextPageAvailable }"
                         @click="changePage(1)"
-                        src="/images/page-change-arrow.svg"
+                        src="/images/page-change-arrow.png"
                         title="Next Page"
                     />
                 </div>
