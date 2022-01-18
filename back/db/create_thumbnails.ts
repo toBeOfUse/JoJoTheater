@@ -1,4 +1,4 @@
-import { Playlist, playlist } from "../../queries";
+import { Playlist, playlist } from "../queries";
 
 /**
  * Not strictly a database migration but close enough. Goes through each video in
