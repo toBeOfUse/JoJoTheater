@@ -12,7 +12,7 @@ import { ChatMessage, Video, UserSubmittedFolderName } from "../types";
 import { youtubeAPIKey } from "./secrets";
 
 const streamsDB = knex({
-    client: "sqlite3",
+    client: "better-sqlite3",
     connection: {
         filename: "./back/db/streams.db",
     },

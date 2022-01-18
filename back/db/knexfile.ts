@@ -1,8 +1,12 @@
+import path from "path";
+const dbPath = path.resolve(__dirname, "streams.db");
+console.log("dbPath:", dbPath);
+
 module.exports = {
     development: {
-        client: "sqlite3",
+        client: "better-sqlite3",
         connection: {
-            filename: "./streams.db",
+            filename: dbPath,
         },
         useNullAsDefault: true,
         migrations: {
@@ -15,7 +19,7 @@ module.exports = {
     },
 
     production: {
-        client: "sqlite3",
+        client: "better-sqlite3",
         connection: {
             filename: "./streams.db",
         },
