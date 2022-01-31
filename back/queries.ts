@@ -81,12 +81,12 @@ class Playlist extends EventEmitter {
         }
 
         const rawVideo: Omit<Video, "id" | "duration" | "title" | "thumbnail"> =
-            {
-                provider: providerInfo.service,
-                src: providerInfo.id,
-                captions: true,
-                folder: UserSubmittedFolderName,
-            };
+        {
+            provider: providerInfo.service,
+            src: providerInfo.id,
+            captions: true,
+            folder: UserSubmittedFolderName,
+        };
         const {
             durationSeconds: duration,
             title,
@@ -267,7 +267,9 @@ class Playlist extends EventEmitter {
 async function addMessage(m: ChatMessage) {
     await streamsDB
         .table<ChatMessage & { createdAt: Date }>("messages")
-        .insert({ ...m, createdAt: new Date() });
+        // hack to make the better-sqlite3 driver live up to its name and
+        // process booleans as sqlite3's native boolean type, int
+        .insert({ ...m, createdAt: new Date(), isAnnouncement: Number(m.isAnnouncement) as any });
 }
 
 async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
