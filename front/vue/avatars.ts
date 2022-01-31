@@ -31,7 +31,7 @@ class Avatar {
 const avatars = [
     // page 1: server emojis
     new Avatar("nymface", right),
-    new Avatar("purpleface", right, true),
+    new Avatar("purpleface", left, true),
     new Avatar("yuuri", left),
     new Avatar("coop", forward),
     new Avatar("gayknife", right, true),
