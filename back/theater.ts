@@ -115,7 +115,9 @@ class AudienceMember {
         this.socket = socket;
         this.id = socket.id;
         this.socket.onAny((eventName: string) => {
-            if (eventName !== "pong" && eventName != "state_report") {
+            if (eventName !== "pong" &&
+                eventName != "state_report"
+                && eventName != "typing_start") {
                 logger.debug(eventName + " event from id " + this.id);
             }
         });
