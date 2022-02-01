@@ -411,5 +411,7 @@
             <path style="stroke:#fff;stroke-width:2;filter:url(#shopping-cart_vue_svg__id-120ax)" d="m-301.326 302.73-52.258 274.133c-.672 5.242-6.335 10.43-13.023 11.197-1.59.183-3.238.115-4.89-.26" transform="matrix(1.07276 -.02341 .0688 1.00642 848.562 9.452)" id="shopping-cart_vue_svg__path572"/>
         </g>
     </g>
-    <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="keyboard.png" id="shopping-cart_vue_svg__keyboard" x="27.939" y="172.103" transform="rotate(3.686)"/>
+    <g transform="rotate(3.686)">
+        <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="keyboard.png" id="shopping-cart_vue_svg__keyboard" x="27.939" y="172.103"/>
+    </g>
 </svg>
