@@ -9,6 +9,7 @@
             <component
                 :is="getChair(user.id)"
                 v-hijack-svg-image="user.avatarURL"
+                v-show-keyboard="typing"
             ></component>
         </div>
     </div>
@@ -68,7 +69,7 @@ export default defineComponent({
             el: SVGElement,
             replacement: DirectiveBinding<string>
         ) {
-            const image = el.querySelector("image") as SVGImageElement;
+            const image = el.querySelector(".seated-avatar") as SVGImageElement;
             if (image) {
                 // TODO: optimize with Record<string, Avatar> lookup?
                 const avatar = avatars.find((a) => a.path == replacement.value);
@@ -82,6 +83,21 @@ export default defineComponent({
                         window.devicePixelRatio;
                 image.setAttribute("href", cdnURL);
                 image.setAttribute("xlink:href", cdnURL);
+            }
+        },
+        "show-keyboard"(
+            el: SVGElement,
+            showKeyboard: DirectiveBinding<boolean>
+        ) {
+            const keyboard = el.querySelector(
+                ".seated-keyboard"
+            ) as SVGImageElement;
+            console.log("typing directive triggered with", showKeyboard.value);
+            keyboard.setAttribute("href", "/images/chairs/keyboard.png");
+            if (showKeyboard.value) {
+                keyboard.style.display = "unset";
+            } else {
+                keyboard.style.display = "none";
             }
         },
     },
@@ -98,54 +114,60 @@ export default defineComponent({
             return chairs[acc % chairs.length];
         };
         // test data
-        // const users = ref<ChatUserInfo[]>([
-        //     {
-        //         avatarURL: "/images/avatars/facingright/strongseal.jpg",
-        //         name: "fake selki",
-        //         id: "1",
-        //         resumed: false,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/facingright/bad.jpg",
-        //         name: "fake erica",
-        //         id: "2",
-        //         resumed: false,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/facingright/scream.jpg",
-        //         name: "fake dorian",
-        //         id: "3",
-        //         resumed: false,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/facingright/purpleface.png",
-        //         name: "fake mickey",
-        //         id: "4",
-        //         resumed: false,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/facingright/fear.jpg",
-        //         name: "fake melissa",
-        //         id: "5",
-        //         resumed: false,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/facingright/coop.jpg",
-        //         name: "fake coop fan",
-        //         id: "6",
-        //         resumed: false,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/facingright/rosie.jpg",
-        //         name: "fake rosie",
-        //         id: "7",
-        //         resumed: false,
-        //     },
-        // ]);
-        const users = ref<ChatUserInfo[]>([]);
-        props.socket.on("audience_info_set", (audience: ChatUserInfo[]) => {
-            users.value = audience;
-        });
+        const users = ref<ChatUserInfo[]>([
+            {
+                avatarURL: "/images/avatars/strongseal.jpg",
+                name: "fake selki",
+                id: "1",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/bad.jpg",
+                name: "fake erica",
+                id: "2",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/scream.jpg",
+                name: "fake dorian",
+                id: "3",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/purpleface.png",
+                name: "fake mickey",
+                id: "4",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/fear.jpg",
+                name: "fake melissa",
+                id: "5",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/coop.jpg",
+                name: "fake coop fan",
+                id: "6",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/rosie.jpg",
+                name: "fake rosie",
+                id: "7",
+                resumed: false,
+            },
+            {
+                avatarURL: "/images/avatars/rosie.jpg",
+                name: "fake rosie 2",
+                id: "8",
+                resumed: false,
+            },
+        ]);
+        // const users = ref<ChatUserInfo[]>([]);
+        // props.socket.on("audience_info_set", (audience: ChatUserInfo[]) => {
+        //     users.value = audience;
+        // });
         const getMaxUsersPerRow = () =>
             Math.floor(
                 (document.querySelector("#container-container") as HTMLElement)
@@ -178,9 +200,11 @@ export default defineComponent({
             return groups;
         });
 
+        const typing = ref(true);
+
         props.socket.emit("ready_for", Subscription.audience);
 
-        return { getChair, users, groupedUsers, maxUsersPerRow };
+        return { getChair, users, groupedUsers, maxUsersPerRow, typing };
     },
 });
 </script>

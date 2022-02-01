@@ -62,7 +62,7 @@ function getConfig(_: any, options: any) {
                             loader: "vue-svg-loader",
                             options: {
                                 svgo: {
-                                    plugins: [{ prefixIds: true }],
+                                    plugins: [{ prefixIds: { prefixClassNames: false } }],
                                 },
                             },
                         },
