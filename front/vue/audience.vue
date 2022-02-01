@@ -40,8 +40,7 @@ export default defineComponent({
     },
     components: { Chair },
     setup(props) {
-        // test data
-        // const users = ref<RoomInhabitant[]>([
+        // const testUsers: RoomInhabitant[] = [
         //     {
         //         avatarURL: "/images/avatars/strongseal.jpg",
         //         name: "fake selki",
@@ -49,74 +48,95 @@ export default defineComponent({
         //         resumed: false,
         //         chairURL: "/images/rooms/basic/arm-chair.svg",
         //         typing: true,
+        //         lastTypingTimestamp: -1,
         //     },
-        // {
-        //     avatarURL: "/images/avatars/bad.jpg",
-        //     name: "fake erica",
-        //     id: "2",
-        //     resumed: false,
-        // },
-        // {
-        //     avatarURL: "/images/avatars/scream.jpg",
-        //     name: "fake dorian",
-        //     id: "3",
-        //     resumed: false,
-        // },
-        // {
-        //     avatarURL: "/images/avatars/purpleface.png",
-        //     name: "fake mickey",
-        //     id: "4",
-        //     resumed: false,
-        // },
-        // {
-        //     avatarURL: "/images/avatars/fear.jpg",
-        //     name: "fake melissa",
-        //     id: "5",
-        //     resumed: false,
-        // },
-        // {
-        //     avatarURL: "/images/avatars/coop.jpg",
-        //     name: "fake coop fan",
-        //     id: "6",
-        //     resumed: false,
-        // },
-        // {
-        //     avatarURL: "/images/avatars/rosie.jpg",
-        //     name: "fake rosie",
-        //     id: "7",
-        //     resumed: false,
-        // },
-        // {
-        //     avatarURL: "/images/avatars/rosie.jpg",
-        //     name: "fake rosie 2",
-        //     id: "8",
-        //     resumed: false,
-        // },
-        //]);
+        //     {
+        //         avatarURL: "/images/avatars/bad.jpg",
+        //         name: "fake erica",
+        //         id: "2",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/blue-chair.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/scream.jpg",
+        //         name: "fake dorian",
+        //         id: "3",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/clawfoot-tub.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/purpleface.png",
+        //         name: "fake mickey",
+        //         id: "4",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/game-chair.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/fear.jpg",
+        //         name: "fake melissa",
+        //         id: "5",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/little-car.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/coop.jpg",
+        //         name: "fake coop fan",
+        //         id: "6",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/shopping-cart.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/rosie.jpg",
+        //         name: "fake rosie",
+        //         id: "7",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/tan-chair.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        //     {
+        //         avatarURL: "/images/avatars/rosie.jpg",
+        //         name: "fake rosie 2",
+        //         id: "8",
+        //         resumed: false,
+        //         chairURL: "/images/rooms/basic/grey-couch.svg",
+        //         typing: true,
+        //         lastTypingTimestamp: -1,
+        //     },
+        // ];
         interface LoadedRoomInhabitant extends RoomInhabitant {
             svgMarkup: string;
         }
         const svgMarkupCache: Record<string, string> = {};
 
         const users = ref<LoadedRoomInhabitant[]>([]);
-        props.socket.on(
-            "audience_info_set",
-            async (audience: RoomInhabitant[]) => {
-                const loaded: LoadedRoomInhabitant[] = [];
-                for (const inhabitant of audience) {
-                    if (!svgMarkupCache[inhabitant.chairURL]) {
-                        const markupResponse = await fetch(inhabitant.chairURL);
-                        const markup = await markupResponse.text();
-                        svgMarkupCache[inhabitant.chairURL] = markup;
-                    }
-                    loaded.push({
-                        ...inhabitant,
-                        svgMarkup: svgMarkupCache[inhabitant.chairURL],
-                    });
+        const addInhabitants = async (audience: RoomInhabitant[]) => {
+            const loaded: LoadedRoomInhabitant[] = [];
+            for (const inhabitant of audience) {
+                if (!svgMarkupCache[inhabitant.chairURL]) {
+                    const markupResponse = await fetch(inhabitant.chairURL);
+                    const markup = await markupResponse.text();
+                    svgMarkupCache[inhabitant.chairURL] = markup;
                 }
-                users.value = loaded;
+                loaded.push({
+                    ...inhabitant,
+                    svgMarkup: svgMarkupCache[inhabitant.chairURL],
+                });
             }
-        );
+            users.value = loaded;
+        };
+        props.socket.on("audience_info_set", addInhabitants);
+        // addInhabitants(testUsers);
 
         props.socket.emit("ready_for", Subscription.audience);
 
