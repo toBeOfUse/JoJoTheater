@@ -1,13 +1,26 @@
 <template>
-    <div v-if="users.length" class="chair-space">
-        <Chair
-            v-for="user in users"
-            :key="user.id"
-            :title="user.name"
-            :avatarURL="user.avatarURL"
-            :typing="user.typing"
-            :chairURL="user.chairURL"
-        />
+    <div class="chair-space" v-if="users.length">
+        <transition-group name="musical-chairs" @before-leave="beforeLeave">
+            <div
+                key="left-spacer"
+                class="musical-chairs-item"
+                style="width: 100%; flex-shrink: 1"
+            />
+            <Chair
+                v-for="user in users"
+                :key="user.id"
+                :title="user.name"
+                :avatarURL="user.avatarURL"
+                :typing="user.typing"
+                :chairMarkup="user.svgMarkup"
+                class="musical-chairs-item"
+            />
+            <div
+                key="right-spacer"
+                class="musical-chairs-item"
+                style="width: 100%; flex-shrink: 1"
+            />
+        </transition-group>
     </div>
 </template>
 
@@ -80,14 +93,39 @@ export default defineComponent({
         //     resumed: false,
         // },
         //]);
-        const users = ref<RoomInhabitant[]>([]);
-        props.socket.on("audience_info_set", (audience: RoomInhabitant[]) => {
-            users.value = audience;
-        });
+        interface LoadedRoomInhabitant extends RoomInhabitant {
+            svgMarkup: string;
+        }
+        const svgMarkupCache: Record<string, string> = {};
+
+        const users = ref<LoadedRoomInhabitant[]>([]);
+        props.socket.on(
+            "audience_info_set",
+            async (audience: RoomInhabitant[]) => {
+                const loaded: LoadedRoomInhabitant[] = [];
+                for (const inhabitant of audience) {
+                    if (!svgMarkupCache[inhabitant.chairURL]) {
+                        const markupResponse = await fetch(inhabitant.chairURL);
+                        const markup = await markupResponse.text();
+                        svgMarkupCache[inhabitant.chairURL] = markup;
+                    }
+                    loaded.push({
+                        ...inhabitant,
+                        svgMarkup: svgMarkupCache[inhabitant.chairURL],
+                    });
+                }
+                users.value = loaded;
+            }
+        );
 
         props.socket.emit("ready_for", Subscription.audience);
 
-        return { users };
+        const beforeLeave = (el: HTMLElement) => {
+            el.style.left = el.offsetLeft + "px";
+            el.style.top = el.offsetTop + "px";
+        };
+
+        return { users, beforeLeave };
     },
 });
 </script>
@@ -104,7 +142,21 @@ export default defineComponent({
     background-position: center;
     background-size: cover;
     overflow-x: auto;
+    overflow-y: hidden;
     max-width: 100%;
     padding: 0 10px;
+}
+</style>
+<style lang="scss">
+.musical-chairs-item {
+    transition: transform 0.2s, opacity 0.2s;
+}
+.musical-chairs-enter-from,
+.musical-chairs-leave-to {
+    opacity: 0;
+    transform: translateY(-30px);
+}
+.musical-chairs-leave-active {
+    position: absolute;
 }
 </style>

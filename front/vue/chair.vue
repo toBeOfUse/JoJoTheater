@@ -1,5 +1,9 @@
 <template>
-    <div class="chair-container" ref="chairContainer" v-html="svgSource"></div>
+    <div
+        class="chair-container"
+        ref="chairContainer"
+        v-html="chairMarkup"
+    ></div>
 </template>
 
 <script lang="ts">
@@ -10,7 +14,7 @@
  * then making imperative programatic changes to certain elements inside.
  */
 
-import { defineComponent, ref, nextTick, watch, onMounted } from "vue";
+import { defineComponent, onMounted, ref, watch } from "vue";
 import { avatars, Direction } from "./avatars";
 
 export default defineComponent({
@@ -23,7 +27,7 @@ export default defineComponent({
             type: Boolean,
             required: true,
         },
-        chairURL: {
+        chairMarkup: {
             type: String,
             required: true,
         },
@@ -63,43 +67,35 @@ export default defineComponent({
                         );
                         initialized = true;
                     }
-                    console.log("props.typing is", props.typing);
-                    keyboard.style.opacity = props.typing ? "1" : "0";
+                    keyboard.style.opacity = props.typing ? "1" : "";
+                    keyboard.style.animationName = props.typing
+                        ? "verticalshake"
+                        : "";
                 }
             }
         };
-        const svgSource = ref("");
-        onMounted(() => {
-            fetch(props.chairURL).then(async (response) => {
-                svgSource.value = await response.text();
-                await nextTick();
-                setChairVisuals();
-            });
-        });
+        onMounted(setChairVisuals);
         watch(() => props.typing, setChairVisuals);
-        return { chairContainer, svgSource };
+        return { chairContainer };
     },
 });
 </script>
 
 <style lang="scss">
 @keyframes verticalshake {
-    from {
+    0% {
         transform: translateY(-3px);
     }
-    to {
+    40% {
+        transform: translateY(1px);
+    }
+    100% {
         transform: translateY(3px);
     }
 }
 .chair-container {
     position: relative;
     margin: 0 5px;
-    &:first-child {
-        margin-left: auto;
-    }
-    &:last-child {
-        margin-right: auto;
-    }
 }
 .svg-chair {
     height: 150px;
@@ -112,12 +108,13 @@ export default defineComponent({
         background-color: white;
     }
     .seated-keyboard {
-        animation-name: verticalshake;
-        animation-duration: 0.1s;
+        // animation-name: verticalshake is applied in setChairVisuals()
+        animation-duration: 0.25s;
         animation-iteration-count: infinite;
         animation-direction: alternate;
         animation-timing-function: linear;
         transition: opacity 0.1s linear;
+        opacity: 0;
     }
 }
 </style>
