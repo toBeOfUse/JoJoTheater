@@ -33,6 +33,7 @@ body {
     display: flex;
     align-items: center;
     flex: 1;
+    width: 100%;
 }
 
 .xp,
@@ -45,7 +46,7 @@ body {
 
 #container-container {
     width: calc(100% - #{((vars.$chat-width * 2)+20)}); // desktop mode
-    @media (max-width: 1000px) {
+    @media (max-width: 1200px) {
         width: 95%; // mobile portrait mode
         margin-bottom: 200px; // leave space at bottom for chat window in vertical mode
         @media (min-aspect-ratio: 16/8) {

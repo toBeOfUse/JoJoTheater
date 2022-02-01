@@ -86,6 +86,12 @@ export default defineComponent({
 .chair-container {
     position: relative;
     margin: 0 5px;
+    &:first-child {
+        margin-left: auto;
+    }
+    &:last-child {
+        margin-right: auto;
+    }
 }
 .svg-chair {
     height: 150px;

@@ -1,20 +1,19 @@
 <template>
-    <div class="chair-space" v-for="(group, i) in groupedUsers" :key="i">
-        <template v-for="user in group" :key="user.id">
-            <Chair
-                :title="user.name"
-                :avatarURL="user.avatarURL"
-                :typing="user.typing"
-                :chairURL="user.chairURL"
-            />
-        </template>
+    <div class="chair-space">
+        <Chair
+            v-for="user in users"
+            :key="user.id"
+            :title="user.name"
+            :avatarURL="user.avatarURL"
+            :typing="user.typing"
+            :chairURL="user.chairURL"
+        />
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, PropType } from "vue";
-import { ChatUserInfo, Subscription } from "../../types";
-import { avatars, Direction } from "./avatars";
+import { defineComponent, ref, onMounted, PropType } from "vue";
+import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import { RoomInhabitant } from "../../back/rooms";
@@ -97,31 +96,12 @@ export default defineComponent({
         onMounted(() => {
             maxUsersPerRow.value = getMaxUsersPerRow();
         });
-        const groupedUsers = computed(() => {
-            const rowCount = Math.ceil(
-                users.value.length / maxUsersPerRow.value
-            );
-            const groups: ChatUserInfo[][] = [];
-            for (let j = 0; j < rowCount; j++) {
-                groups.push([]);
-            }
-            let i = 0;
-            while (
-                i < users.value.length &&
-                maxUsersPerRow.value != -1 &&
-                !isNaN(maxUsersPerRow.value)
-            ) {
-                groups[i % rowCount].push(users.value[i]);
-                i++;
-            }
-            return groups;
-        });
 
         const typing = ref(true);
 
         props.socket.emit("ready_for", Subscription.audience);
 
-        return { users, groupedUsers, maxUsersPerRow, typing };
+        return { users, maxUsersPerRow, typing };
     },
 });
 </script>
@@ -130,14 +110,15 @@ export default defineComponent({
 .chair-space {
     display: flex;
     flex-direction: row;
-    justify-content: center;
     align-items: baseline;
-    flex-wrap: wrap;
     margin: 10px auto;
     border: 2px solid black;
     border-radius: 10px;
     background-image: url("/assets/images/rooms/basic/background.svg");
     background-position: center;
     background-size: cover;
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 0 10px;
 }
 </style>
