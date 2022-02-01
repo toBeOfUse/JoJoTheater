@@ -17,6 +17,7 @@ import {
 } from "../types";
 import logger from "./logger";
 import { password } from "./secrets";
+import { propCollections, RoomGraphics } from "./rooms";
 
 type ServerSentEvent =
     | "ping"
@@ -41,7 +42,8 @@ type ClientSentEvent =
     | "error_report"
     | "state_report"
     | "state_update_request"
-    | "ready_for";
+    | "ready_for"
+    | "typing_start";
 
 class AudienceMember {
     private socket: Socket;
@@ -136,7 +138,7 @@ class AudienceMember {
             ) {
                 logger.warn(
                     "user re-logging in with identical info; " +
-                        "possible front-end glitch"
+                    "possible front-end glitch"
                 );
                 // kind of a hack, but in the case of a duplicate login we are
                 // marking the second one as resuming a session so that an
@@ -209,6 +211,7 @@ class AudienceMember {
 class Theater {
     audience: AudienceMember[] = [];
     playlist: Playlist;
+    graphics: RoomGraphics;
 
     _baseState: PlayerState = {
         playing: false,
@@ -241,22 +244,18 @@ class Theater {
             ...this.baseState,
             currentTimeMs: this.baseState.playing
                 ? this.baseState.currentTimeMs +
-                  (Date.now() - this.baseStateTimestamp)
+                (Date.now() - this.baseStateTimestamp)
                 : this.baseState.currentTimeMs,
         };
     }
 
-    get allUserInfo(): ChatUserInfo[] {
-        const info = [];
-        for (const user of this.audience) {
-            if (user.chatInfo) {
-                info.push(user.chatInfo);
-            }
-        }
-        return info;
-    }
-
-    constructor(io: SocketServer, playlist: Playlist) {
+    constructor(io: SocketServer, playlist: Playlist, graphics: RoomGraphics) {
+        this.graphics = graphics;
+        // this will propogate all changes in our RoomGraphics object to the
+        // front-end:
+        this.graphics.on("change", () => {
+            this.emitAll("audience_info_set", this.graphics.inhabitants);
+        });
         this.playlist = playlist;
         this.playlist.getVideos().then((videos) => {
             this.baseState = { ...this.currentState, video: videos[0] };
@@ -325,7 +324,7 @@ class Theater {
                     })
                 );
             } else if (sub == Subscription.audience) {
-                member.emit("audience_info_set", this.allUserInfo);
+                member.emit("audience_info_set", this.graphics.inhabitants);
             } else if (sub == Subscription.playlist) {
                 this.playlist.getVideos().then((videos) => {
                     member.emit("playlist_set", videos);
@@ -361,7 +360,7 @@ class Theater {
                     } else {
                         logger.warn(
                             "client requested video with unknown id" +
-                                newVideoID
+                            newVideoID
                         );
                     }
                 } else if (change.changeType == ChangeTypes.nextVideo) {
@@ -390,18 +389,24 @@ class Theater {
         });
 
         member.on("user_info_set", () => {
-            if (member.chatInfo && !member.chatInfo.resumed) {
-                const announcement = {
-                    isAnnouncement: true,
-                    messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
-                };
-                this.sendToChat(announcement);
+            if (member.chatInfo) {
+                if (!member.chatInfo.resumed) {
+                    const announcement = {
+                        isAnnouncement: true,
+                        messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
+                    };
+                    this.sendToChat(announcement);
+                }
+                this.graphics.addInhabitant(member.chatInfo)
             }
-            this.emitAll("audience_info_set", this.allUserInfo);
         });
         member.on("user_info_clear", () => {
-            this.emitAll("audience_info_set", this.allUserInfo);
+            this.graphics.removeInhabitant(member.id);
         });
+
+        member.on("typing_start", () => {
+            this.graphics.startTyping(member.id);
+        })
 
         member.on("wrote_message", (messageText: string) => {
             messageText = messageText.trim();
@@ -426,14 +431,13 @@ class Theater {
                         this.sendToChat(villagerMessage);
                     }, 500);
                 }
+                this.graphics.stopTyping(member.id);
             }
         });
 
         member.on("disconnect", () => {
             this.removeMember(member);
-            this.audience
-                .filter((a) => a.subscriptions.has(Subscription.audience))
-                .forEach((a) => a.emit("audience_info_set", this.allUserInfo));
+            this.graphics.removeInhabitant(member.id);
             logger.info(
                 "client disconnected: " + this.audience.length + " remaining"
             );
@@ -454,7 +458,7 @@ class Theater {
         if (this.baseState.video && this.baseState.playing) {
             const timeUntil = Math.max(
                 this.baseState.video.duration * 1000 -
-                    this.currentState.currentTimeMs,
+                this.currentState.currentTimeMs,
                 0
             );
             logger.debug(
@@ -513,7 +517,7 @@ class Theater {
                             member.emit(
                                 "alert",
                                 "Your browser is blocking autoplay;" +
-                                    " press play to sync up with MitchBot"
+                                " press play to sync up with MitchBot"
                             );
                             toldThemToPlay = 0;
                         }
@@ -521,7 +525,7 @@ class Theater {
                 } else if (difference > 1000) {
                     logger.debug(
                         `correcting currentTime for player ${member.id}, ` +
-                            `who is off by ${difference} ms`
+                        `who is off by ${difference} ms`
                     );
                     member.emit("state_set", this.currentState);
                     if (difference > 3000) {
@@ -539,7 +543,8 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const theater = new Theater(io, playlist);
+    const graphics = new RoomGraphics(propCollections.basic);
+    const theater = new Theater(io, playlist, graphics);
     const auth: RequestHandler = (req, res, next) => {
         if (req.headers.authorization == password) {
             next();

@@ -160,7 +160,7 @@
                         type="text"
                         id="message-input"
                         ref="messageInput"
-                        @keydown.enter="send"
+                        @keydown="messageInputKeydown"
                     />
                     <button @click="send" id="send-message">Send</button>
                 </section>
@@ -446,6 +446,13 @@ export default defineComponent({
                 messageInput.value.value = "";
             }
         };
+        const messageInputKeydown = (event: KeyboardEvent) => {
+            if (event.key != "Enter") {
+                props.socket.emit("typing_start");
+            } else {
+                send();
+            }
+        };
 
         // message display logic:
         const groupedMessages = ref<ChatMessage[][]>([]);
@@ -504,6 +511,7 @@ export default defineComponent({
             avatarPage,
             changePage,
             nextPageAvailable,
+            messageInputKeydown,
         };
     },
 });
