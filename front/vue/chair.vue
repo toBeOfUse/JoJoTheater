@@ -64,7 +64,7 @@ export default defineComponent({
                         initialized = true;
                     }
                     console.log("props.typing is", props.typing);
-                    keyboard.style.display = props.typing ? "unset" : "none";
+                    keyboard.style.opacity = props.typing ? "1" : "0";
                 }
             }
         };
@@ -83,6 +83,14 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
+@keyframes verticalshake {
+    from {
+        transform: translateY(-3px);
+    }
+    to {
+        transform: translateY(3px);
+    }
+}
 .chair-container {
     position: relative;
     margin: 0 5px;
@@ -102,6 +110,14 @@ export default defineComponent({
     overflow: visible;
     image {
         background-color: white;
+    }
+    .seated-keyboard {
+        animation-name: verticalshake;
+        animation-duration: 0.1s;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+        animation-timing-function: linear;
+        transition: opacity 0.1s linear;
     }
 }
 </style>
