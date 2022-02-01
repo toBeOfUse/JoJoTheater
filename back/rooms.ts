@@ -17,7 +17,8 @@ const propCollections: Record<string, RoomProps> = {
             "game-chair",
             "little-car",
             "shopping-cart",
-            "tan-chair"]
+            "tan-chair",
+            "grey-couch"]
     }
 };
 
