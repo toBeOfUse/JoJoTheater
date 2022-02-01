@@ -93,6 +93,7 @@ export default defineComponent({
         height: 70px;
     }
     width: auto;
+    overflow: visible;
     image {
         background-color: white;
     }
