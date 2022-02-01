@@ -83,7 +83,7 @@ class RoomGraphics extends EventEmitter {
     }
     /**
      * This method will automatically call `stopTyping` if it is not called
-     * for five seconds.
+     * for two seconds.
      */
     startTyping(userID: string) {
         const typer = this._inhabitants.find(i => i.id == userID);
@@ -95,10 +95,10 @@ class RoomGraphics extends EventEmitter {
             ].concat(this._inhabitants.filter(i => i.id != userID));
             this.emit("change");
             setTimeout(() => {
-                if (Date.now() - typer.lastTypingTimestamp >= 5000) {
+                if (Date.now() - typer.lastTypingTimestamp >= 1900) {
                     this.stopTyping(userID);
                 }
-            }, 5000);
+            }, 2000);
         }
     }
     /**
