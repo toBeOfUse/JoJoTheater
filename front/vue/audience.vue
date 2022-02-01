@@ -1,5 +1,5 @@
 <template>
-    <div class="chair-space">
+    <div v-if="users.length" class="chair-space">
         <Chair
             v-for="user in users"
             :key="user.id"
@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, PropType } from "vue";
+import { defineComponent, ref, PropType } from "vue";
 import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
@@ -80,28 +80,14 @@ export default defineComponent({
         //     resumed: false,
         // },
         //]);
-        const users = ref<ChatUserInfo[]>([]);
+        const users = ref<RoomInhabitant[]>([]);
         props.socket.on("audience_info_set", (audience: RoomInhabitant[]) => {
             users.value = audience;
         });
-        const getMaxUsersPerRow = () =>
-            Math.floor(
-                (document.querySelector("#container-container") as HTMLElement)
-                    .offsetWidth / (window.innerWidth > 450 ? 160 : 80)
-            );
-        const maxUsersPerRow = ref(-1);
-        window.addEventListener("resize", () => {
-            maxUsersPerRow.value = getMaxUsersPerRow();
-        });
-        onMounted(() => {
-            maxUsersPerRow.value = getMaxUsersPerRow();
-        });
-
-        const typing = ref(true);
 
         props.socket.emit("ready_for", Subscription.audience);
 
-        return { users, maxUsersPerRow, typing };
+        return { users };
     },
 });
 </script>
