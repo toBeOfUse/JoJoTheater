@@ -45,10 +45,13 @@ body {
 }
 
 #container-container {
-    width: calc(100% - #{((vars.$chat-width * 2)+20)}); // desktop mode
+    // desktop mode: leave space on right and left for chat window
+    width: calc(100% - #{((vars.$chat-width * 2)+20)});
     @media (max-width: 1200px) {
         width: 95%; // mobile portrait mode
-        margin-bottom: 200px; // leave space at bottom for chat window in vertical mode
+        // leave space at bottom for chat window (in desktop mode it can go on
+        // the right or left):
+        margin-bottom: 200px;
         @media (min-aspect-ratio: 16/8) {
             width: 70%; // mobile landscape mode
         }
@@ -96,4 +99,8 @@ body {
     margin: 10px auto;
     font-family: vars.$pilot-font;
     width: 95%;
+}
+
+#audience-container {
+    position: relative;
 }

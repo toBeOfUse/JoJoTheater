@@ -9,9 +9,10 @@
 <script lang="ts">
 /**
  * I will admit, this component is kind of rough. Instead of making dedicated
- * Vue template files for each "chair" that can be displayed, I'm loading SVGs
- * as text, setting them as the innerHTML of the component's root element, and
- * then making imperative programatic changes to certain elements inside.
+ * Vue template files for each "chair" that can be displayed, this component
+ * receives the source of the SVG for the "chair" as a prop, places it within
+ * the root element, and then modifies it imperatively based on the other
+ * props.
  */
 
 import { defineComponent, onMounted, ref, watch } from "vue";
@@ -76,7 +77,34 @@ export default defineComponent({
         };
         onMounted(setChairVisuals);
         watch(() => props.typing, setChairVisuals);
-        return { chairContainer };
+        // here we can see whether we are visible in the parent element,
+        // scrolled offscreen within it to the left, or scrolled offscreen
+        // within it to the right; this property is for the consumption of the
+        // parent element so that it can display a count of how many chairs are
+        // offscreen
+        const placement = (): "left" | "middle" | "right" | null => {
+            if (!chairContainer.value) {
+                return null;
+            } else {
+                const space = chairContainer.value.parentElement;
+                if (!space) {
+                    return null;
+                } else {
+                    const width = space.offsetWidth;
+                    const ourWidth = chairContainer.value.offsetWidth;
+                    const scrollPos = space.scrollLeft;
+                    const ourPos = chairContainer.value.offsetLeft;
+                    if (ourPos + ourWidth < scrollPos) {
+                        return "left";
+                    } else if (ourPos > scrollPos + width) {
+                        return "right";
+                    } else {
+                        return "middle";
+                    }
+                }
+            }
+        };
+        return { chairContainer, placement };
     },
 });
 </script>

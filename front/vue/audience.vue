@@ -1,5 +1,8 @@
 <template>
-    <div class="chair-space" v-if="users.length">
+    <div class="counter" id="offToTheLeftCount" v-if="visibleCount.left">
+        &lt; +{{ visibleCount.left }}
+    </div>
+    <div class="chair-space" ref="chairSpace" v-if="users.length">
         <transition-group name="musical-chairs" @before-leave="beforeLeave">
             <div
                 key="left-spacer"
@@ -14,6 +17,7 @@
                 :typing="user.typing"
                 :chairMarkup="user.svgMarkup"
                 class="musical-chairs-item"
+                :ref="(e) => chairs.push(e)"
             />
             <div
                 key="right-spacer"
@@ -22,14 +26,25 @@
             />
         </transition-group>
     </div>
+    <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
+        +{{ visibleCount.right }} &gt;
+    </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, PropType } from "vue";
+import {
+    defineComponent,
+    ref,
+    PropType,
+    onBeforeUpdate,
+    nextTick,
+    watch,
+} from "vue";
 import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import { RoomInhabitant } from "../../back/rooms";
+// import testUsers from "./testaudience";
 
 export default defineComponent({
     props: {
@@ -40,80 +55,34 @@ export default defineComponent({
     },
     components: { Chair },
     setup(props) {
-        // const testUsers: RoomInhabitant[] = [
-        //     {
-        //         avatarURL: "/images/avatars/strongseal.jpg",
-        //         name: "fake selki",
-        //         id: "1",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/arm-chair.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/bad.jpg",
-        //         name: "fake erica",
-        //         id: "2",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/blue-chair.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/scream.jpg",
-        //         name: "fake dorian",
-        //         id: "3",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/clawfoot-tub.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/purpleface.png",
-        //         name: "fake mickey",
-        //         id: "4",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/game-chair.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/fear.jpg",
-        //         name: "fake melissa",
-        //         id: "5",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/little-car.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/coop.jpg",
-        //         name: "fake coop fan",
-        //         id: "6",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/shopping-cart.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/rosie.jpg",
-        //         name: "fake rosie",
-        //         id: "7",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/tan-chair.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        //     {
-        //         avatarURL: "/images/avatars/rosie.jpg",
-        //         name: "fake rosie 2",
-        //         id: "8",
-        //         resumed: false,
-        //         chairURL: "/images/rooms/basic/grey-couch.svg",
-        //         typing: true,
-        //         lastTypingTimestamp: -1,
-        //     },
-        // ];
+        // receive an array of the Chair components as a template ref and track
+        // their visibility within our chair-space:
+        const chairs = ref<typeof Chair[]>([]);
+        onBeforeUpdate(() => (chairs.value = []));
+        const visibleCount = ref<{ left: number; right: number }>({
+            left: 0,
+            right: 0,
+        });
+        const updateVisibleCount = () => {
+            const result = { left: 0, right: 0 };
+            for (const chair of chairs.value) {
+                const visibility = chair.placement();
+                if (visibility == "left") {
+                    result.left++;
+                } else if (visibility == "right") {
+                    result.right++;
+                }
+            }
+            visibleCount.value = result;
+        };
+        const chairSpace = ref<null | HTMLDivElement>(null);
+        watch(chairSpace, () => {
+            if (!chairSpace.value) return;
+            chairSpace.value.addEventListener("scroll", updateVisibleCount);
+        });
+
+        // Load and cache the SVG markup for each of the "chairs" that the Chair
+        // components will display:
         interface LoadedRoomInhabitant extends RoomInhabitant {
             svgMarkup: string;
         }
@@ -134,23 +103,30 @@ export default defineComponent({
                 });
             }
             users.value = loaded;
+            await nextTick();
+            updateVisibleCount();
         };
+
+        // start receiving audience data from the server:
         props.socket.on("audience_info_set", addInhabitants);
         // addInhabitants(testUsers);
-
         props.socket.emit("ready_for", Subscription.audience);
 
+        // this function is just used to fix a weird bug with transition-group
+        // and flexbox:
         const beforeLeave = (el: HTMLElement) => {
             el.style.left = el.offsetLeft + "px";
             el.style.top = el.offsetTop + "px";
         };
 
-        return { users, beforeLeave };
+        return { users, beforeLeave, visibleCount, chairs, chairSpace };
     },
 });
 </script>
 
 <style scoped lang="scss">
+@use "../scss/vars";
+
 .chair-space {
     display: flex;
     flex-direction: row;
@@ -165,6 +141,24 @@ export default defineComponent({
     overflow-y: hidden;
     max-width: 100%;
     padding: 0 10px;
+    position: relative;
+}
+.counter {
+    position: absolute;
+    background-color: white;
+    padding: 5px;
+    border-radius: 10px;
+    border: 2px solid black;
+    font-family: vars.$pilot-font;
+    z-index: 100;
+}
+#offToTheLeftCount {
+    left: 7px;
+    top: 7px;
+}
+#offToTheRightCount {
+    right: 7px;
+    top: 7px;
 }
 </style>
 <style lang="scss">
