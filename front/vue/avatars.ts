@@ -42,7 +42,33 @@ const avatars = [
     new Avatar("treehouse_emoji/fear.jpg", right),
     new Avatar("treehouse_emoji/yeehaw.png", left),
     new Avatar("treehouse_emoji/sparklewink.jpg", right),
-    // page 2: muppets
+    // page 2: animals in hats
+    new Avatar("animals/hedgehog.jpg", forward),
+    new Avatar("animals/badger.jpg", right),
+    new Avatar("animals/bear.jpg", left),
+    new Avatar("animals/chipmunk.jpg", left),
+    new Avatar("animals/weasel.jpg", right),
+    new Avatar("animals/mouse.jpg", forward),
+    new Avatar("animals/rabbit.jpg", right),
+    new Avatar("animals/fox.jpg", forward),
+    new Avatar("animals/doggo.jpg", left),
+    new Avatar("animals/kangaroo.jpg", right),
+    new Avatar("animals/raccoon.jpg", left),
+    new Avatar("animals/squirrel.jpg", right),
+    // page 3: anime pets
+    new Avatar("anime_pets/sakamoto.jpg", right),
+    new Avatar("anime_pets/blair.jpg", left),
+    new Avatar("anime_pets/catbus.jpg", left),
+    new Avatar("anime_pets/ein.jpg", left),
+    new Avatar("anime_pets/kiara.jpg", right),
+    new Avatar("anime_pets/kyubey.jpg", forward),
+    new Avatar("anime_pets/luna.jpg", right),
+    new Avatar("anime_pets/maya.jpg", left),
+    new Avatar("anime_pets/heen.jpg", right),
+    new Avatar("anime_pets/meow.jpg", left),
+    new Avatar("princess_tutu/neko.jpg", forward),
+    new Avatar("anime_pets/takkun.jpg", right),
+    // page 4: muppets
     new Avatar("muppets/kermit.jpg", right),
     new Avatar("muppets/rowlf.jpg", right),
     new Avatar("muppets/rizzo.jpg", right),
@@ -55,7 +81,7 @@ const avatars = [
     new Avatar("muppets/misspiggy.jpg", forward),
     new Avatar("muppets/gonzo.jpg", right),
     new Avatar("muppets/timcurry.jpg", left),
-    // page 3: characters from princess tutu
+    // page 5: characters from princess tutu
     new Avatar("princess_tutu/ahiru.jpg", right),
     new Avatar("princess_tutu/anteaterina.jpg", right),
     new Avatar("princess_tutu/drosselmeyer.jpg", forward),
