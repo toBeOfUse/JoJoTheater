@@ -704,5 +704,6 @@ export default defineComponent({
 .in-chat-username {
     font-weight: bold;
     font-size: 1.3em;
+    line-height: 1.3em;
 }
 </style>
