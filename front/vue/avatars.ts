@@ -9,65 +9,65 @@ const { left, right, forward } = Direction;
 class Avatar {
     filename: string;
     facing: Direction;
-    transparent: boolean;
     constructor(
         filename: string,
         facing: Direction,
-        transparent: boolean = false
     ) {
         this.filename = filename;
         this.facing = facing;
-        this.transparent = transparent;
+    }
+    get transparent() {
+        return this.filename.toLowerCase().endsWith(".png");
     }
     get path() {
         return (
             "/images/avatars/" +
-            this.filename +
-            (this.transparent ? ".png" : ".jpg")
+            this.filename
         );
     }
 }
 
 const avatars = [
+    // pages are 12 images at the moment
     // page 1: server emojis
-    new Avatar("nymface", right),
-    new Avatar("purpleface", left, true),
-    new Avatar("yuuri", left),
-    new Avatar("coop", forward),
-    new Avatar("gayknife", right, true),
-    new Avatar("scream", right),
-    new Avatar("rosie", left),
-    new Avatar("nonut", right),
-    new Avatar("strongseal", right),
-    new Avatar("fear", right),
-    new Avatar("yeehaw", left, true),
-    new Avatar("sparklewink", right),
+    new Avatar("treehouse_emoji/nymface.jpg", right),
+    new Avatar("treehouse_emoji/purpleface.png", left),
+    new Avatar("treehouse_emoji/yuuri.jpg", left),
+    new Avatar("treehouse_emoji/coop.jpg", forward),
+    new Avatar("treehouse_emoji/gayknife.png", right),
+    new Avatar("treehouse_emoji/scream.jpg", right),
+    new Avatar("treehouse_emoji/rosie.jpg", left),
+    new Avatar("treehouse_emoji/nonut.jpg", right),
+    new Avatar("treehouse_emoji/strongseal.jpg", right),
+    new Avatar("treehouse_emoji/fear.jpg", right),
+    new Avatar("treehouse_emoji/yeehaw.png", left),
+    new Avatar("treehouse_emoji/sparklewink.jpg", right),
     // page 2: muppets
-    new Avatar("kermit", right),
-    new Avatar("rowlf", right),
-    new Avatar("rizzo", right),
-    new Avatar("scrooge", left),
-    new Avatar("beaker", left),
-    new Avatar("animal", left),
-    new Avatar("scrunch", right),
-    new Avatar("statler", left),
-    new Avatar("waldorf", forward),
-    new Avatar("misspiggy", forward),
-    new Avatar("gonzo", right),
-    new Avatar("timcurry", left),
+    new Avatar("muppets/kermit.jpg", right),
+    new Avatar("muppets/rowlf.jpg", right),
+    new Avatar("muppets/rizzo.jpg", right),
+    new Avatar("muppets/scrooge.jpg", left),
+    new Avatar("muppets/beaker.jpg", left),
+    new Avatar("muppets/animal.jpg", left),
+    new Avatar("muppets/scrunch.jpg", right),
+    new Avatar("muppets/statler.jpg", left),
+    new Avatar("muppets/waldorf.jpg", forward),
+    new Avatar("muppets/misspiggy.jpg", forward),
+    new Avatar("muppets/gonzo.jpg", right),
+    new Avatar("muppets/timcurry.jpg", left),
     // page 3: characters from princess tutu
-    new Avatar("ahiru", right),
-    new Avatar("anteaterina", right),
-    new Avatar("drosselmeyer", forward),
-    new Avatar("duck", left),
-    new Avatar("edel", forward),
-    new Avatar("moon", left),
-    new Avatar("fakir", forward),
-    new Avatar("mytho", forward),
-    new Avatar("neko", forward),
-    new Avatar("rue", right),
-    new Avatar("shard", left),
-    new Avatar("princess", forward),
+    new Avatar("princess_tutu/ahiru.jpg", right),
+    new Avatar("princess_tutu/anteaterina.jpg", right),
+    new Avatar("princess_tutu/drosselmeyer.jpg", forward),
+    new Avatar("princess_tutu/duck.jpg", left),
+    new Avatar("princess_tutu/edel.jpg", forward),
+    new Avatar("princess_tutu/moon.jpg", left),
+    new Avatar("princess_tutu/fakir.jpg", forward),
+    new Avatar("princess_tutu/mytho.jpg", forward),
+    new Avatar("princess_tutu/neko.jpg", forward),
+    new Avatar("princess_tutu/rue.jpg", right),
+    new Avatar("princess_tutu/shard.jpg", left),
+    new Avatar("princess_tutu/princess.jpg", forward),
 ];
 
 export { avatars, Direction };
