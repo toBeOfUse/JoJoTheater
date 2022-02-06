@@ -601,12 +601,12 @@ export default defineComponent({
 .avatar-option {
     display: inline;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-width: 2px;
     border-style: solid;
-    border-color: #0003;
-    margin: 0 3px;
+    border-color: #0005;
+    margin: 0 1px;
     cursor: pointer;
     background-color: white;
     &.selected {
