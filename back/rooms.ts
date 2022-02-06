@@ -89,12 +89,17 @@ class RoomGraphics extends EventEmitter {
     startTyping(userID: string) {
         const typer = this._inhabitants.find(i => i.id == userID);
         if (typer) {
-            typer.typing = true;
+            // if they have just started typing - move them to the front of the
+            // audience line so that can be seen
+            if (!typer.typing) {
+                this._inhabitants = [
+                    typer
+                ].concat(this._inhabitants.filter(i => i.id != userID));
+                typer.typing = true;
+                this.emit("change");
+            }
+            // either way, postpone the typing animation cancel (again)
             typer.lastTypingTimestamp = Date.now();
-            this._inhabitants = [
-                typer
-            ].concat(this._inhabitants.filter(i => i.id != userID));
-            this.emit("change");
             setTimeout(() => {
                 if (Date.now() - typer.lastTypingTimestamp >= 1900) {
                     this.stopTyping(userID);
