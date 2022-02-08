@@ -5,9 +5,10 @@ import { ChatUserInfo } from "../types";
 import logger from "./logger";
 
 interface RoomProps {
-    folderName: string,
-    background: string,
-    chairs: string[]
+    folderName: string;
+    background: string;
+    foreground?: string;
+    chairs: string[];
 }
 
 const propCollections: Record<string, RoomProps> = {
@@ -22,6 +23,12 @@ const propCollections: Record<string, RoomProps> = {
             "shopping-cart",
             "tan-chair",
             "grey-couch"]
+    },
+    soybeans: {
+        folderName: "soybeans",
+        background: "soybeansbg.jpg",
+        foreground: "soybeansfg.png",
+        chairs: ["soybeans"]
     }
 };
 
@@ -31,7 +38,14 @@ interface RoomInhabitant extends ChatUserInfo {
     chairURL: string;
 }
 
-class RoomGraphics extends EventEmitter {
+interface OutputRoom {
+    props: RoomProps;
+    background: string;
+    foreground?: string;
+    inhabitants: RoomInhabitant[];
+}
+
+class RoomController extends EventEmitter {
     /**
      * Class that holds all the information needed for rendering the front-end
      * "Audience" component, defined in front/vue/audience.vue. Whenever this
@@ -50,7 +64,7 @@ class RoomGraphics extends EventEmitter {
     constructor(props: RoomProps) {
         super();
         this.props = props;
-        this.chairSequence = RoomGraphics.shuffleArray(this.props.chairs);
+        this.chairSequence = RoomController.shuffleArray(this.props.chairs);
     }
     static shuffleArray(input: any[]) {
         const array = [...input];
@@ -66,12 +80,27 @@ class RoomGraphics extends EventEmitter {
     get background() {
         return this.getPublicPathFor(this.props.background);
     }
+    get foreground() {
+        if (!this.props.foreground) {
+            return undefined;
+        } else {
+            return this.getPublicPathFor(this.props.foreground);
+        }
+    }
+    get outputGraphics(): OutputRoom {
+        return {
+            props: this.props,
+            background: this.background,
+            foreground: this.foreground,
+            inhabitants: this.inhabitants
+        };
+    }
     getNewChairURL() {
         const filename = this.chairSequence[this.usedChairs];
         this.usedChairs++;
         if (this.usedChairs >= this.chairSequence.length) {
             this.usedChairs = 0;
-            this.chairSequence = RoomGraphics.shuffleArray(this.props.chairs);
+            this.chairSequence = RoomController.shuffleArray(this.props.chairs);
         }
         let publicPath = this.getPublicPathFor(filename + ".svg");
         const localPath = path.resolve(__dirname, "../assets" + publicPath);
@@ -131,4 +160,4 @@ class RoomGraphics extends EventEmitter {
     }
 }
 
-export { RoomProps, propCollections, RoomGraphics, RoomInhabitant }
+export { RoomProps, propCollections, RoomController, RoomInhabitant, OutputRoom }

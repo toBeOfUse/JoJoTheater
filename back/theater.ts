@@ -17,7 +17,7 @@ import {
 } from "../types";
 import logger from "./logger";
 import { password } from "./secrets";
-import { propCollections, RoomGraphics } from "./rooms";
+import { propCollections, RoomController } from "./rooms";
 
 type ServerSentEvent =
     | "ping"
@@ -213,7 +213,7 @@ class AudienceMember {
 class Theater {
     audience: AudienceMember[] = [];
     playlist: Playlist;
-    graphics: RoomGraphics;
+    graphics: RoomController;
 
     _baseState: PlayerState = {
         playing: false,
@@ -251,12 +251,12 @@ class Theater {
         };
     }
 
-    constructor(io: SocketServer, playlist: Playlist, graphics: RoomGraphics) {
+    constructor(io: SocketServer, playlist: Playlist, graphics: RoomController) {
         this.graphics = graphics;
-        // this will propogate all changes in our RoomGraphics object to the
+        // this will propogate all changes in our RoomController object to the
         // front-end:
         this.graphics.on("change", () => {
-            this.emitAll("audience_info_set", this.graphics.inhabitants);
+            this.emitAll("audience_info_set", this.graphics.outputGraphics);
         });
         this.playlist = playlist;
         this.playlist.getVideos().then((videos) => {
@@ -326,7 +326,7 @@ class Theater {
                     })
                 );
             } else if (sub == Subscription.audience) {
-                member.emit("audience_info_set", this.graphics.inhabitants);
+                member.emit("audience_info_set", this.graphics.outputGraphics);
             } else if (sub == Subscription.playlist) {
                 this.playlist.getVideos().then((videos) => {
                     member.emit("playlist_set", videos);
@@ -443,7 +443,7 @@ class Theater {
             logger.info(
                 "client disconnected: " + this.audience.length + " remaining"
             );
-            if (this.audience.length === 0) {
+            if (this.audience.length === 0 && this.currentState.playing) {
                 logger.debug("pausing video as no one is left to watch");
                 this.baseState = {
                     ...this.currentState,
@@ -545,7 +545,7 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const graphics = new RoomGraphics(propCollections.basic);
+    const graphics = new RoomController(propCollections.soybeans);
     const theater = new Theater(io, playlist, graphics);
     const auth: RequestHandler = (req, res, next) => {
         if (req.headers.authorization == password) {

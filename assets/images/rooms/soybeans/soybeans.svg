@@ -1,0 +1,15 @@
+<svg viewBox="0 0 158.4 317.5" height="1200" width="600" version="1.1" id="svg15"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+   <defs id="defs5">
+      <clipPath clipPathUnits="userSpaceOnUse" id="a">
+         <circle style="fill:#473e81;stroke:#1a191e;stroke-width:0.86209;stroke-linecap:round" r="87.569" cy="-262.03101" cx="-615.61902" id="circle2" />
+      </clipPath>
+   </defs>
+   <g style="stroke-linejoin:round" transform="translate(1210.0166,234.5684)" id="g11">
+      <circle style="fill:#ffffff;stroke:#1a191e;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" r="53.173" cy="-46.238998" cx="-1128.4351" id="circle7" />
+      <image transform="matrix(0.60721,0,0,0.60721,-754.625,112.869)" clip-path="url(#a)" width="179.261" height="179.261" preserveAspectRatio="none" xlink:href="../basic/placeholder.png" x="-705.24902" y="-351.66199" class="seated-avatar" id="image9" />
+   </g>
+   <image class="seated-keyboard" width="209.85001" height="46.167" preserveAspectRatio="none" xlink:href="../keyboard.png" x="-12.451428" y="204.10812" id="image13" />
+</svg>
