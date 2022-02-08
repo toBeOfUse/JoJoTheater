@@ -78,7 +78,6 @@ class RoomGraphics extends EventEmitter {
         try {
             const stats = fs.statSync(localPath);
             return publicPath + "?v=" + Math.round(stats.mtimeMs);
-
         } catch {
             logger.error("could not find chair file " + localPath);
             return "";

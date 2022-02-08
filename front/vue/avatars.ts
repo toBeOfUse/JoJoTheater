@@ -119,7 +119,7 @@ const avatars = [
     new Avatar("muppets/waldorf.jpg", forward),
     new Avatar("muppets/misspiggy.jpg", forward),
     new Avatar("muppets/gonzo.jpg", right),
-    new Avatar("muppets/timcurry.jpg", left),
+    new Avatar("muppets/rocco.jpg", forward),
 ];
 
 export { avatars, Direction };
