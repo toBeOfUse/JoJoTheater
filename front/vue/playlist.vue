@@ -279,13 +279,14 @@ $playlist-item-margin: 3px;
     &.active {
         font-style: italic;
         color: #666;
-        border-color: #666 #bbb #bbb #666;
+        border-style: inset;
         border-width: 2px;
         & .video-thumbnail {
             opacity: 0.7;
         }
     }
     &:not(.active) {
+        border-style: solid;
         cursor: pointer;
         color: black;
         padding: 1px; // to substitute for the thicker border in &.active
