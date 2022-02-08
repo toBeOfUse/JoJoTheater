@@ -7,15 +7,17 @@ import { Playlist, playlist } from "../queries";
  * local files, looks for an existing .jpg file with the same name as the video file
  * and makes a copy with the correct name, leaving the originals in place.
  */
-async function addThumbnails() {
+async function ensureMetadata() {
     const videos = await playlist.getVideos();
     for (const video of videos) {
-        console.log("updating thumbnail for " + video.title);
-        const { thumbnail } = await Playlist.getVideoMetadata(video);
+        console.log("updating thumbnail and duration for " + video.title);
+        const { thumbnail, durationSeconds: duration } = await Playlist.getVideoMetadata(video);
         if (thumbnail) {
             await Playlist.saveThumbnail(video.id, thumbnail);
         }
+        await playlist.connection("playlist").where({ id: video.id })
+            .update({ duration });
     }
 }
 
-addThumbnails().then(() => process.exit(0));
+ensureMetadata().then(() => process.exit(0));
