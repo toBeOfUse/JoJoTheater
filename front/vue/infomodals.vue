@@ -7,7 +7,7 @@
     </div>
     <div id="modal-bg" v-if="showing != ''" @click="showing = ''"></div>
     <div class="modal" v-if="showing == 'about'">
-        <h2>About</h2>
+        <h2>About <span class="close" @click="showing = ''">(close)</span></h2>
         <p>
             MitchBot Streams was created by me, Mitch. It aims to be the most
             interesting platform for watching synchronized videos with other
@@ -18,7 +18,10 @@
         </p>
     </div>
     <div class="modal" v-if="showing == 'instructions'">
-        <h2>Instructions</h2>
+        <h2>
+            Instructions
+            <span class="close" @click="showing = ''">(close)</span>
+        </h2>
         <p>
             Use this website to watch videos. The current video and current time
             within the video will be synchronized between everyone in the
@@ -44,13 +47,15 @@
         </p>
     </div>
     <div class="modal" v-if="showing == 'credits'">
-        <h2>Credits</h2>
+        <h2>
+            Credits <span class="close" @click="showing = ''">(close)</span>
+        </h2>
         <p>
             The Windows XP style of the chat window comes from the great
             <a href="https://botoxparty.github.io/XP.css/">XP.css</a> library by
             <a href="https://adamham.dev/">Adam Hammad</a>. The main font used
             is the open source <a href="https://b612-font.com/">B612</a>,
-            designed for high legibility and aircraft cockpit screens.
+            designed for high legibility on aircraft cockpit screens.
         </p>
         <p>
             The images for the built-in avatars were sourced from the following
@@ -321,6 +326,11 @@ export default defineComponent({
     @media (max-width: 500px) {
         width: 95%;
     }
+}
+.close {
+    font-size: 0.7em;
+    text-decoration: underline;
+    cursor: pointer;
 }
 .gallery {
     display: flex;
