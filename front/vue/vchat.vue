@@ -364,6 +364,9 @@ export default defineComponent({
             window.removeEventListener("touchend", pointerUp);
             window.removeEventListener("touchcancel", pointerUp);
             currentAction = "none";
+            if (messageInput.value) {
+                messageInput.value.focus();
+            }
         };
 
         const maximize = async () => {
