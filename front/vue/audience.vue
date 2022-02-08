@@ -2,29 +2,35 @@
     <div class="counter" id="offToTheLeftCount" v-if="visibleCount.left">
         &lt; +{{ visibleCount.left }}
     </div>
-    <div class="chair-space" ref="chairSpace" v-if="users.length">
-        <transition-group name="musical-chairs" @before-leave="beforeLeave">
-            <div
-                key="left-spacer"
-                class="musical-chairs-item"
-                style="width: 100%; flex-shrink: 1"
-            />
-            <Chair
-                v-for="user in users"
-                :key="user.id"
-                :title="user.name"
-                :avatarURL="user.avatarURL"
-                :typing="user.typing"
-                :chairMarkup="user.svgMarkup"
-                class="musical-chairs-item"
-                :ref="(e) => chairs.push(e)"
-            />
-            <div
-                key="right-spacer"
-                class="musical-chairs-item"
-                style="width: 100%; flex-shrink: 1"
-            />
-        </transition-group>
+    <div
+        id="chair-space"
+        ref="chairSpace"
+        v-if="backgroundURL && users.length"
+        :style="{ backgroundImage: 'url(' + backgroundURL + ')' }"
+    >
+        <!-- <img v-if="backgroundURL" :src="backgroundURL" class="image-layer" /> -->
+        <div id="musical-chairs">
+            <transition-group name="musical-chairs" @before-leave="beforeLeave">
+                <div key="left-spacer" style="width: 100%; flex-shrink: 1" />
+                <Chair
+                    v-for="user in users"
+                    :key="user.id"
+                    :title="user.name"
+                    :avatarURL="user.avatarURL"
+                    :typing="user.typing"
+                    :chairMarkup="user.svgMarkup"
+                    class="musical-chairs-item"
+                    :ref="(e) => chairs.push(e)"
+                />
+                <div key="right-spacer" style="width: 100%; flex-shrink: 1" />
+            </transition-group>
+        </div>
+        <img
+            v-if="foregroundURL"
+            :src="foregroundURL"
+            class="image-layer"
+            id="foreground"
+        />
     </div>
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
         +{{ visibleCount.right }} &gt;
@@ -43,8 +49,21 @@ import {
 import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
-import { RoomInhabitant } from "../../back/rooms";
-// import testUsers from "./testaudience";
+import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
+import { avatars } from "./avatars";
+
+const testUsers: RoomInhabitant[] = [];
+for (let i = 0; i < 10; i++) {
+    testUsers.push({
+        id: String(i),
+        typing: Math.random() > 0.5,
+        lastTypingTimestamp: -1,
+        chairURL: "/images/rooms/soybeans/soybeans.svg",
+        name: "Test Users " + i,
+        avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
+        resumed: false,
+    });
+}
 
 export default defineComponent({
     props: {
@@ -88,10 +107,16 @@ export default defineComponent({
         }
         const svgMarkupCache: Record<string, string> = {};
 
+        const backgroundURL = ref("");
+        const foregroundURL = ref<undefined | string>(undefined);
         const users = ref<LoadedRoomInhabitant[]>([]);
-        const addInhabitants = async (audience: RoomInhabitant[]) => {
+        const loadRoom = async (graphics: OutputRoom) => {
+            backgroundURL.value = graphics.background;
+            foregroundURL.value = graphics.foreground;
             const loaded: LoadedRoomInhabitant[] = [];
-            for (const inhabitant of audience) {
+            for (const inhabitant of graphics.inhabitants.concat(
+                location.hostname == "localhost" ? testUsers : []
+            )) {
                 if (!svgMarkupCache[inhabitant.chairURL]) {
                     const markupResponse = await fetch(inhabitant.chairURL);
                     const markup = await markupResponse.text();
@@ -108,8 +133,7 @@ export default defineComponent({
         };
 
         // start receiving audience data from the server:
-        props.socket.on("audience_info_set", addInhabitants);
-        // addInhabitants(testUsers);
+        props.socket.on("audience_info_set", loadRoom);
         props.socket.emit("ready_for", Subscription.audience);
 
         // this function is just used to fix a weird bug with transition-group
@@ -119,7 +143,15 @@ export default defineComponent({
             el.style.top = el.offsetTop + "px";
         };
 
-        return { users, beforeLeave, visibleCount, chairs, chairSpace };
+        return {
+            users,
+            beforeLeave,
+            visibleCount,
+            chairs,
+            chairSpace,
+            backgroundURL,
+            foregroundURL,
+        };
     },
 });
 </script>
@@ -127,21 +159,32 @@ export default defineComponent({
 <style scoped lang="scss">
 @use "../scss/vars";
 
-.chair-space {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
+#chair-space {
     margin: 10px auto;
     border: 2px solid black;
     border-radius: 10px;
-    background-image: url("/assets/images/rooms/basic/background.svg");
-    background-position: center;
-    background-size: cover;
+    width: 100%;
+    position: relative;
     overflow-x: auto;
     overflow-y: hidden;
-    max-width: 100%;
-    padding: 0 10px;
-    position: relative;
+    height: 175px;
+    // max 5:1 aspect ratio to avoid stretching art assets
+    max-width: 175px * 5;
+    @media (max-width: 450px) {
+        height: 70px;
+        max-width: 70px * 5;
+    }
+    background-size: cover;
+    background-position: center;
+}
+#musical-chairs {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
 }
 .counter {
     position: absolute;
@@ -151,6 +194,20 @@ export default defineComponent({
     border: 2px solid black;
     font-family: vars.$pilot-font;
     z-index: 100;
+}
+.image-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+#foreground {
+    position: sticky;
+    left: 0px;
+    top: 0px;
 }
 #offToTheLeftCount {
     left: 7px;

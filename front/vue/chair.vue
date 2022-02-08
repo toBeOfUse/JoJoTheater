@@ -1,9 +1,5 @@
 <template>
-    <div
-        class="chair-container"
-        ref="chairContainer"
-        v-html="chairMarkup"
-    ></div>
+    <div class="chair-container" ref="chairContainer" v-html="markup"></div>
 </template>
 
 <script lang="ts">
@@ -35,7 +31,46 @@ export default defineComponent({
     },
     setup(props) {
         const chairContainer = ref<null | HTMLDivElement>(null);
-        let initialized = false;
+        const initializeSVG = (markup: string, height: number) => {
+            const cont = document.createElement("div");
+            cont.innerHTML = markup;
+            const svgElement = cont.querySelector("svg") as SVGSVGElement;
+            const avatarImage = svgElement.querySelector(
+                ".seated-avatar"
+            ) as SVGImageElement;
+            svgElement.classList.add("svg-chair");
+            const nativeWidth = Number(svgElement.getAttribute("width"));
+            const nativeHeight = Number(svgElement.getAttribute("height"));
+            const scaleFactor = height / nativeHeight;
+            svgElement.setAttribute("width", String(nativeWidth * scaleFactor));
+            svgElement.setAttribute(
+                "height",
+                String(nativeHeight * scaleFactor)
+            );
+            const avatar = avatars.find((a2) => a2.path == props.avatarURL);
+            let avatarURL =
+                "/imgopt?path=" + encodeURIComponent(props.avatarURL);
+            if (avatar && avatar.facing == Direction.left) {
+                avatarURL += "&flip=true";
+            }
+            avatarURL +=
+                "&width=" +
+                avatarImage.getBoundingClientRect().width *
+                    window.devicePixelRatio;
+            avatarImage.setAttribute("href", avatarURL);
+            const keyboard = svgElement.querySelector(
+                ".seated-keyboard"
+            ) as HTMLElement;
+            keyboard.setAttribute("href", "/images/rooms/keyboard.png");
+            return cont.innerHTML;
+        };
+        const markup = ref("");
+        onMounted(() => {
+            if (chairContainer.value) {
+                const chairHeight = chairContainer.value.offsetHeight;
+                markup.value = initializeSVG(props.chairMarkup, chairHeight);
+            }
+        });
         const setChairVisuals = () => {
             if (chairContainer.value) {
                 const svgElement = chairContainer.value.querySelector("svg");
@@ -43,31 +78,6 @@ export default defineComponent({
                     const keyboard = svgElement.querySelector(
                         ".seated-keyboard"
                     ) as HTMLElement;
-                    if (!initialized) {
-                        const avatarImage = svgElement.querySelector(
-                            ".seated-avatar"
-                        ) as SVGImageElement;
-                        svgElement.classList.add("svg-chair");
-                        const avatar = avatars.find(
-                            (a2) => a2.path == props.avatarURL
-                        );
-                        let avatarURL =
-                            "/imgopt?path=" +
-                            encodeURIComponent(props.avatarURL);
-                        if (avatar && avatar.facing == Direction.left) {
-                            avatarURL += "&flip=true";
-                        }
-                        avatarURL +=
-                            "&width=" +
-                            avatarImage.getBoundingClientRect().width *
-                                window.devicePixelRatio;
-                        avatarImage.setAttribute("href", avatarURL);
-                        keyboard.setAttribute(
-                            "href",
-                            "/images/rooms/keyboard.png"
-                        );
-                        initialized = true;
-                    }
                     keyboard.style.opacity = props.typing ? "1" : "";
                     keyboard.style.animationName = props.typing
                         ? "verticalshake"
@@ -86,17 +96,23 @@ export default defineComponent({
             if (!chairContainer.value) {
                 return null;
             } else {
-                const space = chairContainer.value.parentElement;
+                let space: HTMLElement = chairContainer.value;
+                while (space.id != "chair-space" && space.parentElement) {
+                    space = space.parentElement;
+                }
                 if (!space) {
+                    console.error(
+                        "could not find chair-space element to check chair visibility"
+                    );
                     return null;
                 } else {
                     const width = space.offsetWidth;
                     const ourWidth = chairContainer.value.offsetWidth;
                     const scrollPos = space.scrollLeft;
                     const ourPos = chairContainer.value.offsetLeft;
-                    if (ourPos + ourWidth < scrollPos) {
+                    if (ourPos + ourWidth - ourWidth / 2 < scrollPos) {
                         return "left";
-                    } else if (ourPos > scrollPos + width) {
+                    } else if (ourPos + ourWidth / 2 > scrollPos + width) {
                         return "right";
                     } else {
                         return "middle";
@@ -104,7 +120,7 @@ export default defineComponent({
                 }
             }
         };
-        return { chairContainer, placement };
+        return { chairContainer, placement, markup };
     },
 });
 </script>
@@ -124,13 +140,9 @@ export default defineComponent({
 .chair-container {
     position: relative;
     margin: 0 5px;
+    height: 100%;
 }
 .svg-chair {
-    height: 150px;
-    @media (max-width: 450px) {
-        height: 70px;
-    }
-    width: auto;
     overflow: visible;
     image {
         background-color: white;
