@@ -43,6 +43,7 @@
             class="window-body"
             v-if="!minimized"
             :style="!loggedIn ? {} : { height: chatBodyHeight + 'px' }"
+            @click.stop="deflectFocusToMessageInput"
         >
             <div id="chat-login" v-if="!loggedIn">
                 <label
@@ -185,6 +186,31 @@ export default defineComponent({
     components: { OptImage },
     setup(props) {
         const socket = props.socket;
+
+        // message sending:
+        const messageInput = ref<HTMLInputElement | null>(null);
+        const send = () => {
+            if (messageInput.value) {
+                const messageText = messageInput.value.value.trim();
+                socket.emit("wrote_message", messageText);
+                messageInput.value.value = "";
+            }
+        };
+        const messageInputKeydown = (event: KeyboardEvent) => {
+            if (event.key != "Enter") {
+                socket.emit("typing_start");
+            } else {
+                send();
+            }
+        };
+        const deflectFocusToMessageInput = (event: MouseEvent) => {
+            event.stopPropagation();
+            // deflect focus to message input unless it would destroy a selection
+            if (messageInput.value && !window?.getSelection()?.toString()) {
+                messageInput.value.focus();
+            }
+        };
+
         // positioning logic:
         const minimized = ref(true);
         const messagePanel = ref<null | HTMLElement>(null);
@@ -275,8 +301,9 @@ export default defineComponent({
             | "resizing_from_bottom"
             | "none" = "none";
         const pointerDown = (event: MouseEvent | TouchEvent) => {
-            if (!chatWindow.value || !chatHeader.value || minimized.value)
+            if (!chatWindow.value || !chatHeader.value || minimized.value) {
                 return;
+            }
             const windowBox = chatWindow.value.getBoundingClientRect();
             const headerBox = chatHeader.value.getBoundingClientRect();
             if (event instanceof MouseEvent) {
@@ -437,23 +464,6 @@ export default defineComponent({
             socket.emit("user_info_clear");
         };
 
-        // message sending:
-        const messageInput = ref<HTMLInputElement | null>(null);
-        const send = () => {
-            if (messageInput.value) {
-                const messageText = messageInput.value.value.trim();
-                socket.emit("wrote_message", messageText);
-                messageInput.value.value = "";
-            }
-        };
-        const messageInputKeydown = (event: KeyboardEvent) => {
-            if (event.key != "Enter") {
-                props.socket.emit("typing_start");
-            } else {
-                send();
-            }
-        };
-
         // message display logic:
         const groupedMessages = ref<ChatMessage[][]>([]);
         let lastSender = "";
@@ -512,6 +522,7 @@ export default defineComponent({
             changePage,
             nextPageAvailable,
             messageInputKeydown,
+            deflectFocusToMessageInput,
         };
     },
 });
@@ -699,6 +710,13 @@ export default defineComponent({
     height: 35px;
     border-radius: 50%;
     margin-right: 10px;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
 }
 
 .in-chat-username {
