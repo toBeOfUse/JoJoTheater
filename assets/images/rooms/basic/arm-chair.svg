@@ -398,7 +398,7 @@
    </g>
    <path d="m77.973 214.846 129.84-15.347" style="fill:none;stroke:#b9895d;stroke-width:.565"/>
    <g style="stroke-linejoin:round" transform="translate(1253.725 204.953)">
-      <circle style="fill:#fff;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" r="53.173" cy="-46.239" cx="-1128.435"/>
+      <circle style="fill:#fff;stroke:#1a191e;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" r="53.173" cy="-46.239" cx="-1128.435"/>
       <image transform="translate(-754.625 112.869) scale(.60721)" clip-path="url(#arm-chair_vue_svg__aN)" width="179.261" height="179.261" preserveAspectRatio="none" xlink:href="placeholder.png" x="-705.249" y="-351.662" class="seated-avatar"/>
    </g>
    <path style="fill:#bdb1a3" d="M55.303 172.838s6.675-.044 7.364.43c.69.474 1.421 2.153 1.421 2.153l.474 5.168.904 11.713.388 2.024-6.072-.603z"/>

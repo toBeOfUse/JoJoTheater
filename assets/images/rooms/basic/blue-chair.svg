@@ -218,7 +218,7 @@
         <path style="overflow:visible;fill:#acacac" d="m95.809 136.297-.16.504-2.014.107-.207-.474zm58.443 11.566.139.574-2.377.659-1.405-.49.024-.493 1.21.58zM45.369 152.25l2.861.178.026.927-2.873-.107zm65.016 16.941 3.011.264-.06.684-2.926-.248z" overflow="visible" transform="translate(-281.3 -171.936) scale(1.43613)" id="blue-chair_vue_svg__path307"/>
     </g>
     <g transform="translate(418.946 212.093)" id="blue-chair_vue_svg__g315">
-        <circle cx="-330.003" cy="-44.927" r="53.173" style="fill:#fff;stroke:#1a191e;stroke-width:1;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" id="blue-chair_vue_svg__circle311"/>
+        <circle cx="-330.003" cy="-44.927" r="53.173" style="fill:#fff;stroke:#1a191e;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" id="blue-chair_vue_svg__circle311"/>
         <image y="-351.662" x="-705.249" xlink:href="placeholder.png" preserveAspectRatio="none" height="179.261" width="179.261" clip-path="url(#blue-chair_vue_svg__id-16m)" transform="translate(43.807 114.18) scale(.60721)" class="seated-avatar" />
     </g>
     <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="keyboard.png" x="-5.988" y="183.163"/>
