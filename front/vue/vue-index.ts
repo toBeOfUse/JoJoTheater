@@ -20,6 +20,10 @@ async function loadIndexComps(
         Vue.createApp(Audience.default, { socket }).mount(
             "#audience-container"
         );
+        const Info = await import(
+            /* webpackMode: "eager" */ "./infomodals.vue"
+        );
+        Vue.createApp(Info.default).mount("#info-container");
     });
 }
 
