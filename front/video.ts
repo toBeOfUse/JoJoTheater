@@ -223,9 +223,9 @@ class HTML5VideoController extends VideoController {
             this.videoElement.setAttribute(
                 "poster",
                 "/imgopt?width=max&path=" +
-                    encodeURIComponent(
-                        "/images/thumbnails/" + v.video.id + ".jpg"
-                    )
+                encodeURIComponent(
+                    "/images/thumbnails/" + v.video.id + ".jpg"
+                )
             );
             this.prevSrc = v.video.src;
         }
@@ -711,14 +711,16 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
     });
     document.addEventListener("keydown", (e) => {
         if (
-            e.code.toLowerCase() == "space" &&
-            (!e.target ||
-                ((e.target as HTMLElement).tagName.toLowerCase() != "input" &&
-                    (e.target as HTMLElement).tagName.toLowerCase() !=
-                        "textarea"))
+            e.code == "Space"
         ) {
-            e.preventDefault();
-            DOMControls.playPause.click();
+            const path = e.composedPath();
+            const fromChat = path.some(
+                (t) => t instanceof HTMLElement && t.id == "chat-container"
+            );
+            if (!fromChat) {
+                e.preventDefault();
+                DOMControls.playPause.click();
+            }
         }
     });
     // store whether the player was playing, pre-seek and restore in endSeek?
@@ -826,7 +828,7 @@ class Coordinator {
             };
             const NeededController =
                 controllerTypes[
-                    String(currentProvider) as keyof typeof controllerTypes
+                String(currentProvider) as keyof typeof controllerTypes
                 ] || HTML5VideoController;
 
             if (!(this.controller instanceof NeededController)) {
