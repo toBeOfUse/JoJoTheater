@@ -79,7 +79,9 @@
         </p>
         <div class="gallery">
             <div class="thumbnail" v-for="image in sources" :key="image.id">
-                <a-nt :href="image.link"><img :src="image.thumbnail" /></a-nt>
+                <a-nt :href="image.link">
+                    <opt-image :path="image.thumbnail" />
+                </a-nt>
                 <a-nt class="author-link" :href="image.authorURL">{{
                     image.author
                 }}</a-nt>
@@ -90,10 +92,12 @@
 <script lang="ts">
 import { defineComponent, ref, watch } from "vue";
 import newtablink from "./newtablink.vue";
+import optImage from "./image.vue";
 
 export default defineComponent({
     components: {
         "a-nt": newtablink,
+        optImage,
     },
     setup() {
         const showing = ref("");
