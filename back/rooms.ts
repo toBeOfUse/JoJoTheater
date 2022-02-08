@@ -1,5 +1,8 @@
 import EventEmitter from "events";
+import path from "path";
+import fs from "fs";
 import { ChatUserInfo } from "../types";
+import logger from "./logger";
 
 interface RoomProps {
     folderName: string,
@@ -64,13 +67,22 @@ class RoomGraphics extends EventEmitter {
         return this.getPublicPathFor(this.props.background);
     }
     getNewChairURL() {
-        const result = this.chairSequence[this.usedChairs];
+        const filename = this.chairSequence[this.usedChairs];
         this.usedChairs++;
         if (this.usedChairs >= this.chairSequence.length) {
             this.usedChairs = 0;
             this.chairSequence = RoomGraphics.shuffleArray(this.props.chairs);
         }
-        return this.getPublicPathFor(result + ".svg");
+        let publicPath = this.getPublicPathFor(filename + ".svg");
+        const localPath = path.resolve(__dirname, "../assets" + publicPath);
+        try {
+            const stats = fs.statSync(localPath);
+            return publicPath + "?v=" + Math.round(stats.mtimeMs);
+
+        } catch {
+            logger.error("could not find chair file " + localPath);
+            return "";
+        }
     }
     addInhabitant(inhabitant: ChatUserInfo) {
         this._inhabitants = [
