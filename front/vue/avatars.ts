@@ -90,8 +90,8 @@ const avatars = [
     new Avatar("earthly_delights/merknight.jpg", left),
     new Avatar("earthly_delights/tonguebird.jpg", right),
     new Avatar("earthly_delights/reader.jpg", left),
-    new Avatar("earthly_delights/sconc.jpg", right),
-    new Avatar("earthly_delights/skater.jpg", right),
+    new Avatar("earthly_delights/sconc.2.jpg", right),
+    new Avatar("earthly_delights/lisa.jpg", left),
     new Avatar("earthly_delights/smoochhog.jpg", left),
     new Avatar("earthly_delights/squawker.jpg", left),
     // page 6: entraptas
