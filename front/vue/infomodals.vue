@@ -77,7 +77,9 @@
         <div class="gallery">
             <div class="thumbnail" v-for="image in sources" :key="image.id">
                 <a :href="image.link"><img :src="image.thumbnail" /></a>
-                <a :href="image.authorURL">{{ image.author }}</a>
+                <a class="author-link" :href="image.authorURL">{{
+                    image.author
+                }}</a>
             </div>
         </div>
     </div>
@@ -345,19 +347,28 @@ export default defineComponent({
     text-align: center;
     margin: 5px;
     border-radius: 5px;
-    background: lightgray;
-    padding: 2px;
+    border: 1px solid black;
+    overflow: hidden;
     font-size: 0.8em;
     & img {
-        max-width: 100%;
-        max-height: 100px;
+        // max-width: 100%;
+        // max-height: 100px;
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        object-position: center;
         margin: 0 auto;
         display: block;
     }
+    & .author-link {
+        display: block;
+        margin: 2px 0;
+        color: black;
+    }
     @media (max-width: 500px) {
-        width: 75px;
+        width: 100px;
         & img {
-            max-height: 50px;
+            height: 66px;
         }
     }
 }
