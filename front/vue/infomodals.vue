@@ -14,7 +14,8 @@
             people over the Internet. It is named after a Discord bot (mostly
             unrelated.) It is written in Typescript with Vue as the primary
             front-end library. You can view its source code
-            <a href="https://github.com/toBeOfUse/MitchBotStreams">here</a>.
+            <a-nt href="https://github.com/toBeOfUse/MitchBotStreams">here</a-nt
+            >.
         </p>
     </div>
     <div class="modal" v-if="showing == 'instructions'">
@@ -52,10 +53,12 @@
         </h2>
         <p>
             The Windows XP style of the chat window comes from the great
-            <a href="https://botoxparty.github.io/XP.css/">XP.css</a> library by
-            <a href="https://adamham.dev/">Adam Hammad</a>. The main font used
-            is the open source <a href="https://b612-font.com/">B612</a>,
-            designed for high legibility on aircraft cockpit screens.
+            <a-nt href="https://botoxparty.github.io/XP.css/">XP.css</a-nt>
+            library by
+            <a-nt href="https://adamham.dev/">Adam Hammad</a-nt>. The main font
+            used is the open source
+            <a-nt href="https://b612-font.com/">B612</a-nt>, designed for high
+            legibility on aircraft cockpit screens.
         </p>
         <p>
             The images for the built-in avatars were sourced from the following
@@ -76,18 +79,22 @@
         </p>
         <div class="gallery">
             <div class="thumbnail" v-for="image in sources" :key="image.id">
-                <a :href="image.link"><img :src="image.thumbnail" /></a>
-                <a class="author-link" :href="image.authorURL">{{
+                <a-nt :href="image.link"><img :src="image.thumbnail" /></a-nt>
+                <a-nt class="author-link" :href="image.authorURL">{{
                     image.author
-                }}</a>
+                }}</a-nt>
             </div>
         </div>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent, ref, watch } from "vue";
+import newtablink from "./newtablink.vue";
 
 export default defineComponent({
+    components: {
+        "a-nt": newtablink,
+    },
     setup() {
         const showing = ref("");
         watch(showing, (newValue) => {
