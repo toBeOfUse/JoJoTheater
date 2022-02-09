@@ -11,7 +11,7 @@
  * props.
  */
 
-import { defineComponent, onMounted, ref, watch } from "vue";
+import { defineComponent, nextTick, onMounted, ref, watch } from "vue";
 import { avatars, Direction } from "./avatars";
 
 export default defineComponent({
@@ -75,17 +75,6 @@ export default defineComponent({
             }
             return space;
         };
-        const markup = ref("");
-        onMounted(() => {
-            if (chairContainer.value) {
-                const space = findParentSpace();
-                if (!space) {
-                    return;
-                }
-                const chairHeight = space.offsetHeight;
-                markup.value = initializeSVG(props.chairMarkup, chairHeight);
-            }
-        });
         const setChairVisuals = () => {
             if (chairContainer.value) {
                 const svgElement = chairContainer.value.querySelector("svg");
@@ -100,7 +89,19 @@ export default defineComponent({
                 }
             }
         };
-        onMounted(setChairVisuals);
+        const markup = ref("");
+        onMounted(async () => {
+            if (chairContainer.value) {
+                const space = findParentSpace();
+                if (!space) {
+                    return;
+                }
+                const chairHeight = space.offsetHeight;
+                markup.value = initializeSVG(props.chairMarkup, chairHeight);
+                await nextTick();
+                setChairVisuals();
+            }
+        });
         watch(() => props.typing, setChairVisuals);
         // here we can see whether we are visible in the parent element,
         // scrolled offscreen within it to the left, or scrolled offscreen
