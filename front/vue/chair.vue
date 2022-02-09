@@ -31,10 +31,26 @@ export default defineComponent({
     },
     setup(props) {
         const chairContainer = ref<null | HTMLDivElement>(null);
-        const initializeSVG = (markup: string, height: number) => {
-            const cont = document.createElement("div");
-            cont.innerHTML = markup;
-            const svgElement = cont.querySelector("svg") as SVGSVGElement;
+        const initializeSVG = async () => {
+            const markup = props.chairMarkup;
+            const parentSpace = findParentSpace();
+            if (!parentSpace) {
+                console.error(
+                    "could not find #chair-space parent " +
+                        "while initializing chair svg!"
+                );
+                return;
+            }
+            if (!chairContainer.value) {
+                console.error("premature chair svg initialization!");
+                return;
+            }
+            const height = parentSpace.offsetHeight;
+            chairContainer.value.innerHTML = markup;
+            await nextTick();
+            const svgElement = chairContainer.value.querySelector(
+                "svg"
+            ) as SVGSVGElement;
             const avatarImage = svgElement.querySelector(
                 ".seated-avatar"
             ) as SVGImageElement;
@@ -54,13 +70,15 @@ export default defineComponent({
                 avatarURL += "&flip=true";
             }
             avatarURL +=
-                "&width=" + avatarImage.clientWidth * window.devicePixelRatio;
+                "&width=" +
+                avatarImage.getBoundingClientRect().width *
+                    window.devicePixelRatio;
             avatarImage.setAttribute("href", avatarURL);
             const keyboard = svgElement.querySelector(
                 ".seated-keyboard"
             ) as HTMLElement;
             keyboard.setAttribute("href", "/images/rooms/keyboard.png");
-            return cont.innerHTML;
+            setChairVisuals();
         };
         const findParentSpace = (): null | HTMLElement => {
             if (!chairContainer.value) {
@@ -90,22 +108,9 @@ export default defineComponent({
             }
         };
         const markup = ref("");
-        // TODO: take apart into initializeSVG
-        const initinit = async () => {
-            if (chairContainer.value) {
-                const space = findParentSpace();
-                if (!space) {
-                    return;
-                }
-                const chairHeight = space.offsetHeight;
-                markup.value = initializeSVG(props.chairMarkup, chairHeight);
-                await nextTick();
-                setChairVisuals();
-            }
-        };
-        onMounted(initinit);
+        onMounted(initializeSVG);
         watch(() => props.typing, setChairVisuals);
-        watch(() => props.chairMarkup, initinit);
+        watch(() => props.chairMarkup, initializeSVG);
         // here we can see whether we are visible in the parent element,
         // scrolled offscreen within it to the left, or scrolled offscreen
         // within it to the right; this property is for the consumption of the
