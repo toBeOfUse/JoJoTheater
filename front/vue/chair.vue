@@ -90,7 +90,8 @@ export default defineComponent({
             }
         };
         const markup = ref("");
-        onMounted(async () => {
+        // TODO: take apart into initializeSVG
+        const initinit = async () => {
             if (chairContainer.value) {
                 const space = findParentSpace();
                 if (!space) {
@@ -101,8 +102,10 @@ export default defineComponent({
                 await nextTick();
                 setChairVisuals();
             }
-        });
+        };
+        onMounted(initinit);
         watch(() => props.typing, setChairVisuals);
+        watch(() => props.chairMarkup, initinit);
         // here we can see whether we are visible in the parent element,
         // scrolled offscreen within it to the left, or scrolled offscreen
         // within it to the right; this property is for the consumption of the

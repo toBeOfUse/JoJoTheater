@@ -8,7 +8,6 @@
         v-if="backgroundURL && users.length"
         :style="{ backgroundImage: 'url(' + backgroundURL + ')' }"
     >
-        <!-- <img v-if="backgroundURL" :src="backgroundURL" class="image-layer" /> -->
         <div id="musical-chairs">
             <transition-group name="musical-chairs" @before-leave="beforeLeave">
                 <div key="left-spacer" style="width: 100%; flex-shrink: 1" />
@@ -35,6 +34,8 @@
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
         +{{ visibleCount.right }} &gt;
     </div>
+    <!-- TODO: v-if cooldown and then fade in -->
+    <button id="switch" @click="requestSceneChange">Change Scene</button>
 </template>
 
 <script lang="ts">
@@ -52,18 +53,18 @@ import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
 import { avatars } from "./avatars";
 
-const testUsers: RoomInhabitant[] = [];
-for (let i = 0; i < 10; i++) {
-    testUsers.push({
-        id: String(i),
-        typing: Math.random() > 0.5,
-        lastTypingTimestamp: -1,
-        chairURL: "/images/rooms/trees/lift.svg",
-        name: "Test User " + i,
-        avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
-        resumed: false,
-    });
-}
+// const testUsers: RoomInhabitant[] = [];
+// for (let i = 0; i < 10; i++) {
+//     testUsers.push({
+//         id: String(i),
+//         typing: Math.random() > 0.5,
+//         lastTypingTimestamp: -1,
+//         chairURL: "/images/rooms/trees/lift.svg",
+//         name: "Test User " + i,
+//         avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
+//         resumed: false,
+//     });
+// }
 
 export default defineComponent({
     props: {
@@ -111,12 +112,12 @@ export default defineComponent({
         const foregroundURL = ref<undefined | string>(undefined);
         const users = ref<LoadedRoomInhabitant[]>([]);
         const loadRoom = async (graphics: OutputRoom) => {
+            console.log("received graphics:");
+            console.log(graphics);
             backgroundURL.value = graphics.background;
             foregroundURL.value = graphics.foreground;
             const loaded: LoadedRoomInhabitant[] = [];
-            for (const inhabitant of graphics.inhabitants.concat(
-                location.hostname == "localhost" ? testUsers : []
-            )) {
+            for (const inhabitant of graphics.inhabitants) {
                 if (!svgMarkupCache[inhabitant.chairURL]) {
                     const markupResponse = await fetch(inhabitant.chairURL);
                     const markup = await markupResponse.text();
@@ -143,6 +144,10 @@ export default defineComponent({
             el.style.top = el.offsetTop + "px";
         };
 
+        const requestSceneChange = () => {
+            props.socket.emit("change_room");
+        };
+
         return {
             users,
             beforeLeave,
@@ -151,6 +156,7 @@ export default defineComponent({
             chairSpace,
             backgroundURL,
             foregroundURL,
+            requestSceneChange,
         };
     },
 });
@@ -216,6 +222,11 @@ export default defineComponent({
 #offToTheRightCount {
     right: 7px;
     top: 7px;
+}
+#switch {
+    position: absolute;
+    right: 7px;
+    bottom: 7px;
 }
 </style>
 <style lang="scss">

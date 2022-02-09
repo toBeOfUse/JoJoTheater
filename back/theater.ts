@@ -43,7 +43,8 @@ type ClientSentEvent =
     | "state_report"
     | "state_update_request"
     | "ready_for"
-    | "typing_start";
+    | "typing_start"
+    | "change_room";
 
 class AudienceMember {
     private socket: Socket;
@@ -55,6 +56,10 @@ class AudienceMember {
     subscriptions: Set<Subscription> = new Set();
     lastClientState: (PlayerState & { receivedTimeISO: string }) | undefined =
         undefined;
+
+    get loggedIn(): boolean {
+        return !!this.chatInfo;
+    }
 
     get lastRecordedLatency(): number {
         return this.lastLatencies[this.lastLatencies.length - 1];
@@ -341,6 +346,9 @@ class Theater {
         member.on(
             "state_change_request",
             async (change: StateChangeRequest) => {
+                if (!member.loggedIn) {
+                    return;
+                }
                 const newState: any = {};
                 if (change.changeType == ChangeTypes.playing) {
                     newState.currentTimeMs = this.currentState.currentTimeMs;
@@ -380,6 +388,9 @@ class Theater {
         );
 
         member.on("add_video", async (url: string) => {
+            if (!member.loggedIn) {
+                return;
+            }
             logger.debug(
                 "attempting to add video with url " + url + " to playlist"
             );
@@ -391,7 +402,7 @@ class Theater {
         });
 
         member.on("user_info_set", () => {
-            if (member.chatInfo) {
+            if (member.loggedIn && member.chatInfo) {
                 if (!member.chatInfo.resumed) {
                     const announcement = {
                         isAnnouncement: true,
@@ -408,7 +419,21 @@ class Theater {
 
         member.on("typing_start", () => {
             this.graphics.startTyping(member.id);
-        })
+        });
+
+        member.on("change_room", () => {
+            if (member.loggedIn) {
+                this.graphics = RoomController.switchedProps(this.graphics);
+                this.graphics.on("change", () => {
+                    this.emitAll("audience_info_set", this.graphics.outputGraphics);
+                });
+                this.graphics.emit("change");
+                this.sendToChat({
+                    isAnnouncement: true,
+                    messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`
+                });
+            }
+        });
 
         member.on("wrote_message", (messageText: string) => {
             messageText = messageText.trim();

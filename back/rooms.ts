@@ -49,7 +49,6 @@ interface RoomInhabitant extends ChatUserInfo {
 }
 
 interface OutputRoom {
-    props: RoomProps;
     background: string;
     foreground?: string;
     inhabitants: RoomInhabitant[];
@@ -64,7 +63,7 @@ class RoomController extends EventEmitter {
      * property out to all the clients so they can update their Audience
      * components.
      */
-    readonly props: RoomProps;
+    private props: RoomProps;
     private chairSequence: string[];
     private usedChairs: number = 0;
     private _inhabitants: RoomInhabitant[] = [];
@@ -99,7 +98,6 @@ class RoomController extends EventEmitter {
     }
     get outputGraphics(): OutputRoom {
         return {
-            props: this.props,
             background: this.background,
             foreground: this.foreground,
             inhabitants: this.inhabitants
@@ -122,9 +120,25 @@ class RoomController extends EventEmitter {
             return "";
         }
     }
+    static switchedProps(oldRoom: RoomController, to: string | undefined = undefined) {
+        if (!to) {
+            const availableProps = Object.keys(propCollections)
+                .filter(c => propCollections[c].folderName != oldRoom.props.folderName);
+            to = availableProps[Math.floor(Math.random() * availableProps.length)];
+        }
+        const newRoom = new RoomController(propCollections[to]);
+        newRoom._inhabitants = oldRoom._inhabitants
+            .map(i => ({ ...i, chairURL: newRoom.getNewChairURL() }));
+        return newRoom;
+    }
     addInhabitant(inhabitant: ChatUserInfo) {
         this._inhabitants = [
-            { ...inhabitant, typing: false, lastTypingTimestamp: -1, chairURL: this.getNewChairURL() }
+            {
+                ...inhabitant,
+                typing: false,
+                lastTypingTimestamp: -1,
+                chairURL: this.getNewChairURL()
+            }
         ].concat(this._inhabitants);
         this.emit("change");
     }
