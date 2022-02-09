@@ -20,7 +20,7 @@
                     :typing="user.typing"
                     :chairMarkup="user.svgMarkup"
                     class="musical-chairs-item"
-                    :ref="(e) => chairs.push(e)"
+                    :ref="(e) => e && chairs.push(e)"
                 />
                 <div key="right-spacer" style="width: 100%; flex-shrink: 1" />
             </transition-group>

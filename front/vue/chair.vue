@@ -54,9 +54,7 @@ export default defineComponent({
                 avatarURL += "&flip=true";
             }
             avatarURL +=
-                "&width=" +
-                avatarImage.getBoundingClientRect().width *
-                    window.devicePixelRatio;
+                "&width=" + avatarImage.clientWidth * window.devicePixelRatio;
             avatarImage.setAttribute("href", avatarURL);
             const keyboard = svgElement.querySelector(
                 ".seated-keyboard"
@@ -64,10 +62,27 @@ export default defineComponent({
             keyboard.setAttribute("href", "/images/rooms/keyboard.png");
             return cont.innerHTML;
         };
+        const findParentSpace = (): null | HTMLElement => {
+            if (!chairContainer.value) {
+                return null;
+            }
+            let space: HTMLElement = chairContainer.value;
+            while (space.id != "chair-space" && space.parentElement) {
+                space = space.parentElement;
+            }
+            if (!space) {
+                console.error("could not find chair-space element");
+            }
+            return space;
+        };
         const markup = ref("");
         onMounted(() => {
             if (chairContainer.value) {
-                const chairHeight = chairContainer.value.offsetHeight;
+                const space = findParentSpace();
+                if (!space) {
+                    return;
+                }
+                const chairHeight = space.offsetHeight;
                 markup.value = initializeSVG(props.chairMarkup, chairHeight);
             }
         });
@@ -96,14 +111,8 @@ export default defineComponent({
             if (!chairContainer.value) {
                 return null;
             } else {
-                let space: HTMLElement = chairContainer.value;
-                while (space.id != "chair-space" && space.parentElement) {
-                    space = space.parentElement;
-                }
+                const space = findParentSpace();
                 if (!space) {
-                    console.error(
-                        "could not find chair-space element to check chair visibility"
-                    );
                     return null;
                 } else {
                     const width = space.offsetWidth;
