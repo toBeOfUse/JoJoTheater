@@ -144,10 +144,7 @@ export default defineComponent({
                 }
             }
             get thumbnail() {
-                return (
-                    "/images/avatars/originals/animals/" +
-                    this.thumbnailFileName
-                );
+                return "/images/credits/" + this.thumbnailFileName;
             }
         }
         const sources = [
@@ -284,6 +281,34 @@ export default defineComponent({
                 "https://unsplash.com/@vincentvanzalinge",
                 "vincent-van-zalinge-GvSLkDH7XdI-unsplash.jpg"
             ),
+            new PhotoSource(
+                Unsplash,
+                "UIz_4PMK8xI",
+                "Braden Egli",
+                "https://unsplash.com/@bradenegli",
+                "braden-egli-UIz_4PMK8xI-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "2tigIl6Tt7E",
+                "Everaldo Coelho",
+                "https://unsplash.com/@_everaldo",
+                "everaldo-coelho-2tigIl6Tt7E-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "-IZ2sgQKIhM",
+                "Michael Benz",
+                "https://unsplash.com/@michaelbenz",
+                "michael-benz--IZ2sgQKIhM-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "ElDn5SmTmB4",
+                "Nick van der Ende",
+                "https://unsplash.com/@nkend",
+                "nick-van-der-ende-ElDn5SmTmB4-unsplash.jpg"
+            ),
         ];
         return { showing, sources };
     },
@@ -310,7 +335,7 @@ export default defineComponent({
     border-radius: 3px;
     border: 1px dotted black;
     width: fit-content;
-    margin: 10px auto 5px auto;
+    margin: 10px auto;
 }
 .link {
     text-decoration: underline;
@@ -326,7 +351,7 @@ export default defineComponent({
 }
 .modal {
     position: fixed;
-    width: 70%;
+    width: 50%;
     top: 50px;
     left: 50%;
     transform: translateX(-50%);
