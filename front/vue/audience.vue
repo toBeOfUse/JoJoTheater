@@ -10,7 +10,7 @@
     >
         <div id="musical-chairs">
             <transition-group name="musical-chairs" @before-leave="beforeLeave">
-                <div key="left-spacer" style="width: 100%; flex-shrink: 1" />
+                <div key="left-spacer" style="width: 100%" />
                 <Chair
                     v-for="user in users"
                     :key="user.id"
@@ -21,7 +21,7 @@
                     class="musical-chairs-item"
                     :ref="(e) => e && chairs.push(e)"
                 />
-                <div key="right-spacer" style="width: 100%; flex-shrink: 1" />
+                <div key="right-spacer" style="width: 100%" />
             </transition-group>
         </div>
         <img
@@ -30,12 +30,12 @@
             class="image-layer"
             id="foreground"
         />
+        <!-- TODO: v-if cooldown and then fade in -->
+        <button id="switch" @click="requestSceneChange">Change Scene</button>
     </div>
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
         +{{ visibleCount.right }} &gt;
     </div>
-    <!-- TODO: v-if cooldown and then fade in -->
-    <button id="switch" @click="requestSceneChange">Change Scene</button>
 </template>
 
 <script lang="ts">
@@ -188,6 +188,7 @@ export default defineComponent({
     left: 0;
     top: 0;
     height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: row;
     justify-content: start;
