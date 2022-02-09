@@ -545,7 +545,7 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const graphics = new RoomController(propCollections.soybeans);
+    const graphics = new RoomController(propCollections.waterfront);
     const theater = new Theater(io, playlist, graphics);
     const auth: RequestHandler = (req, res, next) => {
         if (req.headers.authorization == password) {

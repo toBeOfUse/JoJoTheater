@@ -58,8 +58,8 @@ for (let i = 0; i < 10; i++) {
         id: String(i),
         typing: Math.random() > 0.5,
         lastTypingTimestamp: -1,
-        chairURL: "/images/rooms/soybeans/soybeans.svg",
-        name: "Test Users " + i,
+        chairURL: "/images/rooms/waterfront/ship.svg",
+        name: "Test User " + i,
         avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
         resumed: false,
     });

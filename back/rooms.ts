@@ -29,6 +29,11 @@ const propCollections: Record<string, RoomProps> = {
         background: "soybeansbg.jpg",
         foreground: "soybeansfg.png",
         chairs: ["soybeans"]
+    },
+    waterfront: {
+        folderName: "waterfront",
+        background: "waterfrontbg.jpg",
+        chairs: ["ship"]
     }
 };
 
