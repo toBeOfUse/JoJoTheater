@@ -24,22 +24,19 @@
                 <div key="right-spacer" style="width: 100%" />
             </transition-group>
         </div>
-        <img
-            v-if="foregroundURL"
-            :src="foregroundURL"
-            class="image-layer"
-            id="foreground"
-        />
-        <button
-            id="switch"
-            @click="requestSceneChange"
-            :disabled="switchCoolingDown"
-        >
-            Change Scene
-        </button>
-        <transition name="fade">
-            <div class="image-layer" id="curtain" v-show="fadedOut" />
-        </transition>
+        <div class="image-layer">
+            <img v-if="foregroundURL" :src="foregroundURL" id="foreground" />
+            <button
+                id="switch"
+                @click="requestSceneChange"
+                :disabled="switchCoolingDown"
+            >
+                Change Scene
+            </button>
+            <transition name="fade">
+                <div class="image-layer" id="curtain" v-show="fadedOut" />
+            </transition>
+        </div>
     </div>
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
         +{{ visibleCount.right }} &gt;
@@ -122,8 +119,6 @@ export default defineComponent({
         const foregroundURL = ref<undefined | string>(undefined);
         const users = ref<LoadedRoomInhabitant[]>([]);
         const loadRoom = async (graphics: OutputRoom) => {
-            console.log("received graphics:");
-            console.log(graphics);
             if (
                 backgroundURL.value &&
                 backgroundURL.value != graphics.background
@@ -231,6 +226,13 @@ export default defineComponent({
 }
 .image-layer {
     position: sticky;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+}
+#foreground {
+    position: absolute;
     left: 0;
     top: 0;
     height: 100%;
