@@ -30,8 +30,16 @@
             class="image-layer"
             id="foreground"
         />
-        <!-- TODO: v-if cooldown and then fade in -->
-        <button id="switch" @click="requestSceneChange">Change Scene</button>
+        <button
+            id="switch"
+            @click="requestSceneChange"
+            :disabled="switchCoolingDown"
+        >
+            Change Scene
+        </button>
+        <transition name="fade">
+            <div class="image-layer" id="curtain" v-show="fadedOut" />
+        </transition>
     </div>
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
         +{{ visibleCount.right }} &gt;
@@ -51,7 +59,7 @@ import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
-import { avatars } from "./avatars";
+// import { avatars } from "./avatars";
 
 // const testUsers: RoomInhabitant[] = [];
 // for (let i = 0; i < 10; i++) {
@@ -101,6 +109,8 @@ export default defineComponent({
             chairSpace.value.addEventListener("scroll", updateVisibleCount);
         });
 
+        const fadedOut = ref(false);
+
         // Load and cache the SVG markup for each of the "chairs" that the Chair
         // components will display:
         interface LoadedRoomInhabitant extends RoomInhabitant {
@@ -114,6 +124,16 @@ export default defineComponent({
         const loadRoom = async (graphics: OutputRoom) => {
             console.log("received graphics:");
             console.log(graphics);
+            if (
+                backgroundURL.value &&
+                backgroundURL.value != graphics.background
+            ) {
+                fadedOut.value = true;
+                // wait for "curtain" to fade in
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                // start fading curtain back out soon
+                setTimeout(() => (fadedOut.value = false), 100);
+            }
             backgroundURL.value = graphics.background;
             foregroundURL.value = graphics.foreground;
             const loaded: LoadedRoomInhabitant[] = [];
@@ -144,8 +164,13 @@ export default defineComponent({
             el.style.top = el.offsetTop + "px";
         };
 
+        const switchCoolingDown = ref(false);
         const requestSceneChange = () => {
-            props.socket.emit("change_room");
+            if (!switchCoolingDown.value) {
+                switchCoolingDown.value = true;
+                setTimeout(() => (switchCoolingDown.value = false), 1000);
+                props.socket.emit("change_room");
+            }
         };
 
         return {
@@ -157,6 +182,8 @@ export default defineComponent({
             backgroundURL,
             foregroundURL,
             requestSceneChange,
+            fadedOut,
+            switchCoolingDown,
         };
     },
 });
@@ -203,7 +230,7 @@ export default defineComponent({
     z-index: 100;
 }
 .image-layer {
-    position: absolute;
+    position: sticky;
     left: 0;
     top: 0;
     height: 100%;
@@ -211,10 +238,16 @@ export default defineComponent({
     object-fit: cover;
     object-position: center;
 }
-#foreground {
-    position: sticky;
-    left: 0px;
-    top: 0px;
+#curtain {
+    background-color: black;
+}
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 1s linear;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 #offToTheLeftCount {
     left: 7px;
