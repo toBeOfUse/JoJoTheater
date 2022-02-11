@@ -77,7 +77,9 @@ export default defineComponent({
             const keyboard = svgElement.querySelector(
                 ".seated-keyboard"
             ) as HTMLElement;
-            keyboard.setAttribute("href", "/images/rooms/keyboard.png");
+            if (keyboard.tagName == "image") {
+                keyboard.setAttribute("href", "/images/rooms/keyboard.png");
+            }
             setChairVisuals();
         };
         const findParentSpace = (): null | HTMLElement => {

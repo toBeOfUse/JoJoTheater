@@ -18,6 +18,7 @@ import {
 import logger from "./logger";
 import { password } from "./secrets";
 import { propCollections, RoomController } from "./rooms";
+import { avatars } from "../front/vue/avatars";
 
 type ServerSentEvent =
     | "ping"
@@ -570,7 +571,17 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const graphics = new RoomController(propCollections.trees);
+    const graphics = new RoomController(propCollections.graveyard);
+    // if (true) {
+    //     for (let i = 0; i < 10; i++) {
+    //         graphics.addInhabitant({
+    //             id: "test" + i,
+    //             name: "Test User " + i,
+    //             avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
+    //             resumed: false
+    //         });
+    //     }
+    // }
     const theater = new Theater(io, playlist, graphics);
     const auth: RequestHandler = (req, res, next) => {
         if (req.headers.authorization == password) {

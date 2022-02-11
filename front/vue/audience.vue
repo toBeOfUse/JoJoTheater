@@ -56,20 +56,6 @@ import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
-// import { avatars } from "./avatars";
-
-// const testUsers: RoomInhabitant[] = [];
-// for (let i = 0; i < 10; i++) {
-//     testUsers.push({
-//         id: String(i),
-//         typing: Math.random() > 0.5,
-//         lastTypingTimestamp: -1,
-//         chairURL: "/images/rooms/trees/lift.svg",
-//         name: "Test User " + i,
-//         avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
-//         resumed: false,
-//     });
-// }
 
 export default defineComponent({
     props: {

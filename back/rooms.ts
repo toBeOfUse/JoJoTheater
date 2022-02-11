@@ -39,6 +39,11 @@ const propCollections: Record<string, RoomProps> = {
         folderName: "trees",
         background: "treesbg.jpg",
         chairs: ["lift"]
+    },
+    graveyard: {
+        folderName: "graveyard",
+        background: "graveyardbg.jpg",
+        chairs: ["curly-ghost", "fake-ghost", "real-ghost", "scared-ghost", "short-ghost"]
     }
 };
 

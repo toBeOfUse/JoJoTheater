@@ -1,0 +1,39 @@
+<svg width="300" height="400" viewBox="0 0 300 400"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <radialGradient xlink:href="#curly-ghost_svg__b" id="curly-ghost_svg__a" gradientUnits="userSpaceOnUse" gradientTransform="translate(498.487 -886.233) scale(1.30994)" cx="382.773" cy="1599.167" fx="382.773" fy="1599.167" r="190.829"/>
+        <radialGradient xlink:href="#curly-ghost_svg__b" id="curly-ghost_svg__c" gradientUnits="userSpaceOnUse" gradientTransform="translate(498.487 -886.233) scale(1.30994)" cx="382.773" cy="1599.167" fx="382.773" fy="1599.167" r="190.829"/>
+        <radialGradient xlink:href="#curly-ghost_svg__b" id="curly-ghost_svg__d" gradientUnits="userSpaceOnUse" gradientTransform="translate(498.487 -886.233) scale(1.30994)" cx="382.773" cy="1599.167" fx="382.773" fy="1599.167" r="190.829"/>
+        <radialGradient xlink:href="#curly-ghost_svg__b" id="curly-ghost_svg__e" gradientUnits="userSpaceOnUse" gradientTransform="translate(498.487 -886.233) scale(1.30994)" cx="382.773" cy="1599.167" fx="382.773" fy="1599.167" r="190.829"/>
+        <radialGradient xlink:href="#curly-ghost_svg__b" id="curly-ghost_svg__f" gradientUnits="userSpaceOnUse" gradientTransform="translate(498.487 -886.233) scale(1.30994)" cx="382.773" cy="1599.167" fx="382.773" fy="1599.167" r="190.829"/>
+        <linearGradient id="curly-ghost_svg__b">
+            <stop style="stop-color:#fff;stop-opacity:1" offset="0"/>
+            <stop style="stop-color:#fff;stop-opacity:1" offset=".708"/>
+            <stop style="stop-color:#fff;stop-opacity:0" offset="1"/>
+        </linearGradient>
+        <filter style="color-interpolation-filters:sRGB" id="curly-ghost_svg__h" x="-.292" y="-.292" width="1.585" height="1.585">
+            <feGaussianBlur stdDeviation="31.676"/>
+        </filter>
+        <mask id="curly-ghost_svg__g">
+            <circle style="opacity:1;fill:url(#curly-ghost_svg__d);fill-opacity:1;stroke:none;stroke-width:2.61988;stroke-linecap:round;stroke-linejoin:round" cx="999.898" cy="1208.582" r="249.974"/>
+        </mask>
+    </defs>
+    <g transform="matrix(.51132 0 0 .51132 -394.076 -552.807)">
+        <path style="fill:#fff;fill-opacity:.588477;stroke:#000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M887.08 1692.842c6.708 12.744 61.273 3.945 66.823-19.187 3.036-12.658 1.658-46.154-33.811-63.889-92.199-46.1-120.12 130.504-28.85 151.629 34.232 7.923 72.348 13.636 115.081-12.005 14.47-8.682 33.222-32.434 38.587-53.133 5.364-20.7 15.397-41.263 17.22-94.382 1.823-53.12-70.224-285.055 72.597-288.811 142.821-3.756 103.893 393.086 36.299 457.679-99.415 74.56-429.824 67.017-357.995-131.103 34.603-95.442 161.261-94.464 170.189 19.05.99 12.6-5.65 42.28-15.782 47.346-21.799 10.9-56.659 27.35-82.98 16.573-11.284-4.62-23.34-17.067-26.387-34.053-1.545-8.616 9.83-58.758 30.896-61.924 15.384-2.312 39.987 20.01 48.425 36.318-48.425-36.318-60.689 10.174-50.311 29.892z"/>
+        <image width="501" height="501" preserveAspectRatio="none" x="749.398" y="959.198" mask="url(#curly-ghost_svg__g)" transform="matrix(.38055 0 0 .38055 754.2 948.795)" class="seated-avatar"/>
+    </g>
+    <path style="fill:#fff;fill-opacity:.588477;stroke:#000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="M1545.212 681.85c-29.497-66.154-90.372-9.237 0 0M1572.477 681.85c29.498-66.154 90.373-9.237 0 0" transform="matrix(.51132 0 0 .51132 -610.336 -179.06)"/>
+    <g class="seated-keyboard">
+        <g transform="translate(-1495.836 41.073)">
+            <circle style="opacity:.30713;mix-blend-mode:normal;fill:#6fe7e5;fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#curly-ghost_svg__h)" cx="1493.438" cy="670.258" r="130.009" transform="matrix(.45042 0 0 .45042 1078.612 -192.048)"/>
+            <path style="opacity:.75;fill:#72d4d3;fill-opacity:1;stroke:#15617b;stroke-width:1.75858;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" d="m1747.37 73.043-7.337 16.453 11.243 14.274-2.236 16.03-6.18 7.05 3.615 14.458 12.389-3.479 9.125-9.093-1.654-13.854-9.143 2.256 1.684-14.511-12.145-15.404s.826-4.716 4.083-15.4c-2.592-1.675-8.19-5.996-8.19-5.996z"/>
+            <path style="opacity:.75;fill:#6fe7e5;fill-opacity:1;stroke:none;stroke-width:.868852px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="m1756.819 122.08 5.575-1.696 1.454 6.545-5.575 4.969-8.484 3.272-2.06-8.241 5.696-5.333z"/>
+        </g>
+        <g transform="translate(-1644.976 47.386)">
+            <circle style="opacity:.30713;mix-blend-mode:normal;fill:#6fe7e5;fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;filter:url(#curly-ghost_svg__h)" cx="1493.438" cy="670.258" r="130.009" transform="matrix(.45042 0 0 .45042 1078.612 -192.048)"/>
+            <path style="opacity:.75;fill:#72d4d3;fill-opacity:1;stroke:#15617b;stroke-width:1.75858;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" d="m1747.37 73.043-7.337 16.453 11.243 14.274-2.236 16.03-6.18 7.05 3.615 14.458 12.389-3.479 9.125-9.093-1.654-13.854-9.143 2.256 1.684-14.511-12.145-15.404s.826-4.716 4.083-15.4c-2.592-1.675-8.19-5.996-8.19-5.996z"/>
+            <path style="opacity:.75;fill:#6fe7e5;fill-opacity:1;stroke:none;stroke-width:.868852px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" d="m1756.819 122.08 5.575-1.696 1.454 6.545-5.575 4.969-8.484 3.272-2.06-8.241 5.696-5.333z"/>
+        </g>
+    </g>
+</svg>
