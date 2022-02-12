@@ -14,7 +14,6 @@ import {
     Subscription,
     Video,
     ConnectionStatus,
-    ControlsFlag,
 } from "../types";
 import logger from "./logger";
 import { password } from "./secrets";
@@ -360,6 +359,7 @@ class Theater {
                         "alert",
                         "Log in to the chat to  be allowed to control the video 👀"
                     );
+                    member.emit("state_set", this.currentState);
                     return;
                 }
                 const newState: any = {};
