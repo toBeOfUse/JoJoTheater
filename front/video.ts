@@ -8,6 +8,7 @@ import {
     ChangeTypes,
     ControlsFlag,
 } from "../types";
+import e from "express";
 interface ActionableVideoState extends Omit<VideoState, "video"> {
     video: Video;
 }
@@ -730,11 +731,12 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
     // store whether the player was playing, pre-seek and restore in endSeek?
     const beginSeek = () => {
         userIsSeeking = true;
-        const changeRequest: StateChangeRequest = {
-            changeType: ChangeTypes.playing,
-            newValue: false,
-        };
-        io.emit("state_change_request", changeRequest);
+        // TODO: figure something clever out around seeking/pausing
+        // const changeRequest: StateChangeRequest = {
+        //     changeType: ChangeTypes.playing,
+        //     newValue: false,
+        // };
+        // io.emit("state_change_request", changeRequest);
     };
     const performSeek = () => {
         if (userIsSeeking && coordinator.controller) {
@@ -775,25 +777,27 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
     const lastFlags = { play: 0, next_video: 0, prev_video: 0, seek: 0 };
     io.on("set_controls_flag", (flag: ControlsFlag) => {
         console.log(flag);
-        const el = document.createElement("img");
-        el.classList.add("flag");
         let parent;
         if (flag.target == "play") {
-            console.log("setting play button flag");
             parent = DOMControls.playPause;
         } else if (flag.target == "next_video") {
-            console.log("setting next video flag");
             parent = DOMControls.nextVideo;
         } else if (flag.target == "prev_video") {
             parent = DOMControls.prevVideo;
+        } else if (flag.target == "seek") {
+            parent = DOMControls.seek.parentElement as HTMLDivElement;
         } else {
             console.error("flag with unknown target:", flag.target);
             return;
         }
         makeControlsVisible();
         const existing = parent.querySelector(".flag");
+        let el: HTMLImageElement;
         if (existing) {
-            existing.remove();
+            el = existing as HTMLImageElement;
+        } else {
+            el = document.createElement("img");
+            el.classList.add("flag");
         }
         parent.appendChild(el);
         const imageURL =
@@ -806,14 +810,28 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
         lastFlags[flag.target] = thisFlag;
         el.addEventListener("load", () => {
             console.log("flag image loaded");
-            el.style.opacity = "1";
-            el.style.animationName = "flagRiseUp";
+            if (flag.target == "seek") {
+                console.log(
+                    "animating seek from",
+                    flag.startPos,
+                    "to",
+                    flag.endPos
+                );
+                el.style.opacity = "1";
+                el.style.left = (flag.startPos as number) * 100 + "%";
+                setTimeout(() => {
+                    el.style.transition =
+                        "left 0.4s ease-in, opacity 0.2s linear";
+                    el.style.left = (flag.endPos as number) * 100 + "%";
+                }, 100);
+            } else {
+                el.style.left = "50%";
+                el.style.opacity = "1";
+                el.style.animationName = "flagRiseUp";
+            }
             setTimeout(() => {
-                console.log(lastFlags);
-                console.log(thisFlag);
                 if (lastFlags[flag.target] == thisFlag) {
                     el.style.opacity = "0";
-                    el.style.animationName = "";
                 }
             }, 2000);
         });

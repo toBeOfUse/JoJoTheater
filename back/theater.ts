@@ -356,23 +356,44 @@ class Theater {
             "state_change_request",
             async (change: StateChangeRequest) => {
                 if (!member.loggedIn) {
+                    member.emit(
+                        "alert",
+                        "Log in to the chat to  be allowed to control the video 👀"
+                    );
                     return;
                 }
                 const newState: any = {};
                 if (change.changeType == ChangeTypes.playing) {
                     newState.currentTimeMs = this.currentState.currentTimeMs;
+                    const oldState = this.currentState.playing;
                     newState.playing = change.newValue as boolean;
                     this.baseState = { ...this.currentState, ...newState };
                     this.broadcastState();
-                    this.emitAll("set_controls_flag", {
-                        target: "play",
-                        imagePath: member.chatInfo?.avatarURL,
-                    });
+                    if (oldState != change.newValue) {
+                        this.emitAll("set_controls_flag", {
+                            target: "play",
+                            imagePath: member.chatInfo?.avatarURL,
+                        });
+                    }
                 } else if (change.changeType == ChangeTypes.time) {
                     newState.playing = false;
                     newState.currentTimeMs = change.newValue as number;
+                    const oldTime = this.currentState.currentTimeMs;
                     this.baseState = { ...this.currentState, ...newState };
                     this.broadcastState();
+                    const currentDuration = this.currentState.video?.duration;
+                    if (
+                        this.currentState.video &&
+                        currentDuration !== undefined
+                    ) {
+                        this.emitAll("set_controls_flag", {
+                            target: "seek",
+                            imagePath: member.chatInfo?.avatarURL,
+                            startPos: oldTime / 1000 / currentDuration,
+                            endPos:
+                                newState.currentTimeMs / 1000 / currentDuration,
+                        });
+                    }
                 } else if (change.changeType == ChangeTypes.videoID) {
                     const newVideoID = change.newValue as number;
                     const newVideo = await this.playlist.getVideoByID(

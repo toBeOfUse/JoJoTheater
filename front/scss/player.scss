@@ -136,14 +136,12 @@ video#player {
 
 .flag {
     position: absolute;
-    width: 100%;
+    width: 30px;
     height: auto;
     bottom: 100%;
-    left: 50%;
     transform: translateX(-50%);
     pointer-events: none;
     border-radius: 40%;
-    opacity: 0;
     animation-duration: 0.2s;
     animation-fill-mode: forwards;
     transition: opacity 0.2s linear;
@@ -154,6 +152,11 @@ video#player {
     font-weight: bold;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+#seek-container {
+    width: 100%;
+    position: relative;
 }
 
 #seek {

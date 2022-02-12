@@ -83,6 +83,16 @@ interface ConnectionStatus {
 interface ControlsFlag {
     target: "play" | "seek" | "next_video" | "prev_video";
     imagePath: string;
+    /**
+     * if target == "seek", this is a value between 0 and 1 indicating the
+     * pre-seek progress through the video
+     */
+    startPos?: number;
+    /**
+     * if target == "seek", this is a value between 0 and 1 indicating the
+     * post-seek progress through the video
+     */
+    endPos?: number;
 }
 
 export {
@@ -95,5 +105,5 @@ export {
     UserSubmittedFolderName,
     Subscription,
     ConnectionStatus,
-    ControlsFlag
+    ControlsFlag,
 };
