@@ -108,20 +108,45 @@ video#player {
             outline: none;
             box-shadow: none;
             height: 100%;
-            & img {
+            position: relative;
+            & img:not(.flag) {
                 height: 60%;
             }
         }
     }
     opacity: 1;
-    &.fadedOut {
+    &.faded-out {
         transition-duration: 1s;
         opacity: 0;
     }
-    &:not(.fadedOut) {
+    &:not(.faded-out) {
         transition-duration: 0.25s;
     }
     transition-property: opacity;
+}
+
+@keyframes flagRiseUp {
+    from {
+        transform: translate(-50%, 30px);
+    }
+    to {
+        transform: translateY(-50%, 0);
+    }
+}
+
+.flag {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    border-radius: 40%;
+    opacity: 0;
+    animation-duration: 0.2s;
+    animation-fill-mode: forwards;
+    transition: opacity 0.2s linear;
 }
 
 #time-display {

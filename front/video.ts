@@ -1,7 +1,13 @@
 import { Socket } from "socket.io-client";
 import fscreen from "fscreen";
 import VimeoPlayer from "@vimeo/player";
-import { Video, VideoState, StateChangeRequest, ChangeTypes } from "../types";
+import {
+    Video,
+    VideoState,
+    StateChangeRequest,
+    ChangeTypes,
+    ControlsFlag,
+} from "../types";
 interface ActionableVideoState extends Omit<VideoState, "video"> {
     video: Video;
 }
@@ -223,9 +229,9 @@ class HTML5VideoController extends VideoController {
             this.videoElement.setAttribute(
                 "poster",
                 "/imgopt?width=max&path=" +
-                encodeURIComponent(
-                    "/images/thumbnails/" + v.video.id + ".jpg"
-                )
+                    encodeURIComponent(
+                        "/images/thumbnails/" + v.video.id + ".jpg"
+                    )
             );
             this.prevSrc = v.video.src;
         }
@@ -710,9 +716,7 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
         io.emit("state_change_request", { changeType: ChangeTypes.prevVideo });
     });
     document.addEventListener("keydown", (e) => {
-        if (
-            e.code == "Space"
-        ) {
+        if (e.code == "Space") {
             const path = e.composedPath();
             const fromChat = path.some(
                 (t) => t instanceof HTMLElement && t.id == "chat-container"
@@ -752,15 +756,67 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
     DOMControls.seek.addEventListener("input", performSeek);
     DOMControls.seek.addEventListener("mouseup", endSeek);
     DOMControls.seek.addEventListener("touchend", endSeek);
+
     let runningFadeoutTimer: NodeJS.Timeout | undefined = undefined;
-    DOMControls.controlsContainer.addEventListener("mousemove", () => {
+    const makeControlsVisible = () => {
         if (runningFadeoutTimer) {
             clearTimeout(runningFadeoutTimer);
         }
-        DOMControls.controlsContainer.classList.remove("fadedOut");
+        DOMControls.controlsContainer.classList.remove("faded-out");
         runningFadeoutTimer = setTimeout(() => {
-            DOMControls.controlsContainer.classList.add("fadedOut");
+            DOMControls.controlsContainer.classList.add("faded-out");
         }, 3000);
+    };
+    DOMControls.controlsContainer.addEventListener(
+        "mousemove",
+        makeControlsVisible
+    );
+
+    const lastFlags = { play: 0, next_video: 0, prev_video: 0, seek: 0 };
+    io.on("set_controls_flag", (flag: ControlsFlag) => {
+        console.log(flag);
+        const el = document.createElement("img");
+        el.classList.add("flag");
+        let parent;
+        if (flag.target == "play") {
+            console.log("setting play button flag");
+            parent = DOMControls.playPause;
+        } else if (flag.target == "next_video") {
+            console.log("setting next video flag");
+            parent = DOMControls.nextVideo;
+        } else if (flag.target == "prev_video") {
+            parent = DOMControls.prevVideo;
+        } else {
+            console.error("flag with unknown target:", flag.target);
+            return;
+        }
+        makeControlsVisible();
+        const existing = parent.querySelector(".flag");
+        if (existing) {
+            existing.remove();
+        }
+        parent.appendChild(el);
+        const imageURL =
+            "/imgopt?path=" +
+            encodeURIComponent(flag.imagePath) +
+            "&width=" +
+            el.offsetWidth * window.devicePixelRatio;
+        el.src = imageURL;
+        const thisFlag = lastFlags[flag.target] + 1;
+        lastFlags[flag.target] = thisFlag;
+        el.addEventListener("load", () => {
+            console.log("flag image loaded");
+            el.style.opacity = "1";
+            el.style.animationName = "flagRiseUp";
+            setTimeout(() => {
+                console.log(lastFlags);
+                console.log(thisFlag);
+                if (lastFlags[flag.target] == thisFlag) {
+                    el.style.opacity = "0";
+                    el.style.animationName = "";
+                }
+            }, 2000);
+        });
     });
     let currentlyFullscreen = false;
     fscreen.addEventListener("fullscreenchange", () => {
@@ -828,7 +884,7 @@ class Coordinator {
             };
             const NeededController =
                 controllerTypes[
-                String(currentProvider) as keyof typeof controllerTypes
+                    String(currentProvider) as keyof typeof controllerTypes
                 ] || HTML5VideoController;
 
             if (!(this.controller instanceof NeededController)) {

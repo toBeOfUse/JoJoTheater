@@ -80,6 +80,11 @@ interface ConnectionStatus {
     playerState: (VideoState & { receivedTimeISO: string }) | undefined;
 }
 
+interface ControlsFlag {
+    target: "play" | "seek" | "next_video" | "prev_video";
+    imagePath: string;
+}
+
 export {
     ChatMessage,
     Video,
@@ -90,4 +95,5 @@ export {
     UserSubmittedFolderName,
     Subscription,
     ConnectionStatus,
+    ControlsFlag
 };
