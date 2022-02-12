@@ -10,7 +10,11 @@
     >
         <div id="musical-chairs">
             <transition-group name="musical-chairs" @before-leave="beforeLeave">
-                <div key="left-spacer" style="width: 100%" />
+                <div
+                    key="left-spacer"
+                    class="musical-chairs-item"
+                    style="width: 100%"
+                />
                 <Chair
                     v-for="user in users"
                     :key="user.id"
@@ -21,7 +25,11 @@
                     class="musical-chairs-item"
                     :ref="(e) => e && chairs.push(e)"
                 />
-                <div key="right-spacer" style="width: 100%" />
+                <div
+                    key="right-spacer"
+                    class="musical-chairs-item"
+                    style="width: 100%"
+                />
             </transition-group>
         </div>
         <div class="image-layer">
