@@ -36,6 +36,7 @@
             <img v-if="foregroundURL" :src="foregroundURL" id="foreground" />
             <button
                 id="switch"
+                v-if="allowedToSwitch"
                 @click="requestSceneChange"
                 :disabled="switchCoolingDown"
             >
@@ -64,6 +65,7 @@ import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
+import flags from "./globalflags";
 
 export default defineComponent({
     props: {
@@ -162,6 +164,12 @@ export default defineComponent({
             }
         };
 
+        const allowedToSwitch = ref(flags.loggedIn);
+        flags.watchFlag(
+            "loggedIn",
+            (newValue) => (allowedToSwitch.value = newValue)
+        );
+
         return {
             users,
             beforeLeave,
@@ -173,6 +181,7 @@ export default defineComponent({
             requestSceneChange,
             fadedOut,
             switchCoolingDown,
+            allowedToSwitch,
         };
     },
 });
@@ -257,6 +266,8 @@ export default defineComponent({
     position: absolute;
     right: 7px;
     bottom: 7px;
+    font-family: vars.$pilot-font;
+    padding: 3px;
 }
 </style>
 <style lang="scss">

@@ -176,6 +176,7 @@ import { avatars } from "./avatars";
 import OptImage from "./image.vue";
 import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType, computed } from "vue";
+import flags from "./globalflags";
 export default defineComponent({
     props: {
         socket: {
@@ -453,6 +454,7 @@ export default defineComponent({
             }
         };
         socket.on("chat_login_successful", async () => {
+            flags.setFlag("loggedIn", true);
             loggedIn.value = true;
             minimized.value = false;
             await nextTick();
@@ -462,6 +464,7 @@ export default defineComponent({
             }
         });
         const logout = () => {
+            flags.setFlag("loggedIn", false);
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
             socket.emit("user_info_clear");
