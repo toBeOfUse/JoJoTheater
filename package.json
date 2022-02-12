@@ -62,5 +62,8 @@
     "webpack-cli": "^4.8.0",
     "winston": "^3.3.3",
     "xp.css": "^0.2.4"
+  },
+  "devDependencies": {
+    "prettier": "^2.5.1"
   }
 }
