@@ -84,6 +84,7 @@ Chart.register(
     PointElement
 );
 import { LineChart } from "vue-chart-3";
+import { APIPath, endpoints } from "../../endpoints";
 
 export default defineComponent({
     components: { LineChart },
@@ -95,24 +96,27 @@ export default defineComponent({
         const storedPassword = localStorage.getItem("password");
         const password = ref(storedPassword ?? "");
         const authorize = async () => {
-            const headers = { headers: { Authorization: password.value } };
-            await fetch("/api/stats", headers)
-                .then(async (res) => {
-                    const info = await res.json();
-                    players.value = info.players;
-                    server.value = info.server;
-                    authorized.value = true;
-                    localStorage.setItem("password", password.value);
-                })
-                .catch((e) => {
-                    console.log(e);
-                    password.value = "";
-                });
-            fetch("/api/messages", headers)
-                .then(async (res) => {
-                    messages.value = await res.json();
-                })
-                .catch((e) => console.log(e));
+            const headers = { Admin: password.value };
+            try {
+                const info = await endpoints[APIPath.getStats].dispatch(
+                    {},
+                    headers
+                );
+                authorized.value = true;
+                localStorage.setItem("password", password.value);
+                players.value = info.players;
+                server.value = info.server;
+            } catch (e) {
+                console.log(e);
+                password.value = "";
+            }
+            try {
+                messages.value = (
+                    await endpoints[APIPath.getMessages].dispatch({}, headers)
+                ).messages;
+            } catch (e) {
+                console.log(e);
+            }
         };
         if (storedPassword) {
             authorize(); // will fail silently if stored password is out of date

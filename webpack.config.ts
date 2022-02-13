@@ -27,6 +27,7 @@ function getConfig(_: any, options: any) {
         },
         resolve: {
             extensions: [".ts", ".js", ".json", ".vue"],
+            fallback: { util: require.resolve("util/") },
         },
         devtool: mode == "development" ? "eval-cheap-module-source-map" : false,
         module: {

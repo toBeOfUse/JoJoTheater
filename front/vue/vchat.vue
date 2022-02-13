@@ -76,7 +76,7 @@
                                 "
                                 :path="image"
                                 @click="selectedAvatar = image"
-                                @dblclick="attemptLogin"
+                                @dblclick="attemptLogin(false)"
                             />
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                         maxlength="30"
                         style="width: 100%"
                         v-model="nameInput"
-                        @keypress.enter="attemptLogin"
+                        @keypress.enter="attemptLogin(false)"
                     />
                 </section>
                 <section
@@ -118,7 +118,7 @@
                         width: 100%;
                     "
                 >
-                    <button @click="attemptLogin" id="user-info-submit">
+                    <button @click="attemptLogin(false)" id="user-info-submit">
                         OK
                     </button>
                 </section>
@@ -171,17 +171,13 @@
 </template>
 
 <script lang="ts">
-import { ChatMessage, Subscription } from "../../types";
+import { ChatMessage, ChatUserInfo, Subscription } from "../../types";
 import { avatars } from "./avatars";
 import OptImage from "./image.vue";
 import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType, computed } from "vue";
-import { flags, globals } from "../globalflags";
-import {
-    LogInEndpoint,
-    LogOutEndpoint,
-    SendMessageEndpoint,
-} from "../../endpoints";
+import globals from "../globals";
+import { endpoints, APIPath } from "../../endpoints";
 export default defineComponent({
     props: {
         socket: {
@@ -198,19 +194,16 @@ export default defineComponent({
         const send = async () => {
             if (messageInput.value) {
                 const messageText = messageInput.value.value.trim();
-                await SendMessageEndpoint.dispatch(
-                    {
-                        messageText,
-                    },
-                    globals.token
-                );
+                await endpoints[APIPath.sendMessage].dispatch({
+                    messageText,
+                });
                 messageInput.value.value = "";
             }
         };
         const messageInputKeydown = (event: KeyboardEvent) => {
-            if (event.key != "Enter") {
-                socket.emit("typing_start");
-            } else {
+            if (/^[a-z0-9]$/i.test(event.key)) {
+                endpoints[APIPath.typingStart].dispatch({});
+            } else if (event.key == "Enter") {
                 send();
             }
         };
@@ -416,38 +409,20 @@ export default defineComponent({
 
         const nameInput = ref("");
 
-        // attempt to restore previous chat session
         const loginInfoKey = "loginInfo";
-        const lastLoginString = sessionStorage.getItem(loginInfoKey);
-        if (lastLoginString) {
-            try {
-                const lastLogin = JSON.parse(lastLoginString);
-                socket.emit("user_info_set", {
-                    ...lastLogin,
-                    resumed: true,
-                });
-                if (lastLogin.name) {
-                    nameInput.value = lastLogin.name;
-                }
-                if (lastLogin.avatarURL) {
-                    selectedAvatar.value = lastLogin.avatarURL;
-                }
-            } catch {
-                console.log("could not parse previous login info");
-            }
-        }
+
         // attempt to start a new chat session
         const validationWarn = ref<"none" | "name" | "avatar">("none");
-        const attemptLogin = async () => {
+        const attemptLogin = async (resumed: boolean = false) => {
             if (
                 nameInput.value.trim() &&
                 nameInput.value.length < 30 &&
                 selectedAvatar.value
             ) {
-                const info = {
+                const info: Omit<ChatUserInfo, "id"> = {
                     name: nameInput.value,
                     avatarURL: selectedAvatar.value,
-                    resumed: false,
+                    resumed,
                 };
                 try {
                     sessionStorage.setItem(loginInfoKey, JSON.stringify(info));
@@ -455,19 +430,19 @@ export default defineComponent({
                     console.log("could not use session storage");
                 }
                 try {
-                    console.log(globals);
-                    await LogInEndpoint.dispatch(info, globals.token);
-                    flags.setFlag("loggedIn", true);
-                    loggedIn.value = true;
-                    minimized.value = false;
-                    await nextTick();
-                    scrollMessagePanelToBottom();
-                    if (messageInput.value) {
-                        messageInput.value.focus();
-                    }
+                    await endpoints[APIPath.logIn].dispatch(info);
                 } catch (e) {
                     console.error("Log in failed :(");
                     console.error(e);
+                    return;
+                }
+                globals.set("loggedIn", true);
+                loggedIn.value = true;
+                minimized.value = false;
+                await nextTick();
+                scrollMessagePanelToBottom();
+                if (messageInput.value) {
+                    messageInput.value.focus();
                 }
             } else {
                 if (!selectedAvatar.value) {
@@ -477,11 +452,29 @@ export default defineComponent({
                 }
             }
         };
+        // attempt to restore previous chat session
+        const lastLoginString = sessionStorage.getItem(loginInfoKey);
+        if (lastLoginString) {
+            try {
+                const lastLogin = JSON.parse(lastLoginString);
+                if (lastLogin.name) {
+                    nameInput.value = lastLogin.name;
+                }
+                if (lastLogin.avatarURL) {
+                    selectedAvatar.value = lastLogin.avatarURL;
+                }
+                if (lastLogin.name && lastLogin.avatarURL) {
+                    globals.watch("token", () => attemptLogin(true));
+                }
+            } catch {
+                console.log("could not parse previous login info");
+            }
+        }
         const logout = () => {
-            flags.setFlag("loggedIn", false);
+            globals.set("loggedIn", false);
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
-            LogOutEndpoint.dispatch({}, globals.token);
+            endpoints[APIPath.logOut].dispatch({});
         };
 
         // message display logic:

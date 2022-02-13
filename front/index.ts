@@ -4,11 +4,11 @@ import { io } from "socket.io-client";
 
 import { Video, VideoState } from "../types";
 import initVideo from "./video";
-import { globals } from "./globalflags";
+import globals from "./globals";
 const socket = io();
 
 socket.on("grant_token", (token: string) => {
-    globals.token = token;
+    globals.set("token", token);
 });
 socket.on("ping", () => {
     socket.emit("pong");

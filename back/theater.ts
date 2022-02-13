@@ -27,7 +27,14 @@ import {
 import logger from "./logger";
 import { password } from "./secrets";
 import { propCollections, RoomController } from "./rooms";
-import { APIPath, endpoints, LogInBody, SendMessageBody } from "../endpoints";
+import {
+    AddVideoBody,
+    APIPath,
+    endpoints,
+    GetEndpoint,
+    LogInBody,
+    SendMessageBody,
+} from "../endpoints";
 import { assertType, is } from "typescript-is";
 // import { avatars } from "../front/vue/avatars";
 
@@ -37,7 +44,6 @@ type ServerSentEvent =
     | "playlist_set"
     | "chat_message"
     | "chat_announcement"
-    | "add_video_failed"
     | "state_set"
     | "set_controls_flag"
     | "audience_info_set"
@@ -46,15 +52,11 @@ type ServerSentEvent =
 
 type ClientSentEvent =
     | "state_change_request"
-    | "add_video"
-    | "wrote_message"
     | "disconnect"
     | "error_report"
     | "state_report"
     | "state_update_request"
-    | "ready_for"
-    | "typing_start"
-    | "change_room";
+    | "ready_for";
 
 class AudienceMember {
     private socket: Socket;
@@ -148,6 +150,9 @@ class AudienceMember {
                 ...state,
                 receivedTimeISO: new Date().toISOString(),
             };
+        });
+        socket.on("disconnect", () => {
+            clearSession(this.token);
         });
         this.socket.on("ready_for", (sub: Subscription) => {
             this.subscriptions.add(sub);
@@ -280,6 +285,10 @@ class Theater {
             [APIPath.sendMessage]: this.sendMessage,
             [APIPath.logOut]: this.logOut,
             [APIPath.addVideo]: this.addVideo,
+            [APIPath.typingStart]: this.typingStart,
+            [APIPath.changeScene]: this.changeScene,
+            [APIPath.getMessages]: this.getMessages,
+            [APIPath.getStats]: this.getStats,
         };
     }
 
@@ -305,9 +314,11 @@ class Theater {
         }
     }
 
-    logIn(req: Request, res: Response, member: AudienceMember | null) {
+    logIn(req: Request, res: Response, member: AudienceMember) {
         if (!member) {
             console.warn("logIn called without AudienceMember argument");
+            res.status(400);
+            res.end();
             return;
         }
         const info = assertType<LogInBody>(req.body);
@@ -392,19 +403,77 @@ class Theater {
         }
     }
 
-    addVideo(req: Request, res: Response, member: AudienceMember) {}
+    addVideo(req: Request, res: Response, member: AudienceMember) {
+        if (is<AddVideoBody>(req.body)) {
+            const url = req.body.url;
+            logger.debug(
+                "attempting to add video with url " + url + " to playlist"
+            );
+            this.playlist
+                .addFromURL(url)
+                .then(() => {
+                    res.status(200);
+                    res.end();
+                })
+                .catch((e) => {
+                    logger.warn("could not get video from url " + url);
+                    logger.warn(e);
+                    res.status(400);
+                    res.end();
+                });
+        }
+    }
+
+    typingStart(req: Request, res: Response, member: AudienceMember) {
+        this.graphics.startTyping(member.id);
+        res.status(200);
+        res.end();
+    }
+
+    changeScene(req: Request, res: Response, member: AudienceMember) {
+        this.graphics = RoomController.switchedProps(this.graphics);
+        this.graphics.on("change", () => {
+            this.emitAll("audience_info_set", this.graphics.outputGraphics);
+        });
+        this.graphics.emit("change");
+        this.sendToChat({
+            isAnnouncement: true,
+            messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
+        });
+        res.status(200);
+        res.end();
+    }
 
     logOut(_req: Request, res: Response, member: AudienceMember) {
         logger.debug(`member ${member.chatInfo?.name} logged out`);
         this.graphics.removeInhabitant(member.id);
-        clearSession(member.token);
         member.chatInfo = undefined;
         res.status(200);
         res.end();
     }
 
+    getStats(req: Request, res: Response) {
+        if (req.header("Admin") != password) {
+            console.warn("Incorrectly passworded request for stats");
+            res.status(403);
+            res.end();
+            return;
+        }
+        res.status(200);
+        res.json({
+            players: this.audience.map((a) => a.getConnectionInfo()),
+            server: this.currentState,
+        });
+        res.end();
+    }
+
+    async getMessages(_req: Request, res: Response) {
+        res.status(200);
+        res.json({ messages: await getRecentMessages(50) });
+        res.end();
+    }
+
     handleAPICall(req: Request, res: Response) {
-        logger.debug("handling " + req.path + " api call");
         if (req.path in this.apiHandlers) {
             const handler = this.apiHandlers[req.path as APIPath].bind(this);
             let member;
@@ -415,17 +484,23 @@ class Theater {
                 const memberID = getSession(auth);
                 member = this.audience.find((m) => m.id == memberID);
             }
-            if (member || !endpoints[req.path as APIPath].needsAuthentication) {
-                logger.debug("dispatching " + handler.name);
+            if (
+                member?.loggedIn ||
+                !endpoints[req.path as APIPath].mustBeInChat
+            ) {
                 handler(req, res, (member || null) as any);
             } else {
                 logger.warn(
                     "received unauthenticated request for secure path " +
                         req.path
                 );
+                res.status(403);
+                res.end();
             }
         } else {
             logger.warn("received request for unknown path " + req.path);
+            res.status(404);
+            res.end();
         }
     }
 
@@ -539,41 +614,6 @@ class Theater {
             }
         );
 
-        member.on("add_video", async (url: string) => {
-            if (!member.loggedIn) {
-                return;
-            }
-            logger.debug(
-                "attempting to add video with url " + url + " to playlist"
-            );
-            this.playlist.addFromURL(url).catch((e) => {
-                logger.warn("could not get video from url " + url);
-                logger.warn(e);
-                member.emit("add_video_failed");
-            });
-        });
-
-        member.on("typing_start", () => {
-            this.graphics.startTyping(member.id);
-        });
-
-        member.on("change_room", () => {
-            if (member.loggedIn) {
-                this.graphics = RoomController.switchedProps(this.graphics);
-                this.graphics.on("change", () => {
-                    this.emitAll(
-                        "audience_info_set",
-                        this.graphics.outputGraphics
-                    );
-                });
-                this.graphics.emit("change");
-                this.sendToChat({
-                    isAnnouncement: true,
-                    messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
-                });
-            }
-        });
-
         member.on("disconnect", () => {
             this.removeMember(member);
             this.graphics.removeInhabitant(member.id);
@@ -683,41 +723,22 @@ class Theater {
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const graphics = new RoomController(propCollections.graveyard);
-    // if (true) {
-    //     for (let i = 0; i < 10; i++) {
-    //         graphics.addInhabitant({
-    //             id: "test" + i,
-    //             name: "Test User " + i,
-    //             avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
-    //             resumed: false
-    //         });
-    //     }
+
+    // for (let i = 0; i < 10; i++) {
+    //     graphics.addInhabitant({
+    //         id: "test" + i,
+    //         name: "Test User " + i,
+    //         avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
+    //         resumed: false,
+    //     });
     // }
+
     const theater = new Theater(io, playlist, graphics);
-    const auth: RequestHandler = (req, res, next) => {
-        if (req.headers.authorization == password) {
-            next();
-        } else {
-            res.status(403);
-            res.end();
-        }
-    };
-    app.get("/api/stats", auth, (_req, res) => {
-        res.status(200);
-        res.json({
-            players: theater.audience.map((a) => a.getConnectionInfo()),
-            server: theater.currentState,
-        });
-        res.end();
-    });
-    app.get("/api/messages", auth, async (_req, res) => {
-        res.status(200);
-        res.json(await getRecentMessages(50));
-        res.end();
-    });
+
     for (const endpoint of Object.values(APIPath)) {
-        app.post(endpoint, (req: Request, res: Response) =>
-            theater.handleAPICall(req, res)
+        app[endpoints[endpoint] instanceof GetEndpoint ? "get" : "post"](
+            endpoint,
+            (req: Request, res: Response) => theater.handleAPICall(req, res)
         );
     }
 }

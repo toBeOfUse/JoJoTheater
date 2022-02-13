@@ -65,7 +65,8 @@ import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
-import { flags } from "../globalflags";
+import globals from "../globals";
+import { APIPath, endpoints } from "../../endpoints";
 
 export default defineComponent({
     props: {
@@ -160,14 +161,14 @@ export default defineComponent({
             if (!switchCoolingDown.value) {
                 switchCoolingDown.value = true;
                 setTimeout(() => (switchCoolingDown.value = false), 1000);
-                props.socket.emit("change_room");
+                endpoints[APIPath.changeScene].dispatch({});
             }
         };
 
-        const allowedToSwitch = ref(flags.loggedIn);
-        flags.watchFlag(
+        const allowedToSwitch = ref(globals.get("loggedIn"));
+        globals.watch(
             "loggedIn",
-            (newValue) => (allowedToSwitch.value = newValue)
+            (newValue: boolean) => (allowedToSwitch.value = newValue)
         );
 
         return {
