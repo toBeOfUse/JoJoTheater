@@ -15,36 +15,49 @@ const propCollections: Record<string, RoomProps> = {
     basic: {
         background: "background.svg",
         folderName: "basic",
-        chairs: ["arm-chair",
+        chairs: [
+            "arm-chair",
             "blue-chair",
             "clawfoot-tub",
             "game-chair",
             "little-car",
             "shopping-cart",
             "tan-chair",
-            "grey-couch"]
+            "grey-couch",
+        ],
     },
     soybeans: {
         folderName: "soybeans",
         background: "soybeansbg.jpg",
         foreground: "soybeansfg.png",
-        chairs: ["soybeans"]
+        chairs: ["soybeans"],
     },
     waterfront: {
         folderName: "waterfront",
         background: "waterfrontbg.jpg",
-        chairs: ["ship"]
+        chairs: ["ship"],
     },
     trees: {
         folderName: "trees",
         background: "treesbg.jpg",
-        chairs: ["lift"]
+        chairs: ["lift"],
     },
     graveyard: {
         folderName: "graveyard",
         background: "graveyardbg.jpg",
-        chairs: ["curly-ghost", "fake-ghost", "real-ghost", "scared-ghost", "short-ghost"]
-    }
+        chairs: [
+            "curly-ghost",
+            "fake-ghost",
+            "real-ghost",
+            "scared-ghost",
+            "short-ghost",
+        ],
+    },
+    lilypads: {
+        folderName: "lilypads",
+        background: "frogbg.jpg",
+        chairs: ["frog"],
+    },
 };
 
 interface RoomInhabitant extends ChatUserInfo {
@@ -105,7 +118,7 @@ class RoomController extends EventEmitter {
         return {
             background: this.background,
             foreground: this.foreground,
-            inhabitants: this.inhabitants
+            inhabitants: this.inhabitants,
         };
     }
     getNewChairURL() {
@@ -125,15 +138,24 @@ class RoomController extends EventEmitter {
             return "";
         }
     }
-    static switchedProps(oldRoom: RoomController, to: string | undefined = undefined) {
+    static switchedProps(
+        oldRoom: RoomController,
+        to: string | undefined = undefined
+    ) {
         if (!to) {
-            const availableProps = Object.keys(propCollections)
-                .filter(c => propCollections[c].folderName != oldRoom.props.folderName);
-            to = availableProps[Math.floor(Math.random() * availableProps.length)];
+            const availableProps = Object.keys(propCollections).filter(
+                (c) => propCollections[c].folderName != oldRoom.props.folderName
+            );
+            to =
+                availableProps[
+                    Math.floor(Math.random() * availableProps.length)
+                ];
         }
         const newRoom = new RoomController(propCollections[to]);
-        newRoom._inhabitants = oldRoom._inhabitants
-            .map(i => ({ ...i, chairURL: newRoom.getNewChairURL() }));
+        newRoom._inhabitants = oldRoom._inhabitants.map((i) => ({
+            ...i,
+            chairURL: newRoom.getNewChairURL(),
+        }));
         return newRoom;
     }
     addInhabitant(inhabitant: ChatUserInfo) {
@@ -142,28 +164,28 @@ class RoomController extends EventEmitter {
                 ...inhabitant,
                 typing: false,
                 lastTypingTimestamp: -1,
-                chairURL: this.getNewChairURL()
-            }
+                chairURL: this.getNewChairURL(),
+            },
         ].concat(this._inhabitants);
         this.emit("change");
     }
     removeInhabitant(userID: string) {
-        this._inhabitants = this._inhabitants.filter(i => i.id != userID);
-        this.emit("change")
+        this._inhabitants = this._inhabitants.filter((i) => i.id != userID);
+        this.emit("change");
     }
     /**
      * This method will automatically call `stopTyping` if it is not called
      * for two seconds.
      */
     startTyping(userID: string) {
-        const typer = this._inhabitants.find(i => i.id == userID);
+        const typer = this._inhabitants.find((i) => i.id == userID);
         if (typer) {
             // if they have just started typing - move them to the front of the
             // audience line so that can be seen
             if (!typer.typing) {
-                this._inhabitants = [
-                    typer
-                ].concat(this._inhabitants.filter(i => i.id != userID));
+                this._inhabitants = [typer].concat(
+                    this._inhabitants.filter((i) => i.id != userID)
+                );
                 typer.typing = true;
                 this.emit("change");
             }
@@ -181,7 +203,7 @@ class RoomController extends EventEmitter {
      * message (which naturally should dismiss the typing indicator)
      */
     stopTyping(userID: string) {
-        const typer = this._inhabitants.find(i => i.id == userID);
+        const typer = this._inhabitants.find((i) => i.id == userID);
         if (typer && typer.typing) {
             typer.typing = false;
             this.emit("change");
@@ -189,4 +211,10 @@ class RoomController extends EventEmitter {
     }
 }
 
-export { RoomProps, propCollections, RoomController, RoomInhabitant, OutputRoom }
+export {
+    RoomProps,
+    propCollections,
+    RoomController,
+    RoomInhabitant,
+    OutputRoom,
+};

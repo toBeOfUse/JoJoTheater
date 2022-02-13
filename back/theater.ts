@@ -722,7 +722,7 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const graphics = new RoomController(propCollections.graveyard);
+    const graphics = new RoomController(propCollections.lilypads);
 
     // for (let i = 0; i < 10; i++) {
     //     graphics.addInhabitant({
