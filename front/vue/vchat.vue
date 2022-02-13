@@ -176,7 +176,12 @@ import { avatars } from "./avatars";
 import OptImage from "./image.vue";
 import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType, computed } from "vue";
-import flags from "./globalflags";
+import { flags, globals } from "../globalflags";
+import {
+    LogInEndpoint,
+    LogOutEndpoint,
+    SendMessageEndpoint,
+} from "../../endpoints";
 export default defineComponent({
     props: {
         socket: {
@@ -190,10 +195,15 @@ export default defineComponent({
 
         // message sending:
         const messageInput = ref<HTMLInputElement | null>(null);
-        const send = () => {
+        const send = async () => {
             if (messageInput.value) {
                 const messageText = messageInput.value.value.trim();
-                socket.emit("wrote_message", messageText);
+                await SendMessageEndpoint.dispatch(
+                    {
+                        messageText,
+                    },
+                    globals.token
+                );
                 messageInput.value.value = "";
             }
         };
@@ -428,7 +438,7 @@ export default defineComponent({
         }
         // attempt to start a new chat session
         const validationWarn = ref<"none" | "name" | "avatar">("none");
-        const attemptLogin = () => {
+        const attemptLogin = async () => {
             if (
                 nameInput.value.trim() &&
                 nameInput.value.length < 30 &&
@@ -444,7 +454,21 @@ export default defineComponent({
                 } catch {
                     console.log("could not use session storage");
                 }
-                socket.emit("user_info_set", info);
+                try {
+                    console.log(globals);
+                    await LogInEndpoint.dispatch(info, globals.token);
+                    flags.setFlag("loggedIn", true);
+                    loggedIn.value = true;
+                    minimized.value = false;
+                    await nextTick();
+                    scrollMessagePanelToBottom();
+                    if (messageInput.value) {
+                        messageInput.value.focus();
+                    }
+                } catch (e) {
+                    console.error("Log in failed :(");
+                    console.error(e);
+                }
             } else {
                 if (!selectedAvatar.value) {
                     validationWarn.value = "avatar";
@@ -453,21 +477,11 @@ export default defineComponent({
                 }
             }
         };
-        socket.on("chat_login_successful", async () => {
-            flags.setFlag("loggedIn", true);
-            loggedIn.value = true;
-            minimized.value = false;
-            await nextTick();
-            scrollMessagePanelToBottom();
-            if (messageInput.value) {
-                messageInput.value.focus();
-            }
-        });
         const logout = () => {
             flags.setFlag("loggedIn", false);
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
-            socket.emit("user_info_clear");
+            LogOutEndpoint.dispatch({}, globals.token);
         };
 
         // message display logic:

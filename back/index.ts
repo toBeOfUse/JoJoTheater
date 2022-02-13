@@ -62,6 +62,7 @@ app.use((req, _res, next) => {
     next();
 });
 app.use(express.static("assets"));
+app.use(express.json());
 app.use(cdn());
 app.use(uploads());
 

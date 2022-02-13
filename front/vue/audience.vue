@@ -65,7 +65,7 @@ import { Subscription } from "../../types";
 import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
-import flags from "./globalflags";
+import { flags } from "../globalflags";
 
 export default defineComponent({
     props: {

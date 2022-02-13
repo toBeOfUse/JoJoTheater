@@ -1,13 +1,13 @@
 {
   "name": "mitchbot-streams",
   "version": "0.9.0",
-  "description": "watch videos in sync with your fellow mitchbot enterprises customers.",
+  "description": "Watch videos in sync with your fellow MitchBot Enterprises customers.",
   "author": "toBeOfUse <mitchjacov@gmail.com>",
   "license": "MIT",
   "private": false,
   "scripts": {
-    "serve": "nodemon --watch back --exec \"ts-node\" back/index.ts",
-    "serve-production": "npx ts-node back/index.ts"
+    "serve": "nodemon --watch back --ext ts,json --exec \"ts-node -C ttypescript back/index.ts\"",
+    "serve-production": "npx ts-node -C ttypescript back/index.ts"
   },
   "dependencies": {
     "@types/compression": "^1.7.1",
@@ -39,6 +39,7 @@
     "knex": "^1.0.1",
     "mini-css-extract-plugin": "^2.4.5",
     "mini-svg-data-uri": "^1.4.3",
+    "nanoid": "^3.2.0",
     "node-fetch": "^2.6.1",
     "nodemon": "^2.0.12",
     "normalize.css": "^8.0.1",
@@ -53,6 +54,7 @@
     "ts-loader": "^9.2.5",
     "ts-node": "^10.4.0",
     "typescript": "^4.3.5",
+    "typescript-is": "^0.19.0",
     "url-loader": "^4.1.1",
     "vue": "^3.2.26",
     "vue-chart-3": "^3.0.4",
@@ -64,6 +66,7 @@
     "xp.css": "^0.2.4"
   },
   "devDependencies": {
-    "prettier": "^2.5.1"
+    "prettier": "^2.5.1",
+    "ttypescript": "^1.5.13"
   }
 }

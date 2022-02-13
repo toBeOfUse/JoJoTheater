@@ -8,7 +8,12 @@ import execa from "execa";
 import getVideoID from "get-video-id";
 
 import logger from "./logger";
-import { ChatMessage, Video, UserSubmittedFolderName } from "../types";
+import {
+    ChatMessage,
+    Video,
+    UserSubmittedFolderName,
+    ChatUserInfo,
+} from "../types";
 import { youtubeAPIKey } from "./secrets";
 
 const streamsDB = knex({
@@ -81,12 +86,12 @@ class Playlist extends EventEmitter {
         }
 
         const rawVideo: Omit<Video, "id" | "duration" | "title" | "thumbnail"> =
-        {
-            provider: providerInfo.service,
-            src: providerInfo.id,
-            captions: true,
-            folder: UserSubmittedFolderName,
-        };
+            {
+                provider: providerInfo.service,
+                src: providerInfo.id,
+                captions: true,
+                folder: UserSubmittedFolderName,
+            };
         const {
             durationSeconds: duration,
             title,
@@ -269,7 +274,11 @@ async function addMessage(m: ChatMessage) {
         .table<ChatMessage & { createdAt: Date }>("messages")
         // hack to make the better-sqlite3 driver live up to its name and
         // process booleans as sqlite3's native boolean type, int
-        .insert({ ...m, createdAt: new Date(), isAnnouncement: Number(m.isAnnouncement) as any });
+        .insert({
+            ...m,
+            createdAt: new Date(),
+            isAnnouncement: Number(m.isAnnouncement) as any,
+        });
 }
 
 async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
@@ -288,10 +297,31 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
     ).reverse();
 }
 
+const tokens: Record<string, string> = {};
+function getSession(token: string) {
+    return tokens[token] || null;
+}
+function saveSession(token: string, socketID: string) {
+    tokens[token] = socketID;
+}
+function clearSession(token: string) {
+    if (token in tokens) {
+        delete tokens[token];
+    }
+}
+
 /**
  * Serves as the global singleton playlist object at the moment. Could be divided up
  * into multiple instances of the playlist class later.
  */
 const playlist = new Playlist(streamsDB);
 
-export { Playlist, playlist, getRecentMessages, addMessage };
+export {
+    Playlist,
+    playlist,
+    getRecentMessages,
+    addMessage,
+    getSession,
+    saveSession,
+    clearSession,
+};

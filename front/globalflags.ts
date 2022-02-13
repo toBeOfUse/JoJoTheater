@@ -25,4 +25,7 @@ class GlobalFlags {
 }
 
 const flags = new GlobalFlags(false);
-export default flags;
+const globals = {
+    token: "",
+};
+export { flags, globals };

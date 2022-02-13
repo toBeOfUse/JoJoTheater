@@ -1,10 +1,19 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import type { Express, RequestHandler } from "express";
+import type { Express, Request, RequestHandler, Response } from "express";
 import escapeHTML from "escape-html";
+import { nanoid } from "nanoid";
 
-import { Playlist, playlist, getRecentMessages, addMessage } from "./queries";
+import {
+    Playlist,
+    playlist,
+    getRecentMessages,
+    addMessage,
+    getSession,
+    saveSession,
+    clearSession,
+} from "./queries";
 import {
     ChatMessage,
     VideoState as PlayerState,
@@ -18,13 +27,14 @@ import {
 import logger from "./logger";
 import { password } from "./secrets";
 import { propCollections, RoomController } from "./rooms";
+import { APIPath, endpoints, LogInBody, SendMessageBody } from "../endpoints";
+import { assertType, is } from "typescript-is";
 // import { avatars } from "../front/vue/avatars";
 
 type ServerSentEvent =
     | "ping"
-    | "id_set"
+    | "grant_token"
     | "playlist_set"
-    | "chat_login_successful"
     | "chat_message"
     | "chat_announcement"
     | "add_video_failed"
@@ -37,8 +47,6 @@ type ServerSentEvent =
 type ClientSentEvent =
     | "state_change_request"
     | "add_video"
-    | "user_info_set"
-    | "user_info_clear"
     | "wrote_message"
     | "disconnect"
     | "error_report"
@@ -52,6 +60,7 @@ class AudienceMember {
     private socket: Socket;
     location: string = "";
     id: string;
+    token: string;
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
@@ -121,6 +130,9 @@ class AudienceMember {
     constructor(socket: Socket) {
         this.socket = socket;
         this.id = socket.id;
+        this.token = nanoid();
+        this.emit("grant_token", this.token);
+        saveSession(this.token, this.id);
         this.socket.onAny((eventName: string) => {
             if (
                 eventName !== "pong" &&
@@ -139,41 +151,6 @@ class AudienceMember {
         });
         this.socket.on("ready_for", (sub: Subscription) => {
             this.subscriptions.add(sub);
-        });
-        this.socket.on("user_info_set", (info: ChatUserInfo) => {
-            if (
-                this.chatInfo &&
-                this.chatInfo.avatarURL == info.avatarURL &&
-                this.chatInfo.name == info.name &&
-                this.chatInfo.id == info.id
-            ) {
-                logger.warn(
-                    "user re-logging in with identical info; " +
-                        "possible front-end glitch"
-                );
-                // kind of a hack, but in the case of a duplicate login we are
-                // marking the second one as resuming a session so that an
-                // announcement doesn't get sent out announcing a new one
-                info.resumed = true;
-            } else if (
-                info.avatarURL.startsWith("/images/avatars/") &&
-                info.name.trim().length < 30
-            ) {
-                info.name = info.name.trim();
-                info.name = escapeHTML(info.name);
-                this.chatInfo = { ...info, id: this.id };
-                logger.debug(
-                    "audience member successfully set their chat info to:"
-                );
-                logger.debug(JSON.stringify(info));
-                this.emit("chat_login_successful");
-            } else {
-                logger.warn("chat info rejected:");
-                logger.warn(JSON.stringify(info).substring(0, 1000));
-            }
-        });
-        this.socket.on("user_info_clear", () => {
-            this.chatInfo = undefined;
         });
         socket.on("error_report", (error_desc: string) => {
             logger.error(`client side error from ${this.id}: ${error_desc}`);
@@ -223,6 +200,11 @@ class Theater {
     audience: AudienceMember[] = [];
     playlist: Playlist;
     graphics: RoomController;
+    apiHandlers: Record<
+        APIPath,
+        | ((req: Request, res: Response, member: AudienceMember | null) => void)
+        | ((req: Request, res: Response, member: AudienceMember) => void)
+    >;
 
     _baseState: PlayerState = {
         playing: false,
@@ -293,14 +275,20 @@ class Theater {
                 "new client added: " + this.audience.length + " total connected"
             );
         });
+        this.apiHandlers = {
+            [APIPath.logIn]: this.logIn,
+            [APIPath.sendMessage]: this.sendMessage,
+            [APIPath.logOut]: this.logOut,
+            [APIPath.addVideo]: this.addVideo,
+        };
     }
 
     emitAll(event: ServerSentEvent, ...args: any[]) {
         this.audience.forEach((a) => a.emit(event, ...args));
     }
 
-    sendToChat(message: ChatMessage) {
-        addMessage(message);
+    async sendToChat(message: ChatMessage) {
+        await addMessage(message);
         const receivers = this.audience.filter((a) =>
             a.subscriptions.has(Subscription.chat)
         );
@@ -317,12 +305,134 @@ class Theater {
         }
     }
 
+    logIn(req: Request, res: Response, member: AudienceMember | null) {
+        if (!member) {
+            console.warn("logIn called without AudienceMember argument");
+            return;
+        }
+        const info = assertType<LogInBody>(req.body);
+        if (
+            member.chatInfo &&
+            member.chatInfo.avatarURL == info.avatarURL &&
+            member.chatInfo.name == info.name
+        ) {
+            logger.warn(
+                "user re-logging in with identical info; " +
+                    "possible front-end glitch"
+            );
+            // kind of a hack, but in the case of a duplicate login we are
+            // marking the second one as resuming a session so that an
+            // announcement doesn't get sent out announcing a new one
+            info.resumed = true;
+        } else if (
+            info.avatarURL.startsWith("/images/avatars/") &&
+            info.name.trim().length < 30
+        ) {
+            info.name = info.name.trim();
+            info.name = escapeHTML(info.name);
+            member.chatInfo = { ...info, id: member.id };
+            logger.debug(
+                "audience member successfully set their chat info to:"
+            );
+            logger.debug(JSON.stringify(info));
+            if (!info.resumed) {
+                const announcement = {
+                    isAnnouncement: true,
+                    messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
+                };
+                this.sendToChat(announcement);
+            }
+            this.graphics.addInhabitant(member.chatInfo);
+            res.status(200);
+            res.end();
+        } else {
+            logger.warn("chat info rejected:");
+            logger.warn(JSON.stringify(info).substring(0, 1000));
+            res.status(400);
+            res.end();
+        }
+    }
+
+    sendMessage(req: Request, res: Response, member: AudienceMember) {
+        if (!member.chatInfo) {
+            logger.warn("chat message from un-logged-in user " + member.id);
+        } else if (is<SendMessageBody>(req.body)) {
+            const messageText = req.body.messageText.trim();
+            if (member.chatInfo && messageText) {
+                const message: ChatMessage = {
+                    isAnnouncement: false,
+                    messageHTML: escapeHTML(messageText),
+                    senderID: member.chatInfo.id,
+                    senderName: member.chatInfo.name,
+                    senderAvatarURL: member.chatInfo.avatarURL,
+                };
+                this.sendToChat(message).then(() => {
+                    res.status(200);
+                    res.end();
+                });
+                if (/\bhm+\b/.test(message.messageHTML)) {
+                    setTimeout(() => {
+                        const villagerMessage: ChatMessage = {
+                            isAnnouncement: false,
+                            messageHTML: "<em>hmmm...</em>",
+                            senderID: "fake-villager-user",
+                            senderName: "Minecraft Villager",
+                            senderAvatarURL: "/images/avatars/villager.jpg",
+                        };
+                        this.sendToChat(villagerMessage);
+                    }, 500);
+                }
+                this.graphics.stopTyping(member.id);
+            }
+        } else {
+            logger.warn(
+                "chat message failed validation: " +
+                    JSON.stringify(req.body).slice(0, 1000)
+            );
+        }
+    }
+
+    addVideo(req: Request, res: Response, member: AudienceMember) {}
+
+    logOut(_req: Request, res: Response, member: AudienceMember) {
+        logger.debug(`member ${member.chatInfo?.name} logged out`);
+        this.graphics.removeInhabitant(member.id);
+        clearSession(member.token);
+        member.chatInfo = undefined;
+        res.status(200);
+        res.end();
+    }
+
+    handleAPICall(req: Request, res: Response) {
+        logger.debug("handling " + req.path + " api call");
+        if (req.path in this.apiHandlers) {
+            const handler = this.apiHandlers[req.path as APIPath].bind(this);
+            let member;
+            const auth = req.header("Auth");
+            if (!is<string>(auth)) {
+                member = null;
+            } else {
+                const memberID = getSession(auth);
+                member = this.audience.find((m) => m.id == memberID);
+            }
+            if (member || !endpoints[req.path as APIPath].needsAuthentication) {
+                logger.debug("dispatching " + handler.name);
+                handler(req, res, (member || null) as any);
+            } else {
+                logger.warn(
+                    "received unauthenticated request for secure path " +
+                        req.path
+                );
+            }
+        } else {
+            logger.warn("received request for unknown path " + req.path);
+        }
+    }
+
     initializeMember(member: AudienceMember) {
         this.audience.push(member);
 
         this.monitorSynchronization(member);
-
-        member.emit("id_set", member.id);
 
         member.emit("state_set", this.currentState);
 
@@ -443,22 +553,6 @@ class Theater {
             });
         });
 
-        member.on("user_info_set", () => {
-            if (member.loggedIn && member.chatInfo) {
-                if (!member.chatInfo.resumed) {
-                    const announcement = {
-                        isAnnouncement: true,
-                        messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
-                    };
-                    this.sendToChat(announcement);
-                }
-                this.graphics.addInhabitant(member.chatInfo);
-            }
-        });
-        member.on("user_info_clear", () => {
-            this.graphics.removeInhabitant(member.id);
-        });
-
         member.on("typing_start", () => {
             this.graphics.startTyping(member.id);
         });
@@ -477,33 +571,6 @@ class Theater {
                     isAnnouncement: true,
                     messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
                 });
-            }
-        });
-
-        member.on("wrote_message", (messageText: string) => {
-            messageText = messageText.trim();
-            if (member.chatInfo && messageText) {
-                const message: ChatMessage = {
-                    isAnnouncement: false,
-                    messageHTML: escapeHTML(messageText),
-                    senderID: member.chatInfo.id,
-                    senderName: member.chatInfo.name,
-                    senderAvatarURL: member.chatInfo.avatarURL,
-                };
-                this.sendToChat(message);
-                if (/\bhm+\b/.test(message.messageHTML)) {
-                    setTimeout(() => {
-                        const villagerMessage: ChatMessage = {
-                            isAnnouncement: false,
-                            messageHTML: "<em>hmmm...</em>",
-                            senderID: "fake-villager-user",
-                            senderName: "Minecraft Villager",
-                            senderAvatarURL: "/images/avatars/villager.jpg",
-                        };
-                        this.sendToChat(villagerMessage);
-                    }, 500);
-                }
-                this.graphics.stopTyping(member.id);
             }
         });
 
@@ -648,4 +715,9 @@ export default function init(server: Server, app: Express) {
         res.json(await getRecentMessages(50));
         res.end();
     });
+    for (const endpoint of Object.values(APIPath)) {
+        app.post(endpoint, (req: Request, res: Response) =>
+            theater.handleAPICall(req, res)
+        );
+    }
 }

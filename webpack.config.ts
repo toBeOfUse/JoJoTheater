@@ -62,7 +62,13 @@ function getConfig(_: any, options: any) {
                             loader: "vue-svg-loader",
                             options: {
                                 svgo: {
-                                    plugins: [{ prefixIds: { prefixClassNames: false } }],
+                                    plugins: [
+                                        {
+                                            prefixIds: {
+                                                prefixClassNames: false,
+                                            },
+                                        },
+                                    ],
                                 },
                             },
                         },
@@ -75,6 +81,7 @@ function getConfig(_: any, options: any) {
                     options: {
                         appendTsSuffixTo: [/\.vue$/],
                         configFile: "tsconfig.webpack.json",
+                        compiler: "ttypescript",
                         ignoreDiagnostics: [7006, 2363, 2365], // deal with weird problem with vue-loader
                     },
                 },

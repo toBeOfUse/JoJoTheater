@@ -4,9 +4,12 @@ import { io } from "socket.io-client";
 
 import { Video, VideoState } from "../types";
 import initVideo from "./video";
+import { globals } from "./globalflags";
 const socket = io();
 
-socket.on("id_set", (e) => console.log("client has id", e));
+socket.on("grant_token", (token: string) => {
+    globals.token = token;
+});
 socket.on("ping", () => {
     socket.emit("pong");
 });
