@@ -55,7 +55,7 @@ const propCollections: Record<string, RoomProps> = {
     },
     lilypads: {
         name: "lilypads",
-        background: "frogbg.jpg",
+        background: "frogbg3.jpg",
         chairs: ["frog"],
     },
 };
