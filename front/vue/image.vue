@@ -1,5 +1,5 @@
 <template>
-    <img :src="cdnURL" ref="img" />
+    <img :src="cdnURL" ref="img" :style="style" />
 </template>
 
 <script lang="ts">
@@ -22,6 +22,7 @@ export default defineComponent({
         },
     },
     setup(props) {
+        const style = ref<any>({});
         const img = ref<HTMLImageElement | null>(null);
         // image is initially a single transparent png pixel (if the src starts out
         // blank, chrome (and others?) won't give the image a width)
@@ -31,8 +32,11 @@ export default defineComponent({
         );
         onMounted(() => {
             if (img.value) {
-                const width =
-                    img.value.offsetWidth * (window.devicePixelRatio || 1);
+                img.value.addEventListener("load", () => {
+                    style.value = {};
+                });
+                const baseWidth = img.value.offsetWidth;
+                const width = baseWidth * (window.devicePixelRatio || 1);
                 const path = encodeURIComponent(props.path);
                 let url = `/imgopt?width=${width}&path=${path}`;
                 if (props.flipped) {
@@ -42,9 +46,20 @@ export default defineComponent({
                     url += `&ratio=${props.aspectRatio}`;
                 }
                 cdnURL.value = url;
+                if (props.aspectRatio) {
+                    const ratioComps = props.aspectRatio.split(":").map(Number);
+                    if (ratioComps[0] && ratioComps[1]) {
+                        style.value = {
+                            width: baseWidth + "px",
+                            height:
+                                baseWidth * (ratioComps[1] / ratioComps[0]) +
+                                "px",
+                        };
+                    }
+                }
             }
         });
-        return { img, cdnURL };
+        return { img, cdnURL, style };
     },
 });
 </script>
