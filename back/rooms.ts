@@ -187,7 +187,7 @@ class RoomController extends EventEmitter {
      */
     startTyping(userID: string) {
         const typer = this._inhabitants.find((i) => i.id == userID);
-        if (typer) {
+        if (typer && Date.now() - typer.lastTypingTimestamp > 500) {
             // if they have just started typing - move them to the front of the
             // audience line so that can be seen
             if (!typer.typing) {

@@ -206,6 +206,7 @@ export default defineComponent({
                 }
             }
         };
+        let lastTypingEvent = 0;
         const messageInputKeydown = (event: KeyboardEvent) => {
             if (outgoing.value) {
                 event.preventDefault();
@@ -213,7 +214,10 @@ export default defineComponent({
                 /^[a-z0-9]$/i.test(event.key) ||
                 event.key == "Backspace"
             ) {
-                endpoints[APIPath.typingStart].dispatch({});
+                if (Date.now() - lastTypingEvent > 1000) {
+                    endpoints[APIPath.typingStart].dispatch({});
+                    lastTypingEvent = Date.now();
+                }
             } else if (event.key == "Enter") {
                 send();
             }
