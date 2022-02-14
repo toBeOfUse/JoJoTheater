@@ -162,6 +162,7 @@
                         id="message-input"
                         ref="messageInput"
                         @keydown="messageInputKeydown"
+                        :style="{ color: outgoing ? 'gray' : 'black' }"
                     />
                     <button @click="send" id="send-message">Send</button>
                 </section>
@@ -191,17 +192,27 @@ export default defineComponent({
 
         // message sending:
         const messageInput = ref<HTMLInputElement | null>(null);
+        const outgoing = ref(false);
         const send = async () => {
-            if (messageInput.value) {
+            if (messageInput.value && !outgoing.value) {
                 const messageText = messageInput.value.value.trim();
-                await endpoints[APIPath.sendMessage].dispatch({
-                    messageText,
-                });
-                messageInput.value.value = "";
+                if (messageText) {
+                    outgoing.value = true;
+                    await endpoints[APIPath.sendMessage].dispatch({
+                        messageText,
+                    });
+                    messageInput.value.value = "";
+                    outgoing.value = false;
+                }
             }
         };
         const messageInputKeydown = (event: KeyboardEvent) => {
-            if (/^[a-z0-9]$/i.test(event.key)) {
+            if (outgoing.value) {
+                event.preventDefault();
+            } else if (
+                /^[a-z0-9]$/i.test(event.key) ||
+                event.key == "Backspace"
+            ) {
                 endpoints[APIPath.typingStart].dispatch({});
             } else if (event.key == "Enter") {
                 send();
@@ -538,6 +549,7 @@ export default defineComponent({
             nextPageAvailable,
             messageInputKeydown,
             deflectFocusToMessageInput,
+            outgoing,
         };
     },
 });
