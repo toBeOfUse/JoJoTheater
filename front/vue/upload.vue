@@ -9,13 +9,6 @@
                 @change="onFileChange"
                 style="width: 100%; max-width: 70vw"
             />
-            <progress
-                id="uploadProgress"
-                v-if="progress > 0"
-                :value="progress"
-                max="1"
-            />
-            <p id="success" v-if="uploadCompleted">Upload successful!</p>
             <button
                 style="display: block"
                 @click="fullFormShown = !fullFormShown"
@@ -37,7 +30,7 @@
                 <br />
                 <div id="thumbnail-container">
                     <div
-                        id="thumbnail"
+                        class="thumbnail"
                         :style="{ backgroundImage: `url(${thumbnail})` }"
                         @click="thumbnailInput && thumbnailInput.click()"
                     />
@@ -55,6 +48,7 @@
                     id="thumbnailFile"
                     @change="showThumbnail"
                     ref="thumbnailInput"
+                    accept="image/jpeg,image/png"
                 />
                 <p>Password for immediate video availability:</p>
                 <input
@@ -70,6 +64,31 @@
             >
                 UPLOAD
             </button>
+            <div id="in-progress-container">
+                <div
+                    v-for="(inProgress, i) in uploadsInProgress"
+                    :key="i"
+                    class="in-progress"
+                >
+                    <h3>{{ inProgress.title }}</h3>
+                    <p>{{ inProgress.folder }}</p>
+                    <div
+                        class="thumbnail"
+                        style="border: none"
+                        :style="{
+                            backgroundImage:
+                                'url(' + inProgress.thumbnailURL + ')',
+                        }"
+                    />
+                    <progress
+                        v-if="inProgress.progress != 1"
+                        class="uploadProgress"
+                        :value="inProgress.progress"
+                        max="1"
+                    />
+                    <p style="text-align: center" v-else>Complete</p>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -79,12 +98,17 @@ import { defineComponent, ref } from "vue";
 
 export default defineComponent({
     setup() {
+        interface UploadInProgress {
+            title: string;
+            folder: string;
+            thumbnailURL: string;
+            progress: number;
+        }
+        const uploadsInProgress = ref<UploadInProgress[]>([]);
+
         const fileInput = ref<HTMLInputElement | null>(null);
-        const progress = ref(0);
-        const uploadCompleted = ref(false);
         const fileSelected = ref(false);
         const onFileChange = () => {
-            uploadCompleted.value = false;
             fileSelected.value = !!fileInput.value?.files?.length;
         };
 
@@ -129,26 +153,39 @@ export default defineComponent({
             if (password.value) {
                 fd.append("password", password.value);
             }
+
+            const progressIndex = uploadsInProgress.value.length;
+            uploadsInProgress.value.push({
+                title: videoTitle.value || "no title",
+                folder: folder.value || "no folder",
+                thumbnailURL:
+                    thumbnail.value &&
+                    thumbnail.value != thumbnailPlaceholderImage
+                        ? thumbnail.value
+                        : "",
+                progress: 0,
+            });
+
             const xhr = new XMLHttpRequest();
             xhr.upload.addEventListener("progress", (event) => {
-                progress.value = event.loaded / event.total;
+                uploadsInProgress.value[progressIndex].progress =
+                    event.loaded / event.total;
             });
             xhr.upload.addEventListener("load", () => {
-                progress.value = 0;
-                if (fileInput.value) fileInput.value.value = "";
-                videoTitle.value = "";
-                folder.value = "";
-                uploadCompleted.value = true;
-                clearThumbnail();
+                // TODO: something?
             });
             xhr.open("POST", "/api/upload");
             xhr.send(fd);
+            if (fileInput.value) {
+                fileInput.value.value = "";
+            }
+            videoTitle.value = "";
+            folder.value = "";
+            clearThumbnail();
         };
         return {
             upload,
             fileInput,
-            progress,
-            uploadCompleted,
             fullFormShown,
             videoTitle,
             folder,
@@ -160,6 +197,7 @@ export default defineComponent({
             showThumbnail,
             clearThumbnail,
             thumbnailPlaceholderImage,
+            uploadsInProgress,
         };
     },
 });
@@ -174,6 +212,7 @@ export default defineComponent({
 }
 #panel {
     text-align: center;
+    position: relative;
     width: 500px;
     background-color: white;
     border: 1px solid black;
@@ -195,16 +234,12 @@ export default defineComponent({
     margin-top: 5px;
     margin-bottom: 5px;
 }
-#uploadProgress {
-    display: block;
-    margin: 2px auto;
-}
 #thumbnail-container {
     width: 200px;
     position: relative;
     margin: 0 auto;
 }
-#thumbnail {
+.thumbnail {
     height: 0;
     padding-top: 56.25%;
     width: 100%;
@@ -231,5 +266,26 @@ export default defineComponent({
     font-size: 300%;
     display: block;
     margin: 15px auto 5px auto;
+}
+#in-progress-container {
+    width: 150px;
+    position: absolute;
+    left: 105%;
+    top: 0;
+}
+.in-progress {
+    background: white;
+    border-radius: 5px;
+    border: 1px solid black;
+    margin-bottom: 10px;
+    & * {
+        margin: 2px 0;
+    }
+    & img {
+        max-width: 100%;
+    }
+    & progress {
+        width: 100%;
+    }
 }
 </style>
