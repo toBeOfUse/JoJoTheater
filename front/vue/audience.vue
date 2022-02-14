@@ -6,7 +6,7 @@
         id="chair-space"
         ref="chairSpace"
         v-if="backgroundURL && users.length"
-        :style="{ backgroundImage: 'url(' + backgroundURL + ')' }"
+        :style="{ backgroundImage: 'url(' + optBackgroundURL + ')' }"
     >
         <div id="musical-chairs">
             <transition-group name="musical-chairs" @before-leave="beforeLeave">
@@ -34,14 +34,21 @@
         </div>
         <div class="image-layer">
             <img v-if="foregroundURL" :src="foregroundURL" id="foreground" />
-            <button
+            <select
                 id="switch"
                 v-if="allowedToSwitch"
-                @click="requestSceneChange"
+                @change="requestSceneChange"
                 :disabled="switchCoolingDown"
+                :value="currentScene"
             >
-                Change Scene
-            </button>
+                <option
+                    v-for="scene in availableScenes"
+                    :key="scene"
+                    :value="scene"
+                >
+                    {{ scene.charAt(0).toUpperCase() + scene.slice(1) }}
+                </option>
+            </select>
             <transition name="fade">
                 <div class="image-layer" id="curtain" v-show="fadedOut" />
             </transition>
@@ -60,6 +67,7 @@ import {
     onBeforeUpdate,
     nextTick,
     watch,
+    computed,
 } from "vue";
 import { Subscription } from "../../types";
 import Chair from "./chair.vue";
@@ -103,7 +111,7 @@ export default defineComponent({
             chairSpace.value.addEventListener("scroll", updateVisibleCount);
         });
 
-        const fadedOut = ref(false);
+        const fadedOut = ref(true);
 
         // Load and cache the SVG markup for each of the "chairs" that the Chair
         // components will display:
@@ -112,22 +120,41 @@ export default defineComponent({
         }
         const svgMarkupCache: Record<string, string> = {};
 
+        const currentScene = ref("");
         const backgroundURL = ref("");
         const foregroundURL = ref<undefined | string>(undefined);
         const users = ref<LoadedRoomInhabitant[]>([]);
         const loadRoom = async (graphics: OutputRoom) => {
-            if (
-                backgroundURL.value &&
-                backgroundURL.value != graphics.background
-            ) {
+            if (graphics.sceneName != currentScene.value) {
                 fadedOut.value = true;
-                // wait for "curtain" to fade in
+                // wait for "curtain" to fade in to start changing and loading things
                 await new Promise((resolve) => setTimeout(resolve, 1000));
-                // start fading curtain back out soon
-                setTimeout(() => (fadedOut.value = false), 100);
             }
+
             backgroundURL.value = graphics.background;
             foregroundURL.value = graphics.foreground;
+            currentScene.value = graphics.sceneName;
+
+            // wait for background and foreground to be loaded; this ensures
+            // that the curtain's removal (which happens at the end of this
+            // function) will wait for that too
+            // TODO: all the loading in this function should probably be done in
+            // parallel with something like Promise.all
+            await new Promise((resolve) => {
+                const bgimg = new Image();
+                bgimg.onload = resolve;
+                bgimg.src = graphics.background;
+            });
+            await new Promise<void>((resolve) => {
+                if (graphics.foreground) {
+                    const fgimg = new Image();
+                    fgimg.onload = () => resolve();
+                    fgimg.src = graphics.foreground;
+                } else {
+                    resolve();
+                }
+            });
+
             const loaded: LoadedRoomInhabitant[] = [];
             for (const inhabitant of graphics.inhabitants) {
                 if (!svgMarkupCache[inhabitant.chairURL]) {
@@ -143,7 +170,25 @@ export default defineComponent({
             users.value = loaded;
             await nextTick();
             updateVisibleCount();
+            // remove "curtain" now that everything is finished loading, in case it was put in place
+            fadedOut.value = false;
         };
+        const optBackgroundURL = computed(() => {
+            if (!backgroundURL.value || !chairSpace.value) {
+                return "";
+            } else if (backgroundURL.value.endsWith(".svg")) {
+                return backgroundURL.value;
+            } else {
+                const width =
+                    chairSpace.value.offsetWidth * window.devicePixelRatio;
+                return (
+                    "/imgopt?path=" +
+                    encodeURIComponent(backgroundURL.value) +
+                    "&width=" +
+                    width
+                );
+            }
+        });
 
         // start receiving audience data from the server:
         props.socket.on("audience_info_set", loadRoom);
@@ -156,12 +201,20 @@ export default defineComponent({
             el.style.top = el.offsetTop + "px";
         };
 
+        const availableScenes = ref<string[]>([]);
+        endpoints[APIPath.getScenes].dispatch({}, {}).then((scenes) => {
+            availableScenes.value = scenes.scenes;
+        });
+
         const switchCoolingDown = ref(false);
-        const requestSceneChange = () => {
-            if (!switchCoolingDown.value) {
+        const requestSceneChange = (event: InputEvent) => {
+            const newValue = (event.target as HTMLSelectElement).value;
+            if (!switchCoolingDown.value && newValue != currentScene.value) {
                 switchCoolingDown.value = true;
                 setTimeout(() => (switchCoolingDown.value = false), 1000);
-                endpoints[APIPath.changeScene].dispatch({});
+                endpoints[APIPath.changeScene].dispatch({
+                    newScene: newValue,
+                });
             }
         };
 
@@ -183,6 +236,9 @@ export default defineComponent({
             fadedOut,
             switchCoolingDown,
             allowedToSwitch,
+            optBackgroundURL,
+            availableScenes,
+            currentScene,
         };
     },
 });
@@ -268,7 +324,7 @@ export default defineComponent({
     right: 7px;
     bottom: 7px;
     font-family: vars.$pilot-font;
-    padding: 3px;
+    font-size: 0.8em;
 }
 </style>
 <style lang="scss">

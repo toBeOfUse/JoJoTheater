@@ -5,7 +5,7 @@ import { ChatUserInfo } from "../types";
 import logger from "./logger";
 
 interface RoomProps {
-    folderName: string;
+    name: string;
     background: string;
     foreground?: string;
     chairs: string[];
@@ -14,7 +14,7 @@ interface RoomProps {
 const propCollections: Record<string, RoomProps> = {
     basic: {
         background: "background.svg",
-        folderName: "basic",
+        name: "basic",
         chairs: [
             "arm-chair",
             "blue-chair",
@@ -27,23 +27,23 @@ const propCollections: Record<string, RoomProps> = {
         ],
     },
     soybeans: {
-        folderName: "soybeans",
+        name: "soybeans",
         background: "soybeansbg.jpg",
         foreground: "soybeansfg.png",
         chairs: ["soybeans"],
     },
     waterfront: {
-        folderName: "waterfront",
+        name: "waterfront",
         background: "waterfrontbg.jpg",
         chairs: ["ship"],
     },
     trees: {
-        folderName: "trees",
+        name: "trees",
         background: "treesbg.jpg",
         chairs: ["lift"],
     },
     graveyard: {
-        folderName: "graveyard",
+        name: "graveyard",
         background: "graveyardbg.jpg",
         chairs: [
             "curly-ghost",
@@ -54,7 +54,7 @@ const propCollections: Record<string, RoomProps> = {
         ],
     },
     lilypads: {
-        folderName: "lilypads",
+        name: "lilypads",
         background: "frogbg.jpg",
         chairs: ["frog"],
     },
@@ -69,6 +69,7 @@ interface RoomInhabitant extends ChatUserInfo {
 interface OutputRoom {
     background: string;
     foreground?: string;
+    sceneName: string;
     inhabitants: RoomInhabitant[];
 }
 
@@ -101,8 +102,14 @@ class RoomController extends EventEmitter {
         }
         return array;
     }
+    static get scenes() {
+        return Object.keys(propCollections);
+    }
+    get currentScene() {
+        return this.props.name;
+    }
     getPublicPathFor(assetFileName: string) {
-        return "/images/rooms/" + this.props.folderName + "/" + assetFileName;
+        return "/images/rooms/" + this.props.name + "/" + assetFileName;
     }
     get background() {
         return this.getPublicPathFor(this.props.background);
@@ -116,6 +123,7 @@ class RoomController extends EventEmitter {
     }
     get outputGraphics(): OutputRoom {
         return {
+            sceneName: this.currentScene,
             background: this.background,
             foreground: this.foreground,
             inhabitants: this.inhabitants,
@@ -144,7 +152,7 @@ class RoomController extends EventEmitter {
     ) {
         if (!to) {
             const availableProps = Object.keys(propCollections).filter(
-                (c) => propCollections[c].folderName != oldRoom.props.folderName
+                (c) => propCollections[c].name != oldRoom.props.name
             );
             to =
                 availableProps[

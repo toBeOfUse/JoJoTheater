@@ -10,6 +10,7 @@ enum APIPath {
     changeScene = "/events/changeScene",
     getStats = "/get/stats",
     getMessages = "/get/messages",
+    getScenes = "/get/scenes",
 }
 
 interface PostBody {}
@@ -82,6 +83,9 @@ interface SendMessageBody extends PostBody {
 interface AddVideoBody extends PostBody {
     url: string;
 }
+interface ChangeSceneBody extends PostBody {
+    newScene: string;
+}
 
 const endpoints: Record<APIPath, Endpoint<PostBody>> = {
     [APIPath.logIn]: new PostEndpoint<LogInBody>(APIPath.logIn, false),
@@ -91,16 +95,21 @@ const endpoints: Record<APIPath, Endpoint<PostBody>> = {
     ),
     [APIPath.logOut]: new PostEndpoint<{}>(APIPath.logOut, true),
     [APIPath.addVideo]: new PostEndpoint<AddVideoBody>(APIPath.addVideo, true),
-    [APIPath.changeScene]: new PostEndpoint<{}>(APIPath.changeScene, true),
+    [APIPath.changeScene]: new PostEndpoint<ChangeSceneBody>(
+        APIPath.changeScene,
+        true
+    ),
     [APIPath.typingStart]: new PostEndpoint<{}>(APIPath.typingStart, true),
     [APIPath.getStats]: new GetEndpoint<{}>(APIPath.getStats, false),
     [APIPath.getMessages]: new GetEndpoint<{}>(APIPath.getMessages, false),
+    [APIPath.getScenes]: new GetEndpoint<{}>(APIPath.getScenes, false),
 };
 
 export {
     LogInBody,
     SendMessageBody,
     AddVideoBody,
+    ChangeSceneBody,
     APIPath,
     PostEndpoint,
     GetEndpoint,

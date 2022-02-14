@@ -30,6 +30,7 @@ import { propCollections, RoomController } from "./rooms";
 import {
     AddVideoBody,
     APIPath,
+    ChangeSceneBody,
     endpoints,
     GetEndpoint,
     LogInBody,
@@ -289,6 +290,7 @@ class Theater {
             [APIPath.changeScene]: this.changeScene,
             [APIPath.getMessages]: this.getMessages,
             [APIPath.getStats]: this.getStats,
+            [APIPath.getScenes]: this.getScenes,
         };
     }
 
@@ -431,17 +433,28 @@ class Theater {
     }
 
     changeScene(req: Request, res: Response, member: AudienceMember) {
-        this.graphics = RoomController.switchedProps(this.graphics);
-        this.graphics.on("change", () => {
-            this.emitAll("audience_info_set", this.graphics.outputGraphics);
-        });
-        this.graphics.emit("change");
-        this.sendToChat({
-            isAnnouncement: true,
-            messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
-        });
-        res.status(200);
-        res.end();
+        if (
+            is<ChangeSceneBody>(req.body) &&
+            RoomController.scenes.includes(req.body.newScene)
+        ) {
+            this.graphics = RoomController.switchedProps(
+                this.graphics,
+                req.body.newScene
+            );
+            this.graphics.on("change", () => {
+                this.emitAll("audience_info_set", this.graphics.outputGraphics);
+            });
+            this.graphics.emit("change");
+            this.sendToChat({
+                isAnnouncement: true,
+                messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
+            });
+            res.status(200);
+            res.end();
+        } else {
+            res.status(400);
+            res.end();
+        }
     }
 
     logOut(_req: Request, res: Response, member: AudienceMember) {
@@ -473,6 +486,15 @@ class Theater {
         res.end();
     }
 
+    getScenes(_req: Request, res: Response) {
+        res.status(200);
+        res.json({
+            scenes: RoomController.scenes,
+            currentScene: this.graphics.currentScene,
+        });
+        res.end();
+    }
+
     handleAPICall(req: Request, res: Response) {
         if (req.path in this.apiHandlers) {
             const handler = this.apiHandlers[req.path as APIPath].bind(this);
@@ -488,7 +510,17 @@ class Theater {
                 member?.loggedIn ||
                 !endpoints[req.path as APIPath].mustBeInChat
             ) {
-                handler(req, res, (member || null) as any);
+                try {
+                    handler(req, res, (member || null) as any);
+                } catch (e: any) {
+                    logger.warn(
+                        "exception during " + handler.name + " api handler"
+                    );
+                    logger.warn(e.message && e.message());
+                    logger.warn(e.stack);
+                    res.status(400);
+                    res.end();
+                }
             } else {
                 logger.warn(
                     "received unauthenticated request for secure path " +

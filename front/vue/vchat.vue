@@ -464,6 +464,8 @@ export default defineComponent({
                     selectedAvatar.value = lastLogin.avatarURL;
                 }
                 if (lastLogin.name && lastLogin.avatarURL) {
+                    // this should only change once (on token acquisition) but
+                    // we must watch for when that happens
                     globals.watch("token", () => attemptLogin(true));
                 }
             } catch {
