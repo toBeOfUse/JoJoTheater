@@ -5,7 +5,9 @@
     <div
         id="chair-space"
         ref="chairSpace"
-        :style="{ backgroundImage: 'url(' + optBackgroundURL + ')' }"
+        :style="{
+            backgroundImage: 'url(' + optImageLayerURL(backgroundURL) + ')',
+        }"
     >
         <div id="musical-chairs" v-if="backgroundURL && users.length">
             <transition-group name="musical-chairs" @before-leave="beforeLeave">
@@ -32,7 +34,11 @@
             </transition-group>
         </div>
         <div class="image-layer">
-            <img v-if="foregroundURL" :src="foregroundURL" id="foreground" />
+            <img
+                v-if="foregroundURL"
+                :src="optImageLayerURL(foregroundURL)"
+                id="foreground"
+            />
             <select
                 id="switch"
                 v-if="allowedToSwitch"
@@ -78,6 +84,7 @@ import {
     nextTick,
     watch,
     computed,
+    Ref,
 } from "vue";
 import { Subscription } from "../../types";
 import Chair from "./chair.vue";
@@ -185,20 +192,20 @@ export default defineComponent({
                 fadedOut.value = false;
             }
         };
-        const optBackgroundURL = computed(() => {
-            if (!backgroundURL.value || !chairSpace.value) {
+        const optImageLayerURL = (url: string) => {
+            if (!url || !chairSpace.value) {
                 return "";
-            } else if (backgroundURL.value.endsWith(".svg")) {
-                return backgroundURL.value;
+            } else if (url.endsWith(".svg")) {
+                return url;
             } else {
                 const width =
                     chairSpace.value.offsetWidth * window.devicePixelRatio;
                 return getOptimizedImageURL({
-                    path: backgroundURL.value,
+                    path: url,
                     width,
                 });
             }
-        });
+        };
 
         // start receiving audience data from the server:
         props.socket.on("audience_info_set", loadRoom);
@@ -246,7 +253,7 @@ export default defineComponent({
             fadedOut,
             switchCoolingDown,
             allowedToSwitch,
-            optBackgroundURL,
+            optImageLayerURL,
             availableScenes,
             currentScene,
         };
