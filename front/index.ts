@@ -35,6 +35,19 @@ function renderTitle() {
     }
 }
 
+const resizeVideoContainer = () => {
+    const cont = document.querySelector("#video-container") as HTMLDivElement;
+    if (cont && cont.parentElement) {
+        const height = window.innerHeight * 0.7;
+        const maxWidth = cont.parentElement.offsetWidth;
+        const allegedWidth = height * (16 / 9);
+        const actualWidth = Math.min(maxWidth, allegedWidth);
+        console.log("video container max width", maxWidth);
+        cont.style.height = actualWidth * (9 / 16) + "px";
+        cont.style.width = actualWidth + "px";
+    }
+};
+
 async function loadUIComponents() {
     // load full-page styles
     await import(/* webpackChunkName: "index.scss" */ "./scss/index.scss");
@@ -44,6 +57,11 @@ async function loadUIComponents() {
         "#container-container"
     ) as HTMLElement;
     container.style.display = "initial";
+    // resize video container now that everything that needs to be observed
+    // exists
+    resizeVideoContainer();
+    window.addEventListener("resize", resizeVideoContainer);
+    // load all the dynamic vue components
     (
         await import(/*webpackChunkName: "vue-comps"*/ "./vue/vue-index")
     ).loadIndexComps(socket, currentVideo);

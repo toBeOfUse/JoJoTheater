@@ -97,14 +97,6 @@ function setTimeAndSeek(currentTimeS: number, durationS: number) {
     }
 }
 
-function setAspectRatio(aspect: number) {
-    const neededPadding = (1 / aspect) * 100;
-    // max out container aspect ratio at 4:3 to keep videos from going off the top
-    // and bottom of the screen
-    DOMControls.videoContainer.style.paddingTop =
-        Math.min(neededPadding, 75) + "%";
-}
-
 function showBigSpinner() {
     DOMControls.bigLoadingSpinner.style.display = "unset";
     const animateElement = DOMControls.bigLoadingSpinner.querySelector(
@@ -189,11 +181,6 @@ class HTML5VideoController extends VideoController {
         video.setAttribute("playsinline", "");
         DOMControls.videoContainer.prepend(video);
         this.videoElement = video;
-        this.videoElement.addEventListener("loadedmetadata", () => {
-            setAspectRatio(
-                this.videoElement.videoWidth / this.videoElement.videoHeight
-            );
-        });
         this.videoReady = new Promise((resolve) => {
             this.videoElement.addEventListener("loadeddata", () => {
                 resolve();
@@ -881,7 +868,6 @@ class Coordinator {
             this.state = new_state;
             if (sourceChanged) {
                 setTimeAndSeek(0, 0);
-                setAspectRatio(16 / 9);
                 playButtonIcon("play");
             }
             this.updateController(sourceChanged);
