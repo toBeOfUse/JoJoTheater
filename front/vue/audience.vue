@@ -5,10 +5,9 @@
     <div
         id="chair-space"
         ref="chairSpace"
-        v-if="backgroundURL && users.length"
         :style="{ backgroundImage: 'url(' + optBackgroundURL + ')' }"
     >
-        <div id="musical-chairs">
+        <div id="musical-chairs" v-if="backgroundURL && users.length">
             <transition-group name="musical-chairs" @before-leave="beforeLeave">
                 <div
                     key="left-spacer"
@@ -50,7 +49,18 @@
                 </option>
             </select>
             <transition name="fade">
-                <div class="image-layer" id="curtain" v-show="fadedOut" />
+                <div
+                    class="image-layer"
+                    id="curtain"
+                    v-show="fadedOut || (!users.length && !allowedToSwitch)"
+                >
+                    <img
+                        v-if="
+                            backgroundURL && !users.length && !allowedToSwitch
+                        "
+                        src="/images/eyes.svg"
+                    />
+                </div>
             </transition>
         </div>
     </div>
@@ -170,8 +180,10 @@ export default defineComponent({
             users.value = loaded;
             await nextTick();
             updateVisibleCount();
-            // remove "curtain" now that everything is finished loading, in case it was put in place
-            fadedOut.value = false;
+            if (users.value.length) {
+                // remove "curtain" now that everything is finished loading, in case it was put in place
+                fadedOut.value = false;
+            }
         };
         const optBackgroundURL = computed(() => {
             if (!backgroundURL.value || !chairSpace.value) {
@@ -253,9 +265,9 @@ export default defineComponent({
     position: relative;
     overflow-x: auto;
     overflow-y: hidden;
-    height: 175px;
+    height: 25vh;
     // max 5:1 aspect ratio to avoid stretching art assets
-    max-width: 175px * 5;
+    max-width: 25vh * 5;
     @media (max-width: 450px) {
         height: 70px;
         max-width: 70px * 5;
@@ -300,6 +312,13 @@ export default defineComponent({
 }
 #curtain {
     background-color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    & img {
+        height: 80%;
+        width: auto;
+    }
 }
 .fade-enter-active,
 .fade-leave-active {

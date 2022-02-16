@@ -1,0 +1,23 @@
+<svg width="100" height="100"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <radialGradient xlink:href="#a" id="b" cx="25" cy="25" fx="25" fy="25" r="24.567" gradientUnits="userSpaceOnUse" gradientTransform="matrix(2.05867 0 0 2.05867 -1.467 -1.467)"/>
+        <linearGradient id="a">
+            <stop style="stop-color:#fff;stop-opacity:.8" offset="0"/>
+            <stop style="stop-color:#fff;stop-opacity:.5" offset=".75"/>
+            <stop style="stop-color:#fff;stop-opacity:0" offset="1"/>
+        </linearGradient>
+    </defs>
+    <circle style="fill:url(#b);opacity:.34" cx="50" cy="50" r="50"/>
+    <ellipse fill="#f5f8fa" cx="40.371" cy="50" rx="8.321" ry="13.895" style="stroke-width:1"/>
+    <path fill="#e1e8ed" d="M40.371 64.68c-5.105 0-9.105-6.448-9.105-14.68s4-14.68 9.105-14.68c5.106 0 9.105 6.448 9.105 14.68s-4 14.68-9.105 14.68zm0-27.79c-4.155 0-7.536 5.88-7.536 13.11 0 7.23 3.38 13.11 7.536 13.11s7.536-5.88 7.536-13.11c0-7.23-3.38-13.11-7.536-13.11z" style="stroke-width:1"/>
+    <circle fill="#8899a6" cx="38.034" cy="50" r="5.189" style="stroke-width:1"/>
+    <circle fill="#292f33" cx="38.034" cy="50" r="3.73" style="stroke-width:1"/>
+    <circle fill="#f5f8fa" cx="39.412" cy="47.325" r="1.492" style="stroke-width:1"/>
+    <ellipse fill="#f5f8fa" cx="59.628" cy="50" rx="8.321" ry="13.895" style="stroke-width:1"/>
+    <path fill="#e1e8ed" d="M59.628 64.68c-5.106 0-9.105-6.448-9.105-14.68s4-14.68 9.105-14.68 9.106 6.448 9.106 14.68-4 14.68-9.106 14.68zm0-27.79c-4.156 0-7.536 5.882-7.536 13.11 0 7.23 3.38 13.11 7.536 13.11 4.155 0 7.537-5.88 7.537-13.11 0-7.23-3.382-13.11-7.537-13.11z" style="stroke-width:1"/>
+    <circle fill="#8899a6" cx="57.291" cy="50" r="5.189" style="stroke-width:1"/>
+    <circle fill="#292f33" cx="57.291" cy="50" r="3.73" style="stroke-width:1"/>
+    <circle fill="#f5f8fa" cx="58.668" cy="47.325" r="1.492" style="stroke-width:1"/>
+</svg>
