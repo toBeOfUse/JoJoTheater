@@ -23,29 +23,23 @@
             Instructions
             <span class="close" @click="showing = ''">(close)</span>
         </h2>
-        <p>
-            Use this website to watch videos. The current video and current time
-            within the video will be synchronized between everyone in the
-            virtual room. You are not allowed to control the video unless you
-            sign in on the chat - click the rightmost button on the little
-            minimized chat window on the bottom left of the screen to do that.
-        </p>
-        <p>
-            Once you've signed into the chat, you can also grab the top and
-            bottom sides of the window and drag them to make it taller or
-            shorter. Clicking anywhere in the chat window will put the cursor in
-            the message input box, so don't worry about hitting it too
-            precisely. When you make the video fullscreen, if the chat window is
-            not minimized, it will still be there, so you can put it in the
-            corner and use it like that.
-        </p>
-        <p>
-            You can add videos by pasting Vimeo, Dailymotion, or Youtube URLs
-            into the box at the bottom of the "Unrestrained Id of the Audience"
-            section of the playlist. The bottom-most section of the playlist
-            lets you search; enter words into the text input box and videos that
-            match them will appear below it.
-        </p>
+        <ul style="text-align: left">
+            <li>Watch Videos!</li>
+            <li>Everyone is synced :D</li>
+            <li>Sign in through the window on the bottom left</li>
+            <li>
+                Once you sign in, the window is resizeable (grab the top and
+                bottom)
+            </li>
+            <li>The window is still visible in fullscreen unless minimized</li>
+            <li>Add videos to the last playlist folder</li>
+            <li>Search videos with the box below that</li>
+            <li>Hold alt to type emojis!</li>
+        </ul>
+        <img
+            src="/images/emojikeyboard.svg"
+            style="width: 100%; height: auto"
+        />
     </div>
     <div class="modal" v-if="showing == 'credits'">
         <h2>

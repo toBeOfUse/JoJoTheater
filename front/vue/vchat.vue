@@ -108,6 +108,7 @@
                         style="width: 100%"
                         v-model="nameInput"
                         @keypress.enter="attemptLogin(false)"
+                        @keydown="handleEmojiNameInput"
                     />
                 </section>
                 <section
@@ -176,7 +177,7 @@ import { ChatMessage, ChatUserInfo, Subscription } from "../../types";
 import { avatars } from "./avatars";
 import OptImage from "./image.vue";
 import type { Socket } from "socket.io-client";
-import { ref, nextTick, defineComponent, PropType, computed } from "vue";
+import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
 import globals from "../globals";
 import { endpoints, APIPath } from "../../endpoints";
 export default defineComponent({
@@ -207,9 +208,64 @@ export default defineComponent({
             }
         };
         let lastTypingEvent = 0;
+        const emojis: Record<string, string> = {
+            e: "👀",
+            s: "🤝",
+            t: "👍",
+            p: "😔",
+            f: "😳",
+            l: "🥺",
+            c: "🤡",
+            d: "💀",
+            u: "☝",
+            w: "👋",
+            r: "🌈",
+            h: "❤",
+            a: "😩",
+        };
+        const handleEmoji = (
+            event: KeyboardEvent,
+            stringRef: Ref<string> | null = null
+        ) => {
+            if (
+                event.altKey &&
+                event.key in emojis &&
+                event.target instanceof HTMLInputElement
+            ) {
+                event.preventDefault();
+                const target = event.target;
+                const selStart = target.selectionStart;
+                const selEnd = target.selectionEnd;
+                const oldValue = target.value;
+                const emoji = emojis[event.key];
+                if ((selStart || selStart === 0) && (selEnd || selEnd === 0)) {
+                    (stringRef || target).value =
+                        oldValue.substring(0, selStart) +
+                        emoji +
+                        oldValue.substring(selEnd);
+                    if (stringRef) {
+                        nextTick(() => {
+                            target.selectionStart = selStart + emoji.length;
+                            target.selectionEnd = selStart + emoji.length;
+                        });
+                    } else {
+                        target.selectionStart = selStart + emoji.length;
+                        target.selectionEnd = selStart + emoji.length;
+                    }
+                } else {
+                    (stringRef || target).value += emoji;
+                }
+                return true;
+            }
+            return false;
+        };
+        const handleEmojiNameInput = (event: KeyboardEvent) => {
+            handleEmoji(event, nameInput);
+        };
         const messageInputKeydown = (event: KeyboardEvent) => {
             if (outgoing.value) {
                 event.preventDefault();
+            } else if (handleEmoji(event)) {
             } else if (
                 /^[a-z0-9]$/i.test(event.key) ||
                 event.key == "Backspace"
@@ -554,6 +610,8 @@ export default defineComponent({
             messageInputKeydown,
             deflectFocusToMessageInput,
             outgoing,
+            handleEmoji,
+            handleEmojiNameInput,
         };
     },
 });
@@ -683,6 +741,7 @@ export default defineComponent({
 .xp input[type="text"] {
     border: solid #7f9db9 1px;
     padding: 0 5px;
+    font-family: "Pixelated MS Sans Serif", "Segoe UI Emoji", Arial;
 }
 
 #chat-body {
