@@ -40,11 +40,23 @@
                     />
                     <div class="video-info-box">
                         <p class="video-title">
-                            <img
+                            {{ video.title }}
+                        </p>
+                    </div>
+                    <div
+                        style="
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            flex-grow: 1;
+                        "
+                    >
+                        <span class="duration">
+                            (<img
                                 :src="getIcon(video.provider)"
                                 class="video-source-icon"
-                            />{{ video.title }}
-                        </p>
+                            />{{ durationToString(video.duration) }})
+                        </span>
                     </div>
                 </div>
                 <div
@@ -242,6 +254,14 @@ export default defineComponent({
             placeholder.value = defaultPlaceholder;
         };
 
+        const durationToString = (duration: number) => {
+            if (Math.round(duration / 60 / 5) * 5 < 1) {
+                return `${Math.round(duration / 5) * 5} sec.`;
+            } else {
+                return `${Math.round(duration / 60 / 5) * 5} min.`;
+            }
+        };
+
         props.socket.emit("ready_for", Subscription.playlist);
 
         return {
@@ -260,6 +280,7 @@ export default defineComponent({
             activeFolder,
             searchResultsFolderName,
             getFolderLabel,
+            durationToString,
         };
     },
 });
@@ -280,7 +301,6 @@ $playlist-item-margin: 3px;
         font-style: italic;
         color: #666;
         border-style: inset;
-        border-width: 2px;
         & .video-thumbnail {
             opacity: 0.7;
         }
@@ -289,7 +309,6 @@ $playlist-item-margin: 3px;
         border-style: solid;
         cursor: pointer;
         color: black;
-        padding: 1px; // to substitute for the thicker border in &.active
     }
     width: calc(25% - #{$playlist-item-margin * 2});
     @media (max-width: 750px) {
@@ -299,6 +318,9 @@ $playlist-item-margin: 3px;
         width: calc(50% - #{$playlist-item-margin * 2});
     }
     position: relative;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 
 .video-info-box {
@@ -306,10 +328,9 @@ $playlist-item-margin: 3px;
     align-items: center;
     width: 100%;
     border-radius: 3px;
-    height: 2.5em;
     overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 2px;
+    padding: 0 2px;
+    text-align: left;
 }
 
 .video-title {
@@ -319,6 +340,8 @@ $playlist-item-margin: 3px;
     -webkit-box-orient: vertical;
     overflow: hidden;
     width: 100%;
+    text-overflow: ellipsis;
+    margin: 3px 0;
 }
 
 .video-source-icon {
@@ -326,6 +349,12 @@ $playlist-item-margin: 3px;
     display: inline;
     vertical-align: middle;
     margin: 0 4px 0 2px;
+}
+
+.duration {
+    font-size: 85%;
+    color: gray;
+    font-style: italic;
 }
 
 .video-thumbnail {
