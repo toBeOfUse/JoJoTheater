@@ -268,7 +268,8 @@ export default defineComponent({
             } else if (handleEmoji(event)) {
             } else if (
                 /^[a-z0-9]$/i.test(event.key) ||
-                event.key == "Backspace"
+                event.key == "Backspace" ||
+                event.key == "Unidentified" // mobile chrome
             ) {
                 if (Date.now() - lastTypingEvent > 1000) {
                     endpoints[APIPath.typingStart].dispatch({});
