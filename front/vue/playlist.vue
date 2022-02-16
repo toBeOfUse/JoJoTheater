@@ -451,6 +451,7 @@ $playlist-item-margin: 3px;
     height: fit-content;
     align-items: center;
     padding: 3px;
+    flex-direction: row;
 }
 
 .add-video-button {
