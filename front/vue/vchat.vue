@@ -577,6 +577,8 @@ export default defineComponent({
             scrollMessagePanelToBottom();
         });
 
+        // TODO: re-subscribe on reconnect. But it may take some work to block
+        // the resulting incoming message update
         socket.emit("ready_for", Subscription.chat);
 
         return {

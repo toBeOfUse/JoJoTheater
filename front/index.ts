@@ -49,4 +49,4 @@ async function loadUIComponents() {
     ).loadIndexComps(socket, currentVideo);
 }
 
-loadUIComponents();
+window.addEventListener("load", loadUIComponents);

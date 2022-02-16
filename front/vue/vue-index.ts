@@ -6,22 +6,35 @@ async function loadIndexComps(
     initialActiveVideo: Video | undefined
 ) {
     import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
-        const Chat = await import(/* webpackMode: "eager" */ "./vchat.vue");
-        Vue.createApp(Chat.default, { socket }).mount("#chat-container");
-        const Playlist = await import(
+        // Create a Promise for each Vue component and then await them with
+        // Promise.all so they can load in parallel
+        const ChatPromise = import(/* webpackMode: "eager" */ "./vchat.vue");
+        const PlaylistPromise = import(
             /* webpackMode: "eager" */ "./playlist.vue"
         );
+        const AudiencePromise = import(
+            /* webpackMode: "eager" */ "./audience.vue"
+        );
+        const InfoPromise = import(
+            /* webpackMode: "eager" */ "./infomodals.vue"
+        );
+        const [Chat, Playlist, Audience, Info] = await Promise.all([
+            ChatPromise,
+            PlaylistPromise,
+            AudiencePromise,
+            InfoPromise,
+        ]);
+        // ensure socket is connected before Vue components are created so they
+        // can all use it without fear
+        if (!socket.connected) {
+            await new Promise<void>((resolve) => socket.on("connect", resolve));
+        }
+        Vue.createApp(Chat.default, { socket }).mount("#chat-container");
         Vue.createApp(Playlist.default, { socket, initialActiveVideo }).mount(
             "#playlist-container"
         );
-        const Audience = await import(
-            /* webpackMode: "eager" */ "./audience.vue"
-        );
         Vue.createApp(Audience.default, { socket }).mount(
             "#audience-container"
-        );
-        const Info = await import(
-            /* webpackMode: "eager" */ "./infomodals.vue"
         );
         Vue.createApp(Info.default).mount("#info-container");
     });
