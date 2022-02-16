@@ -82,7 +82,7 @@ export default function (
         let imagePath = path.join("./assets/", req.query.path as string);
         const format = chooseFormat(req.headers.accept, imagePath);
         res.setHeader("Content-Type", "image/" + format);
-        // TODO: set cache control headers to max caching
+        res.setHeader("Cache-Control", "max-age=31536000, immutable");
 
         const requestedWidth =
             req.query.width == "max"
