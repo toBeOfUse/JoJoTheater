@@ -12,6 +12,7 @@
  */
 
 import { defineComponent, nextTick, onMounted, ref, watch } from "vue";
+import { getOptimizedImageURL } from "../../endpoints";
 import { avatars, Direction } from "./avatars";
 
 export default defineComponent({
@@ -64,15 +65,13 @@ export default defineComponent({
                 String(nativeHeight * scaleFactor)
             );
             const avatar = avatars.find((a2) => a2.path == props.avatarURL);
-            let avatarURL =
-                "/imgopt?path=" + encodeURIComponent(props.avatarURL);
-            if (avatar && avatar.facing == Direction.left) {
-                avatarURL += "&flip=true";
-            }
-            avatarURL +=
-                "&width=" +
-                avatarImage.getBoundingClientRect().width *
-                    window.devicePixelRatio;
+            const avatarURL = getOptimizedImageURL({
+                path: props.avatarURL,
+                width:
+                    avatarImage.getBoundingClientRect().width *
+                    window.devicePixelRatio,
+                flip: avatar && avatar.facing == Direction.left,
+            });
             avatarImage.setAttribute("href", avatarURL);
             const keyboard = svgElement.querySelector(
                 ".seated-keyboard"

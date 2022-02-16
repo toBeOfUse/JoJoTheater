@@ -31,8 +31,9 @@ function chooseFormat(accept: string | undefined, imagePath: string): Format {
  *
  * `path` (required): string path to the base image, based on the ./assets/
  * directory. This will have to be URL-encoded on the client side with e. g. the
- * encodeURIComponent function. images with "png" as the file extension in their
- * path are guaranteed to be returned in a format that supports transparency (i. e.
+ * encodeURIComponent function (the getOptimizedImageURL function does this
+ * automatically.) images with "png" as the file extension in their path are
+ * guaranteed to be returned in a format that supports transparency (i. e.
  * anything except jpg.)
  *
  * `width` (required): number denoting the width of the image that the client needs
@@ -48,6 +49,8 @@ function chooseFormat(accept: string | undefined, imagePath: string): Format {
  * Example URL:
  *
  * `/imgopt?path=%2Fimages%2Favatars%2Fkermit.jpg&width=450&flip=true&ratio=1:1`
+ *
+ * To get a URL like this quickly, use the getOptimizedImageURL function from /endpoints.ts.
  *
  */
 export default function (
@@ -122,10 +125,10 @@ export default function (
                 );
                 logger.warn(
                     "missing thumbnail at path: " +
-                    req.query.path +
-                    " - serving " +
-                    thumbnailFallback +
-                    " instead"
+                        req.query.path +
+                        " - serving " +
+                        thumbnailFallback +
+                        " instead"
                 );
                 res.status(200);
                 res.sendFile(thumbnailFallback);
@@ -143,10 +146,10 @@ export default function (
         } catch {
             logger.error(
                 "/imgopt error: file exists, but sharp is unable" +
-                " to get image metadata for the following: " +
-                imagePath +
-                " . full request url was " +
-                req.url
+                    " to get image metadata for the following: " +
+                    imagePath +
+                    " . full request url was " +
+                    req.url
             );
             res.status(500);
             res.end();
@@ -180,8 +183,8 @@ export default function (
         } catch {
             logger.error(
                 "/imgopt error: sharp unable to produce image " +
-                "in response to the following: " +
-                req.url
+                    "in response to the following: " +
+                    req.url
             );
             res.status(500);
             res.end();
@@ -193,7 +196,7 @@ export default function (
         const percentDifference = ((1 - newKB / origKB) * 100).toFixed(2);
         logger.info(
             `/imgopt shrunk ${origKB.toFixed(2)}kb image ` +
-            `by ${difference}kb (${percentDifference}%)`
+                `by ${difference}kb (${percentDifference}%)`
         );
         res.status(200);
         res.end(result);

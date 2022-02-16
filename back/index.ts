@@ -5,7 +5,7 @@ import compression from "compression";
 import initTheater from "./theater";
 import uploads from "./upload";
 import logger from "./logger";
-import cdn from "./imagecdn";
+import cdn from "./optimizeimages";
 
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";

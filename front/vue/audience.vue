@@ -74,7 +74,7 @@ import Chair from "./chair.vue";
 import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
 import globals from "../globals";
-import { APIPath, endpoints } from "../../endpoints";
+import { APIPath, endpoints, getOptimizedImageURL } from "../../endpoints";
 
 export default defineComponent({
     props: {
@@ -181,12 +181,10 @@ export default defineComponent({
             } else {
                 const width =
                     chairSpace.value.offsetWidth * window.devicePixelRatio;
-                return (
-                    "/imgopt?path=" +
-                    encodeURIComponent(backgroundURL.value) +
-                    "&width=" +
-                    width
-                );
+                return getOptimizedImageURL({
+                    path: backgroundURL.value,
+                    width,
+                });
             }
         });
 

@@ -8,6 +8,7 @@ import {
     ChangeTypes,
     ControlsFlag,
 } from "../types";
+import { getOptimizedImageURL } from "../endpoints";
 interface ActionableVideoState extends Omit<VideoState, "video"> {
     video: Video;
 }
@@ -228,10 +229,10 @@ class HTML5VideoController extends VideoController {
             this.videoElement.src = v.video.src;
             this.videoElement.setAttribute(
                 "poster",
-                "/imgopt?width=max&path=" +
-                    encodeURIComponent(
-                        "/images/thumbnails/" + v.video.id + ".jpg"
-                    )
+                getOptimizedImageURL({
+                    path: "/images/thumbnails/" + v.video.id + ".jpg",
+                    width: "max",
+                })
             );
             this.prevSrc = v.video.src;
         }
@@ -799,11 +800,10 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
             el.classList.add("flag");
         }
         parent.appendChild(el);
-        const imageURL =
-            "/imgopt?path=" +
-            encodeURIComponent(flag.imagePath) +
-            "&width=" +
-            el.offsetWidth * window.devicePixelRatio;
+        const imageURL = getOptimizedImageURL({
+            path: flag.imagePath,
+            width: el.offsetWidth * devicePixelRatio,
+        });
         el.src = imageURL;
         const thisFlag = lastFlags[flag.target] + 1;
         lastFlags[flag.target] = thisFlag;

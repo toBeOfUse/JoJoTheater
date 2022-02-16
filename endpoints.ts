@@ -11,10 +11,12 @@ enum APIPath {
     getStats = "/get/stats",
     getMessages = "/get/messages",
     getScenes = "/get/scenes",
+    optimizedImage = "/imgopt",
 }
 
 interface PostBody {}
-interface GetBody extends Record<string, string> {}
+interface GetBody
+    extends Record<string, string | number | boolean | undefined> {}
 
 abstract class Endpoint<BodyType> {
     path: APIPath;
@@ -56,6 +58,13 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
 }
 
 class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
+    fullPath(body: BodyType) {
+        const params = new URLSearchParams();
+        for (const key in body) {
+            params.append(key, String(body[key]));
+        }
+        return this.path + "?" + params.toString();
+    }
     async dispatch(body: BodyType, headers: Record<string, string> = {}) {
         const token = globals.get("token") as string;
         if (this.mustBeInChat && !token) {
@@ -63,8 +72,7 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
                 "Missing authentication token for secure endpoint " + this.path
             );
         }
-        const query = new URLSearchParams(body).toString();
-        const response = await fetch(this.path + query, {
+        const response = await fetch(this.fullPath(body), {
             headers: { Auth: token, ...headers },
         });
         const text = await response.text();
@@ -86,6 +94,12 @@ interface AddVideoBody extends PostBody {
 interface ChangeSceneBody extends PostBody {
     newScene: string;
 }
+interface OptimizedImageBody extends GetBody {
+    path: string;
+    width: number | "max";
+    flip?: boolean;
+    ratio?: string;
+}
 
 const endpoints: Record<APIPath, Endpoint<PostBody>> = {
     [APIPath.logIn]: new PostEndpoint<LogInBody>(APIPath.logIn, false),
@@ -103,7 +117,27 @@ const endpoints: Record<APIPath, Endpoint<PostBody>> = {
     [APIPath.getStats]: new GetEndpoint<{}>(APIPath.getStats, false),
     [APIPath.getMessages]: new GetEndpoint<{}>(APIPath.getMessages, false),
     [APIPath.getScenes]: new GetEndpoint<{}>(APIPath.getScenes, false),
+    [APIPath.optimizedImage]: new GetEndpoint<OptimizedImageBody>(
+        APIPath.optimizedImage,
+        false
+    ),
 };
+
+/**
+ * Since the optimized image endpoint is often used by simply setting an img's
+ * src attribute to its url, this function might be more convenient than using a
+ * GetEndpoint object with its dispatch method. Automatically URL-encodes
+ * params.path
+ * @param params: query string parameters, with a non-encoded `path`
+ * value that looks like `/images/avatars/muppets/kermit.jpg`
+ * @returns a URL that looks like
+ * `/imgopt?path=%2Fimages%2Favatars%2Fmuppets%2Fkermit.jpg&width=450&flip=true&ratio=1:1`
+ */
+function getOptimizedImageURL(params: OptimizedImageBody): string {
+    return (
+        endpoints[APIPath.optimizedImage] as GetEndpoint<OptimizedImageBody>
+    ).fullPath(params);
+}
 
 export {
     LogInBody,
@@ -114,4 +148,6 @@ export {
     PostEndpoint,
     GetEndpoint,
     endpoints,
+    OptimizedImageBody,
+    getOptimizedImageURL,
 };

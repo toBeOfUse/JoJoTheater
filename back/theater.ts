@@ -202,15 +202,15 @@ class AudienceMember {
     }
 }
 
+type APIHandler =
+    | ((req: Request, res: Response, member: AudienceMember | null) => void)
+    | ((req: Request, res: Response, member: AudienceMember) => void);
+
 class Theater {
     audience: AudienceMember[] = [];
     playlist: Playlist;
     graphics: RoomController;
-    apiHandlers: Record<
-        APIPath,
-        | ((req: Request, res: Response, member: AudienceMember | null) => void)
-        | ((req: Request, res: Response, member: AudienceMember) => void)
-    >;
+    apiHandlers: Partial<Record<APIPath, APIHandler>>;
 
     _baseState: PlayerState = {
         playing: false,
@@ -497,7 +497,9 @@ class Theater {
 
     handleAPICall(req: Request, res: Response) {
         if (req.path in this.apiHandlers) {
-            const handler = this.apiHandlers[req.path as APIPath].bind(this);
+            const handler = (
+                this.apiHandlers[req.path as APIPath] as APIHandler
+            ).bind(this);
             let member;
             const auth = req.header("Auth");
             if (!is<string>(auth)) {
@@ -768,9 +770,12 @@ export default function init(server: Server, app: Express) {
     const theater = new Theater(io, playlist, graphics);
 
     for (const endpoint of Object.values(APIPath)) {
-        app[endpoints[endpoint] instanceof GetEndpoint ? "get" : "post"](
-            endpoint,
-            (req: Request, res: Response) => theater.handleAPICall(req, res)
-        );
+        // a kludge, but, the optimize image endpoint is handled by back/optimizeimages.ts
+        if (endpoint != endpoints[APIPath.optimizedImage].path) {
+            app[endpoints[endpoint] instanceof GetEndpoint ? "get" : "post"](
+                endpoint,
+                (req: Request, res: Response) => theater.handleAPICall(req, res)
+            );
+        }
     }
 }

@@ -4,6 +4,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, ref } from "vue";
+import { getOptimizedImageURL } from "../../endpoints";
 
 export default defineComponent({
     props: {
@@ -37,15 +38,12 @@ export default defineComponent({
                 });
                 const baseWidth = img.value.offsetWidth;
                 const width = baseWidth * (window.devicePixelRatio || 1);
-                const path = encodeURIComponent(props.path);
-                let url = `/imgopt?width=${width}&path=${path}`;
-                if (props.flipped) {
-                    url += "&flip=true";
-                }
-                if (props.aspectRatio) {
-                    url += `&ratio=${props.aspectRatio}`;
-                }
-                cdnURL.value = url;
+                cdnURL.value = getOptimizedImageURL({
+                    path: props.path,
+                    width,
+                    flip: props.flipped,
+                    ratio: props.aspectRatio,
+                });
                 if (props.aspectRatio) {
                     const ratioComps = props.aspectRatio.split(":").map(Number);
                     if (ratioComps[0] && ratioComps[1]) {
