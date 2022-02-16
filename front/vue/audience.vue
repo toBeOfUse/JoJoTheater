@@ -269,8 +269,8 @@ export default defineComponent({
     // max 5:1 aspect ratio to avoid stretching art assets
     max-width: 25vh * 5;
     @media (max-width: 450px) {
-        height: 70px;
-        max-width: 70px * 5;
+        height: 80px;
+        max-width: 80px * 5;
     }
     background-size: cover;
     background-position: center;
