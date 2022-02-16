@@ -303,6 +303,41 @@ export default defineComponent({
                 "https://unsplash.com/@nkend",
                 "nick-van-der-ende-ElDn5SmTmB4-unsplash.jpg"
             ),
+            new PhotoSource(
+                Unsplash,
+                "uWL3al1dom0",
+                "Tandem X Visuals",
+                "https://unsplash.com/@tandemxvisuals",
+                "tandem-x-visuals-uWL3al1dom0-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "wbTapOXJVhU",
+                "Florian Lidin",
+                "https://unsplash.com/@alieneuh",
+                "florian-lidin-wbTapOXJVhU-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "3mTdjARCw7I",
+                "Riccardo Chiarini",
+                "https://unsplash.com/@riccardoch",
+                "riccardo-chiarini-3mTdjARCw7I-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "MlsjteUQFU0",
+                "Ken Whytock",
+                "https://unsplash.com/@kenwhytock",
+                "ken-whytock-MlsjteUQFU0-unsplash.jpg"
+            ),
+            new PhotoSource(
+                Unsplash,
+                "EHH9gz2zxes",
+                "Jack B",
+                "https://unsplash.com/@nervum",
+                "jack-b-EHH9gz2zxes-unsplash.jpg"
+            ),
         ];
         return { showing, sources };
     },
