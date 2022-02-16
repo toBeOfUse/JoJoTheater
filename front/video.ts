@@ -179,6 +179,7 @@ class HTML5VideoController extends VideoController {
         video.id = "player";
         video.controls = false;
         video.setAttribute("playsinline", "");
+        video.setAttribute("disablePictureInPicture", "");
         DOMControls.videoContainer.prepend(video);
         this.videoElement = video;
         this.videoReady = new Promise((resolve) => {
