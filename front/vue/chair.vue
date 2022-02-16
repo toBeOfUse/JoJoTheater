@@ -11,7 +11,14 @@
  * props.
  */
 
-import { defineComponent, nextTick, onMounted, ref, watch } from "vue";
+import {
+    defineComponent,
+    nextTick,
+    onMounted,
+    onUnmounted,
+    ref,
+    watch,
+} from "vue";
 import { getOptimizedImageURL } from "../../endpoints";
 import { avatars, Direction } from "./avatars";
 
@@ -46,7 +53,6 @@ export default defineComponent({
                 console.error("premature chair svg initialization!");
                 return;
             }
-            const height = parentSpace.offsetHeight;
             chairContainer.value.innerHTML = markup;
             await nextTick();
             const svgElement = chairContainer.value.querySelector(
@@ -56,14 +62,33 @@ export default defineComponent({
                 ".seated-avatar"
             ) as SVGImageElement;
             svgElement.classList.add("svg-chair");
-            const nativeWidth = Number(svgElement.getAttribute("width"));
-            const nativeHeight = Number(svgElement.getAttribute("height"));
-            const scaleFactor = height / nativeHeight;
-            svgElement.setAttribute("width", String(nativeWidth * scaleFactor));
-            svgElement.setAttribute(
-                "height",
-                String(nativeHeight * scaleFactor)
-            );
+            let prevParentSpaceHeight = -1;
+            const setSizes = () => {
+                const height = parentSpace.offsetHeight;
+                // only create new sizes for the SVG if the parent element's
+                // height has actually changed (or this is the first time this
+                // function is running and prevParentSpaceHeight is still set to
+                // -1)
+                if (height == prevParentSpaceHeight) {
+                    return;
+                } else {
+                    prevParentSpaceHeight = height;
+                }
+                const nativeWidth = Number(svgElement.getAttribute("width"));
+                const nativeHeight = Number(svgElement.getAttribute("height"));
+                const scaleFactor = height / nativeHeight;
+                svgElement.setAttribute(
+                    "width",
+                    String(nativeWidth * scaleFactor)
+                );
+                svgElement.setAttribute(
+                    "height",
+                    String(nativeHeight * scaleFactor)
+                );
+            };
+            setSizes();
+            window.addEventListener("resize", setSizes);
+            onUnmounted(() => window.removeEventListener("resize", setSizes));
             const avatar = avatars.find((a2) => a2.path == props.avatarURL);
             const avatarURL = getOptimizedImageURL({
                 path: props.avatarURL,
