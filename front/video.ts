@@ -260,7 +260,6 @@ class HTML5VideoController extends VideoController {
 let injectedYoutubeScript = false;
 const youtubeAPIReady = new Promise<void>((resolve, reject) => {
     (<any>window).onYouTubeIframeAPIReady = () => {
-        console.log("youtube api ready");
         resolve();
     };
 });
@@ -283,7 +282,6 @@ class YoutubeVideoController extends VideoController {
         } else {
             container.prepend(this.videoElement);
         }
-        console.log("creating new YT.Player");
         if (!injectedYoutubeScript) {
             injectedYoutubeScript = true;
             // from https://developers.google.com/youtube/iframe_api_reference
@@ -635,11 +633,6 @@ class DailymotionVideoController extends VideoController {
             this.prevSrc = v.video.src;
             this.dailymotionPlayer.loadContent({ video: v.video.src });
         }
-        console.log(
-            "determining whether to seek. server, local:",
-            v.currentTimeMs,
-            this.currentTimeMs
-        );
         if (Math.abs(this.currentTimeMs - v.currentTimeMs) > 1000) {
             console.log("seeking dailymotion");
             this.dailymotionPlayer.seek(v.currentTimeMs / 1000);
@@ -763,7 +756,6 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
 
     const lastFlags = { play: 0, next_video: 0, prev_video: 0, seek: 0 };
     io.on("set_controls_flag", (flag: ControlsFlag) => {
-        console.log(flag);
         let parent;
         if (flag.target == "play") {
             parent = DOMControls.playPause;
@@ -795,14 +787,7 @@ function initializePlayerInterface(io: Socket, coordinator: Coordinator) {
         const thisFlag = lastFlags[flag.target] + 1;
         lastFlags[flag.target] = thisFlag;
         el.addEventListener("load", () => {
-            console.log("flag image loaded");
             if (flag.target == "seek") {
-                console.log(
-                    "animating seek from",
-                    flag.startPos,
-                    "to",
-                    flag.endPos
-                );
                 el.style.opacity = "1";
                 el.style.left = (flag.startPos as number) * 100 + "%";
                 setTimeout(() => {

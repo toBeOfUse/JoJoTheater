@@ -1,6 +1,5 @@
 import path from "path";
 const dbPath = path.resolve(__dirname, "streams.db");
-console.log("dbPath:", dbPath);
 
 module.exports = {
     development: {

@@ -42,7 +42,6 @@ const resizeVideoContainer = () => {
         const maxWidth = cont.parentElement.offsetWidth;
         const allegedWidth = height * (16 / 9);
         const actualWidth = Math.min(maxWidth, allegedWidth);
-        console.log("video container max width", maxWidth);
         cont.style.height = actualWidth * (9 / 16) + "px";
         cont.style.width = actualWidth + "px";
     }
