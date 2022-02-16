@@ -61,7 +61,9 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
     fullPath(body: BodyType) {
         const params = new URLSearchParams();
         for (const key in body) {
-            params.append(key, String(body[key]));
+            if (body[key] !== undefined) {
+                params.append(key, String(body[key]));
+            }
         }
         return this.path + "?" + params.toString();
     }
@@ -127,7 +129,7 @@ const endpoints: Record<APIPath, Endpoint<PostBody>> = {
  * Since the optimized image endpoint is often used by simply setting an img's
  * src attribute to its url, this function might be more convenient than using a
  * GetEndpoint object with its dispatch method. Automatically URL-encodes
- * params.path
+ * params.path. Parameters that map to `undefined` will be ignored.
  * @param params: query string parameters, with a non-encoded `path`
  * value that looks like `/images/avatars/muppets/kermit.jpg`
  * @returns a URL that looks like
