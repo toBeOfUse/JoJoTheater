@@ -62,6 +62,7 @@
                         ? { backgroundColor: '#000f' }
                         : { backgroundColor: '#0000' }
                 "
+                v-show="showCurtain"
             >
                 <img
                     v-if="backgroundURL && !users.length && !allowedToSwitch"
@@ -82,6 +83,8 @@
                             ? 'open'
                             : 'slightlyOpen'
                     "
+                    @outoftheway="showCurtain = false"
+                    @backintheway="showCurtain = true"
                 />
             </div>
         </div>
@@ -99,8 +102,6 @@ import {
     onBeforeUpdate,
     nextTick,
     watch,
-    computed,
-    Ref,
 } from "vue";
 import { Subscription } from "../../types";
 import Chair from "./chair.vue";
@@ -259,6 +260,8 @@ export default defineComponent({
             (newValue: boolean) => (allowedToSwitch.value = newValue)
         );
 
+        const showCurtain = ref(true);
+
         return {
             users,
             beforeLeave,
@@ -274,6 +277,7 @@ export default defineComponent({
             optImageLayerURL,
             availableScenes,
             currentScene,
+            showCurtain,
         };
     },
 });

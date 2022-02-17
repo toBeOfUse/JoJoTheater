@@ -28,7 +28,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref, watch } from "vue";
+import {
+    defineComponent,
+    nextTick,
+    onMounted,
+    reactive,
+    ref,
+    watch,
+} from "vue";
 
 export default defineComponent({
     props: {
@@ -39,7 +46,7 @@ export default defineComponent({
                 ["closed", "slightlyOpen", "open"].includes(prop),
         },
     },
-    setup(props) {
+    setup(props, context) {
         const svg = ref<SVGSVGElement | null>(null);
         type pathD = string;
         type Spline = [number, number, number, number];
@@ -262,9 +269,14 @@ export default defineComponent({
                 group.currentPos = [initialLeftPos - openFullyOffset, 0];
             }
             activateAnimation("openswishstart");
+            setTimeout(() => {
+                context.emit("outoftheway");
+            }, openFullyDuration * 1000);
         };
 
-        const playCloseMostly = () => {
+        const playCloseMostly = async () => {
+            context.emit("backintheway");
+            await nextTick();
             const animationDuration = openFullyDuration - openSlightlyDuration;
             for (const group of groups) {
                 group.transitionDuration = animationDuration;
