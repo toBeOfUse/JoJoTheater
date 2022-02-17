@@ -54,20 +54,36 @@
                     {{ scene.charAt(0).toUpperCase() + scene.slice(1) }}
                 </option>
             </select>
-            <transition name="fade">
-                <div
-                    class="image-layer"
-                    id="curtain"
-                    v-show="fadedOut || (!users.length && !allowedToSwitch)"
-                >
-                    <img
-                        v-if="
-                            backgroundURL && !users.length && !allowedToSwitch
-                        "
-                        src="/images/eyes.svg"
-                    />
-                </div>
-            </transition>
+            <div
+                class="image-layer"
+                id="curtain"
+                :style="
+                    fadedOut || (!users.length && !allowedToSwitch)
+                        ? { backgroundColor: '#000f' }
+                        : { backgroundColor: '#0000' }
+                "
+            >
+                <img
+                    v-if="backgroundURL && !users.length && !allowedToSwitch"
+                    src="/images/eyes.svg"
+                />
+                <Curtains
+                    style="
+                        position: absolute;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        top: 0;
+                        height: 100%;
+                    "
+                    :state="
+                        !backgroundURL
+                            ? 'closed'
+                            : allowedToSwitch
+                            ? 'open'
+                            : 'slightlyOpen'
+                    "
+                />
+            </div>
         </div>
     </div>
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
@@ -92,6 +108,7 @@ import type { Socket } from "socket.io-client";
 import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
 import globals from "../globals";
 import { APIPath, endpoints, getOptimizedImageURL } from "../../endpoints";
+import Curtains from "./curtains.vue";
 
 export default defineComponent({
     props: {
@@ -100,7 +117,7 @@ export default defineComponent({
             type: Object as PropType<Socket>,
         },
     },
-    components: { Chair },
+    components: { Chair, Curtains },
     setup(props) {
         // receive an array of the Chair components as a template ref and track
         // their visibility within our chair-space:
@@ -184,6 +201,7 @@ export default defineComponent({
                     svgMarkup: svgMarkupCache[inhabitant.chairURL],
                 });
             }
+            // TODO: also await avatarURL fetching?
             users.value = loaded;
             await nextTick();
             updateVisibleCount();
@@ -318,22 +336,16 @@ export default defineComponent({
     object-position: center;
 }
 #curtain {
-    background-color: black;
+    background-color: #000f;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
     & img {
         height: 80%;
         width: auto;
     }
-}
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 1s linear;
-}
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
+    transition: background-color 1s linear;
 }
 #offToTheLeftCount {
     left: 7px;
