@@ -39,6 +39,36 @@ export default defineComponent({
     },
     setup(props) {
         const chairContainer = ref<null | HTMLDivElement>(null);
+        let prevParentSpaceHeight = -1;
+
+        const setSizes = () => {
+            const parentSpace = findParentSpace();
+            if (!parentSpace || !chairContainer.value) return;
+            const svgElement = chairContainer.value.querySelector(
+                "svg"
+            ) as SVGSVGElement;
+            if (!svgElement) return;
+            const height = parentSpace.offsetHeight;
+            // only create new sizes for the SVG if the parent element's
+            // height has actually changed (or this is the first time this
+            // function is running and prevParentSpaceHeight is still set to
+            // -1)
+            if (height == prevParentSpaceHeight) {
+                return;
+            } else {
+                prevParentSpaceHeight = height;
+            }
+            const nativeWidth = Number(svgElement.getAttribute("width"));
+            const nativeHeight = Number(svgElement.getAttribute("height"));
+            const scaleFactor = height / nativeHeight;
+            svgElement.setAttribute("width", String(nativeWidth * scaleFactor));
+            svgElement.setAttribute(
+                "height",
+                String(nativeHeight * scaleFactor)
+            );
+        };
+        window.addEventListener("resize", setSizes);
+        onUnmounted(() => window.removeEventListener("resize", setSizes));
         const initializeSVG = async () => {
             const markup = props.chairMarkup;
             const parentSpace = findParentSpace();
@@ -62,33 +92,7 @@ export default defineComponent({
                 ".seated-avatar"
             ) as SVGImageElement;
             svgElement.classList.add("svg-chair");
-            let prevParentSpaceHeight = -1;
-            const setSizes = () => {
-                const height = parentSpace.offsetHeight;
-                // only create new sizes for the SVG if the parent element's
-                // height has actually changed (or this is the first time this
-                // function is running and prevParentSpaceHeight is still set to
-                // -1)
-                if (height == prevParentSpaceHeight) {
-                    return;
-                } else {
-                    prevParentSpaceHeight = height;
-                }
-                const nativeWidth = Number(svgElement.getAttribute("width"));
-                const nativeHeight = Number(svgElement.getAttribute("height"));
-                const scaleFactor = height / nativeHeight;
-                svgElement.setAttribute(
-                    "width",
-                    String(nativeWidth * scaleFactor)
-                );
-                svgElement.setAttribute(
-                    "height",
-                    String(nativeHeight * scaleFactor)
-                );
-            };
             setSizes();
-            window.addEventListener("resize", setSizes);
-            onUnmounted(() => window.removeEventListener("resize", setSizes));
             const avatar = avatars.find((a2) => a2.path == props.avatarURL);
             const avatarURL = getOptimizedImageURL({
                 path: props.avatarURL,
