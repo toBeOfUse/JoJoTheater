@@ -40,6 +40,7 @@ export default defineComponent({
     setup(props) {
         const chairContainer = ref<null | HTMLDivElement>(null);
         let prevParentSpaceHeight = -1;
+        let prevMarkup = "";
 
         const setSizes = () => {
             const parentSpace = findParentSpace();
@@ -49,14 +50,18 @@ export default defineComponent({
             ) as SVGSVGElement;
             if (!svgElement) return;
             const height = parentSpace.offsetHeight;
-            // only create new sizes for the SVG if the parent element's
-            // height has actually changed (or this is the first time this
-            // function is running and prevParentSpaceHeight is still set to
-            // -1)
-            if (height == prevParentSpaceHeight) {
+            // only create new sizes for the SVG if the parent element's height
+            // or incoming svg file have actually changed (or this is the first
+            // time this function is running and prevParentSpaceHeight is still
+            // set to -1)
+            if (
+                height == prevParentSpaceHeight &&
+                props.chairMarkup == prevMarkup
+            ) {
                 return;
             } else {
                 prevParentSpaceHeight = height;
+                prevMarkup = props.chairMarkup;
             }
             const nativeWidth = Number(svgElement.getAttribute("width"));
             const nativeHeight = Number(svgElement.getAttribute("height"));
@@ -105,7 +110,7 @@ export default defineComponent({
             const keyboard = svgElement.querySelector(
                 ".seated-keyboard"
             ) as HTMLElement;
-            if (keyboard.tagName == "image") {
+            if (keyboard && keyboard.tagName == "image") {
                 keyboard.setAttribute("href", "/images/rooms/keyboard.png");
             }
             setChairVisuals();
@@ -130,10 +135,12 @@ export default defineComponent({
                     const keyboard = svgElement.querySelector(
                         ".seated-keyboard"
                     ) as HTMLElement;
-                    keyboard.style.opacity = props.typing ? "1" : "";
-                    keyboard.style.animationName = props.typing
-                        ? "verticalshake"
-                        : "";
+                    if (keyboard) {
+                        keyboard.style.opacity = props.typing ? "1" : "";
+                        keyboard.style.animationName = props.typing
+                            ? "verticalshake"
+                            : "";
+                    }
                 }
             }
         };
