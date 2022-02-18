@@ -247,9 +247,17 @@ export default defineComponent({
         const groups = reactive([leftGroup, rightGroup]);
 
         const activateAnimation = (className: string) => {
-            document
-                .querySelectorAll("." + className)
-                .forEach((e) => (e as any).beginElement());
+            if (svg.value) {
+                svg.value
+                    .querySelectorAll("animate." + className)
+                    .forEach((e) => (e as any).beginElement());
+            } else {
+                console.warn(
+                    "tried to activate " +
+                        className +
+                        " animations but curtains svg is not mounted"
+                );
+            }
         };
 
         const playOpenSlightly = () => {
