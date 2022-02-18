@@ -79,7 +79,7 @@
                     :state="
                         !backgroundURL
                             ? 'closed'
-                            : allowedToSwitch
+                            : users.length
                             ? 'open'
                             : 'slightlyOpen'
                     "
