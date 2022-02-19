@@ -356,6 +356,8 @@ class Theater {
                 this.sendToChat(announcement);
             }
             this.graphics.addInhabitant(member.chatInfo);
+            // just in case
+            member.subscriptions.add(Subscription.chat);
             res.status(200);
             res.end();
         } else {
@@ -370,6 +372,8 @@ class Theater {
         if (!member.chatInfo) {
             logger.warn("chat message from un-logged-in user " + member.id);
         } else if (is<SendMessageBody>(req.body)) {
+            // just in case
+            member.subscriptions.add(Subscription.chat);
             const messageText = req.body.messageText.trim();
             if (member.chatInfo && messageText) {
                 const message: ChatMessage = {
