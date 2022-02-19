@@ -60,12 +60,10 @@
             <div
                 class="image-layer"
                 id="curtain"
-                :style="
-                    curtainState == 'slightlyOpen'
-                        ? { backgroundColor: '#000f' }
-                        : { backgroundColor: '#0000' }
-                "
-                v-show="showCurtain"
+                :style="{
+                    backgroundColor: curtainState != 'open' ? '#000f' : '#0000',
+                    visibility: showCurtain ? 'visible' : 'hidden',
+                }"
             >
                 <img
                     v-if="curtainState == 'slightlyOpen'"
@@ -382,7 +380,7 @@ export default defineComponent({
         height: 80%;
         width: auto;
     }
-    transition: background-color 1s linear;
+    transition: background-color 0.5s linear;
 }
 #offToTheLeftCount {
     left: 7px;
