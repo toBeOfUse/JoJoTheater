@@ -43,11 +43,13 @@ export default defineComponent({
             type: String,
             required: true,
             validator: (prop: string) =>
-                ["closed", "slightlyOpen", "open"].includes(prop),
+                ["closed", "slightlyOpen", "open", "descended"].includes(prop),
         },
     },
     setup(props, context) {
         const svg = ref<SVGSVGElement | null>(null);
+
+        // type definitions for the variables that will describe our animated paths
         type pathD = string;
         type Spline = [number, number, number, number];
         interface Animation {
@@ -76,8 +78,10 @@ export default defineComponent({
             }
         }
 
+        // fills for our animated paths
         const bgFill = "#cd1313ff";
         const fgFill = "#7a0b0b33";
+        // data describing the states that our animated paths can be in
         const curtainBGNotSwished =
             "M -2.6867292,0.19606453 H 250.02168 C 250.38805,38.725053 252.1884,82.896666 250.16019,83.208696 250.16019,83.208696 244.8567,81.397476 241.22322,77.909486 239.81212,77.806216 236.03354,83.226286 234.51726,83.061746 232.58058,82.851586 230.39013,78.406716 227.25513,78.319856 224.83728,78.252856 222.64781,82.853316 220.84432,82.706416 218.35914,82.503996 213.5553,78.184946 211.07163,78.034236 208.62261,77.885626 205.16968,82.620246 202.81868,82.404996 198.5668,82.015706 196.89826,77.266166 192.86863,77.128356 190.83829,77.058956 187.63753,82.734776 185.74431,82.645726 184.11374,82.569026 179.2085,76.558616 177.71481,76.513766 175.44066,76.445466 169.9869,83.862576 168.12794,83.762166 163.43849,83.508856 159.58295,77.177446 158.9679,77.245766 155.34604,77.648096 154.69107,83.387306 151.64121,83.337296 148.59136,83.287296 148.61536,77.992526 145.0825,77.510196 141.54964,77.027866 137.67334,83.183286 133.74616,83.056646 129.81899,82.930006 128.01142,77.666126 124.23657,77.618206 120.46173,77.570306 117.64904,83.240086 113.93944,83.164976 110.22983,83.089876 108.88653,78.088286 104.84752,77.781586 100.80852,77.474886 95.626469,83.451026 92.105289,82.915626 88.584099,82.380216 89.270759,78.453066 86.193745,78.087996 83.116745,77.722926 80.381365,82.713856 76.319026,82.841296 72.256686,82.968736 68.496792,77.760126 63.879612,77.787486 59.262433,77.814886 54.330763,83.673666 50.717427,83.317566 47.104091,82.961466 47.827337,79.593446 44.496149,79.113926 41.164961,78.634416 36.129005,83.480056 32.409383,82.962916 28.689761,82.445786 27.664439,77.632036 24.197059,77.528546 20.729679,77.425056 18.105228,83.299926 14.707422,83.023936 11.309615,82.747936 8.5513387,75.335456 7.3717692,77.006406 6.1921989,78.677366 2.276979,84.827336 -2.5038472,84.778886 -1.091045,66.673896 -0.56149296,35.117635 -2.6867292,0.19606453 Z";
         const curtainBGOpeningSwish =
@@ -91,6 +95,8 @@ export default defineComponent({
         const curtainFGClosingSwish =
             "M 170.37602,0.32117667 C 171.92147,30.267027 165.50612,56.882987 156.9988,82.552837 158.95284,80.847887 160.71196,78.552787 162.48628,77.552467 173.52639,65.264357 178.49642,29.151827 176.37049,0.32117667 Z M 186.60736,0.32117667 C 188.13735,28.999377 180.3203,59.565147 173.21464,82.521827 175.11957,81.445587 177.75798,77.193247 179.51813,77.253417 179.60843,77.256417 179.68378,77.273717 179.76928,77.281317 186.6001,66.960987 196.12868,18.944597 192.66436,0.32117667 Z M 204.98328,0.32117667 C 206.25641,29.471137 201.31649,60.111777 191.81122,81.658317 193.79083,80.351187 196.00286,78.055017 197.72145,78.159297 197.73735,78.160297 197.75305,78.165297 197.76895,78.167297 204.55236,65.017117 213.56848,29.422607 210.91363,0.32141667 Z M 220.45343,0.32117667 C 229.29144,33.941057 213.29486,67.818217 207.13512,82.766767 207.25434,82.794967 207.37346,82.822067 207.49376,82.831867 209.18334,82.969487 211.21194,78.940787 213.44947,78.486397 221.593,65.734507 236.43749,30.291227 226.46857,0.32115667 Z M 234.72233,0.32117667 C 243.00237,31.915677 224.68963,63.381977 221.35699,83.167267 222.97556,82.928777 226.51596,77.935457 227.87287,78.034767 227.88457,78.045967 227.89327,78.055067 227.90487,78.066267 231.55222,66.891467 250.15565,32.058237 240.74518,0.32115667 Z M 33.307703,0.32116667 C 38.158776,29.970257 33.798574,54.398587 20.314432,83.071147 21.853402,82.869347 23.538262,82.044587 25.198372,81.201997 45.956611,53.515397 46.533208,17.726387 38.983843,0.32529667 L 38.574563,0.32129667 Z M 50.132513,0.32116667 C 54.098423,22.863357 48.580846,50.999487 37.124262,83.403937 37.206542,83.415937 37.279922,83.434137 37.367142,83.442737 38.744662,83.578497 40.315202,82.808427 41.985462,81.805097 57.213137,60.051987 63.401095,24.821897 55.809173,0.32533667 L 55.399893,0.32133667 Z M 93.308183,0.32116667 C 98.670702,23.961427 88.200074,67.777517 80.290117,82.919217 81.796057,82.532187 83.488707,81.455437 85.212297,80.389647 93.330924,69.299247 105.3818,23.720207 98.979673,0.32116667 Z M 114.99421,0.32116667 C 120.0119,20.364557 117.21586,68.096407 101.74049,83.131067 101.76829,83.123067 101.79599,83.114767 101.82369,83.106267 L 106.67663,79.650147 C 121.75548,77.840387 127.93768,11.507217 120.63314,0.32115667 Z M 135.43172,0.32116667 C 140.31415,25.345197 133.91321,59.161237 122.29014,82.795187 123.96581,82.123987 125.62179,80.701557 127.23816,79.504957 138.73524,70.208667 144.93437,47.306517 141.08409,0.32116667 Z M 153.38411,0.32116667 C 158.63494,15.698147 143.29564,71.567107 140.18673,82.611217 141.76449,81.083857 142.78883,77.985027 145.24533,77.434777 153.38244,74.473947 162.11543,29.288287 159.0277,0.32116667 Z M 4.0443732,0.63329667 C 8.6803211,26.572667 1.6835337,53.290487 -9.0873884,80.972047 L -8.6739784,80.696617 C -7.4055682,79.246247 -6.4606382,77.814407 -5.9785382,77.131457 -5.5962682,76.589937 -5.0460682,77.009007 -4.3641582,77.823397 L -4.1497082,77.680257 C 13.489112,53.045627 10.088833,26.468907 9.723093,0.68702667 Z M 17.577393,0.63329667 C 23.747938,23.531817 14.651593,59.508557 4.4456318,80.972047 L 9.3833218,77.680257 C 23.688648,61.077817 28.881865,27.750577 23.256113,0.68702667 Z M 70.247563,0.99915667 C 74.954216,29.839827 68.088676,61.646497 57.393837,80.748787 58.967757,81.743647 60.507677,82.676117 62.078827,82.909907 81.303975,44.943497 78.928839,21.603577 75.926293,1.0565267 Z";
 
+        // exhaustive descriptions of the animations that will morph our
+        // animated paths from one state to another
         const swishStartDuration = 0.4;
         const swishEndDuration = 0.4;
         const swishStartSpline: Spline = [0.41, 0.65, 0.74, 0.98];
@@ -182,14 +188,24 @@ export default defineComponent({
             fgFill
         );
 
-        const openSpline: Spline = [0.18, 0.29, 0.74, 0.98];
+        // function that can activate the animations described above after
+        // they're rendered into the DOM as <animate> elements
+        const activateAnimation = (className: string) => {
+            if (svg.value) {
+                svg.value
+                    .querySelectorAll("animate." + className)
+                    .forEach((e) => (e as any).beginElement());
+            } else {
+                console.warn(
+                    "tried to activate " +
+                        className +
+                        " animations but curtains svg is not mounted"
+                );
+            }
+        };
 
-        const initialLeftPos = -250;
-        const openSlightlyDuration = 0.75;
-        const openFullyDuration = 2;
-        const openSlightlyOffset = 25;
-        const openFullyOffset = 275;
-
+        // type definition for objects representing the <g> elements that will
+        // group our paths into distinct curtains and move them around
         class TranslationGroup {
             children: AnimatedPath[];
             currentPos: [number, number];
@@ -228,12 +244,31 @@ export default defineComponent({
             }
         }
 
+        // data describing the animations that will move our curtains around
+        const movementSpline: Spline = [0.18, 0.29, 0.74, 0.98];
+        const initialLeftPos = -250;
+        const openSlightlyDuration = 0.75;
+        const openFullyDuration = 2;
+        const openSlightlyOffset = 25;
+        const openFullyOffset = 275;
+        const raisedOffset = 80; // the only y-offset
+        const descendDuration = 0.5;
+
+        type CurtainPos = [number, number]; // numbers to go into translate(x, y) CSS function
+        const closedPos: CurtainPos = [initialLeftPos, 0];
+        const slightlyOpenPos: CurtainPos = [
+            initialLeftPos - openSlightlyOffset,
+            0,
+        ];
+        const fullyOpenPos: CurtainPos = [initialLeftPos - openFullyOffset, 0];
+        const raisedPos: CurtainPos = [initialLeftPos, -raisedOffset];
+
         const leftGroup = new TranslationGroup(
             [initialLeftPos, 0],
             [leftBG, leftFG],
             {},
             openSlightlyDuration,
-            openSpline
+            movementSpline
         );
 
         const rightGroup = new TranslationGroup(
@@ -241,59 +276,94 @@ export default defineComponent({
             [leftBG, leftFG],
             { transform: "scaleX(-1)" },
             openSlightlyDuration,
-            openSpline
+            movementSpline
         );
 
         const groups = reactive([leftGroup, rightGroup]);
 
-        const activateAnimation = (className: string) => {
-            if (svg.value) {
-                svg.value
-                    .querySelectorAll("animate." + className)
-                    .forEach((e) => (e as any).beginElement());
+        const applyCSSTransform = () => {
+            // https://stackoverflow.com/a/23551084
+            // ...
+            // seems to work ???
+            if (!svg.value) {
+                return;
             } else {
-                console.warn(
-                    "tried to activate " +
-                        className +
-                        " animations but curtains svg is not mounted"
-                );
+                for (const g of Array.from(svg.value.querySelectorAll("g"))) {
+                    window.getComputedStyle(g).getPropertyValue("transform");
+                }
             }
         };
 
-        const playOpenSlightly = () => {
+        // function to apply the curtain positions described above
+        const applyPos = async (
+            pos: CurtainPos,
+            transitionDuration?: number
+        ) => {
             for (const group of groups) {
-                group.transitionDuration = openSlightlyDuration;
-                group.currentPos = [initialLeftPos - openSlightlyOffset, 0];
+                group.transitionDuration = transitionDuration || 0;
+                group.currentPos = pos;
             }
+            await nextTick();
+            applyCSSTransform();
+        };
+
+        // high level functions that will animate the curtains from position to
+        // position and morph the paths swishily as necessary
+        const playOpenSlightly = async () => {
+            console.log("playing open slightly animation");
+            await applyPos(closedPos);
+            applyPos(slightlyOpenPos, openSlightlyDuration);
             activateAnimation("openswishstart");
             setTimeout(() => {
                 activateAnimation("openswishend");
             }, (openSlightlyDuration - swishEndDuration) * 1000);
         };
 
-        const playOpenFully = () => {
-            for (const group of groups) {
-                group.transitionDuration = openFullyDuration;
-                group.currentPos = [initialLeftPos - openFullyOffset, 0];
-            }
+        const playOpenFully = async () => {
+            console.log("playing open fully animation");
+            applyPos(fullyOpenPos, openFullyDuration);
             activateAnimation("openswishstart");
             setTimeout(() => {
                 context.emit("outoftheway");
+                activateAnimation("openswishend");
             }, openFullyDuration * 1000);
         };
 
         const playCloseMostly = async () => {
             context.emit("backintheway");
             await nextTick();
-            const animationDuration = openFullyDuration - openSlightlyDuration;
-            for (const group of groups) {
-                group.transitionDuration = animationDuration;
-                group.currentPos = [initialLeftPos - openSlightlyOffset, 0];
-            }
+            await applyPos(fullyOpenPos);
+            applyPos(slightlyOpenPos, openFullyDuration - openSlightlyDuration);
             activateAnimation("closeswishstart");
             setTimeout(() => {
                 activateAnimation("closeswishend");
-            }, (animationDuration - swishEndDuration / 2) * 1000);
+            }, (openSlightlyDuration - swishEndDuration / 2) * 1000);
+        };
+
+        const playCloseFully = async () => {
+            context.emit("backintheway");
+            await nextTick();
+            await applyPos(fullyOpenPos);
+            applyPos(closedPos, openFullyDuration);
+            activateAnimation("closeswishstart");
+            setTimeout(() => {
+                activateAnimation("closeswishend");
+            }, (openFullyDuration - swishEndDuration / 2) * 1000);
+        };
+
+        const playDescend = async () => {
+            context.emit("backintheway");
+            await nextTick();
+            await applyPos(raisedPos);
+            applyPos(closedPos, descendDuration);
+        };
+
+        const playAscend = async () => {
+            await applyPos(closedPos);
+            applyPos(raisedPos, descendDuration);
+            setTimeout(() => {
+                context.emit("outoftheway");
+            }, descendDuration * 1000);
         };
 
         onMounted(() => {
@@ -313,7 +383,18 @@ export default defineComponent({
                             playCloseMostly();
                         }
                     } else if (value == "open") {
-                        playOpenFully();
+                        if (oldValue == "descended") {
+                            playAscend();
+                        } else {
+                            playOpenFully();
+                        }
+                    } else if (value == "closed") {
+                        console.warn(
+                            "we're not really set up to completely re-close things"
+                        );
+                        playCloseFully();
+                    } else if (value == "descended") {
+                        playDescend();
                     }
                 }
             );

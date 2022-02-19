@@ -10,7 +10,10 @@
         }"
     >
         <div id="musical-chairs" v-if="backgroundURL && users.length">
-            <transition-group name="musical-chairs" @before-leave="beforeLeave">
+            <transition-group
+                :name="curtainState == 'open' ? 'musical-chairs' : ''"
+                @before-leave="beforeLeave"
+            >
                 <div
                     key="left-spacer"
                     class="musical-chairs-item"
@@ -58,14 +61,14 @@
                 class="image-layer"
                 id="curtain"
                 :style="
-                    fadedOut || (!users.length && !allowedToSwitch)
+                    curtainState == 'slightlyOpen'
                         ? { backgroundColor: '#000f' }
                         : { backgroundColor: '#0000' }
                 "
                 v-show="showCurtain"
             >
                 <img
-                    v-if="backgroundURL && !users.length && !allowedToSwitch"
+                    v-if="curtainState == 'slightlyOpen'"
                     src="/images/eyes.svg"
                 />
                 <Curtains
@@ -76,13 +79,7 @@
                         top: 0;
                         height: 100%;
                     "
-                    :state="
-                        !backgroundURL
-                            ? 'closed'
-                            : users.length
-                            ? 'open'
-                            : 'slightlyOpen'
-                    "
+                    :state="curtainState"
                     @outoftheway="showCurtain = false"
                     @backintheway="showCurtain = true"
                 />
@@ -146,8 +143,6 @@ export default defineComponent({
             chairSpace.value.addEventListener("scroll", updateVisibleCount);
         });
 
-        const fadedOut = ref(true);
-
         // Load and cache the SVG markup for each of the "chairs" that the Chair
         // components will display:
         interface LoadedRoomInhabitant extends RoomInhabitant {
@@ -159,29 +154,45 @@ export default defineComponent({
         const backgroundURL = ref("");
         const foregroundURL = ref<undefined | string>(undefined);
         const users = ref<LoadedRoomInhabitant[]>([]);
+        const curtainState = ref<
+            "closed" | "slightlyOpen" | "open" | "descended"
+        >("closed");
         const loadRoom = async (graphics: OutputRoom) => {
+            const startTime = Date.now();
+            if (graphics.inhabitants.length == 0) {
+                curtainState.value = "slightlyOpen";
+                return;
+            }
             if (graphics.sceneName != currentScene.value) {
-                fadedOut.value = true;
-                // wait for "curtain" to fade in to start changing and loading things
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+                if (curtainState.value == "open") {
+                    curtainState.value = "descended";
+                }
+                console.log(
+                    "scene changing! received " +
+                        graphics.inhabitants.length +
+                        " blorbos"
+                );
             }
 
-            backgroundURL.value = graphics.background;
-            foregroundURL.value = graphics.foreground;
             currentScene.value = graphics.sceneName;
 
             // wait for background and foreground to be loaded; this ensures
             // that the curtain's removal (which happens at the end of this
             // function) will wait for that too
-            // TODO: all the loading in this function should probably be done in
-            // parallel with something like Promise.all
-            await new Promise((resolve) => {
-                const bgimg = new Image();
-                bgimg.onload = resolve;
-                bgimg.src = graphics.background;
+            const bgImageLoaded = new Promise<void>((resolve) => {
+                if (backgroundURL.value == graphics.background) {
+                    resolve();
+                } else {
+                    const bgimg = new Image();
+                    bgimg.onload = () => resolve();
+                    bgimg.src = graphics.background;
+                }
             });
-            await new Promise<void>((resolve) => {
-                if (graphics.foreground) {
+            const fgImageLoaded = new Promise<void>((resolve) => {
+                if (
+                    graphics.foreground &&
+                    foregroundURL.value != graphics.foreground
+                ) {
                     const fgimg = new Image();
                     fgimg.onload = () => resolve();
                     fgimg.src = graphics.foreground;
@@ -190,26 +201,44 @@ export default defineComponent({
                 }
             });
 
-            const loaded: LoadedRoomInhabitant[] = [];
+            const inhabitantsLoaded: Promise<LoadedRoomInhabitant>[] = [];
             for (const inhabitant of graphics.inhabitants) {
-                if (!svgMarkupCache[inhabitant.chairURL]) {
-                    const markupResponse = await fetch(inhabitant.chairURL);
-                    const markup = await markupResponse.text();
-                    svgMarkupCache[inhabitant.chairURL] = markup;
-                }
-                loaded.push({
-                    ...inhabitant,
-                    svgMarkup: svgMarkupCache[inhabitant.chairURL],
-                });
+                inhabitantsLoaded.push(
+                    new Promise<LoadedRoomInhabitant>(async (resolve) => {
+                        if (!svgMarkupCache[inhabitant.chairURL]) {
+                            const markupResponse = await fetch(
+                                inhabitant.chairURL
+                            );
+                            const markup = await markupResponse.text();
+                            svgMarkupCache[inhabitant.chairURL] = markup;
+                        }
+                        resolve({
+                            ...inhabitant,
+                            svgMarkup: svgMarkupCache[inhabitant.chairURL],
+                        });
+                    })
+                );
             }
             // TODO: also await avatarURL fetching?
-            users.value = loaded;
-            await nextTick();
-            updateVisibleCount();
-            if (users.value.length) {
-                // remove "curtain" now that everything is finished loading, in case it was put in place
-                fadedOut.value = false;
-            }
+            Promise.all([bgImageLoaded, fgImageLoaded]).then(() => {
+                Promise.all(inhabitantsLoaded).then(
+                    async (loadedInhabitants) => {
+                        const timePassed = Date.now() - startTime;
+                        if (timePassed < 1000) {
+                            await new Promise((resolve) =>
+                                setTimeout(resolve, 1000 - timePassed)
+                            );
+                        }
+                        backgroundURL.value = graphics.background;
+                        foregroundURL.value = graphics.foreground;
+                        users.value = loadedInhabitants;
+                        nextTick().then(() => {
+                            curtainState.value = "open";
+                            updateVisibleCount();
+                        });
+                    }
+                );
+            });
         };
         const optImageLayerURL = (url: string) => {
             if (!url || !chairSpace.value) {
@@ -227,7 +256,9 @@ export default defineComponent({
         };
 
         // start receiving audience data from the server:
-        props.socket.on("audience_info_set", loadRoom);
+        props.socket.on("audience_info_set", (graphics: OutputRoom) => {
+            loadRoom(graphics);
+        });
         props.socket.emit("ready_for", Subscription.audience);
 
         // this function is just used to fix a weird bug with transition-group
@@ -271,7 +302,7 @@ export default defineComponent({
             backgroundURL,
             foregroundURL,
             requestSceneChange,
-            fadedOut,
+            curtainState,
             switchCoolingDown,
             allowedToSwitch,
             optImageLayerURL,
@@ -340,7 +371,6 @@ export default defineComponent({
     object-position: center;
 }
 #curtain {
-    background-color: #000f;
     display: flex;
     justify-content: center;
     align-items: center;
