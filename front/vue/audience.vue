@@ -163,7 +163,9 @@ export default defineComponent({
                 curtainState.value = "slightlyOpen";
                 return;
             }
+            let sceneChanged = false;
             if (graphics.sceneName != currentScene.value) {
+                sceneChanged = true;
                 if (curtainState.value == "open") {
                     curtainState.value = "descended";
                 }
@@ -224,7 +226,8 @@ export default defineComponent({
                 Promise.all(inhabitantsLoaded).then(
                     async (loadedInhabitants) => {
                         const timePassed = Date.now() - startTime;
-                        if (timePassed < 1000) {
+                        if (sceneChanged && timePassed < 1000) {
+                            // leave enough time for the curtain animation not to look jerky
                             await new Promise((resolve) =>
                                 setTimeout(resolve, 1000 - timePassed)
                             );
