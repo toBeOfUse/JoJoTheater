@@ -36,7 +36,7 @@
                 />
             </transition-group>
         </div>
-        <div class="image-layer">
+        <div class="image-layer" style="pointer-events: none">
             <img
                 v-if="foregroundURL"
                 :src="optImageLayerURL(foregroundURL)"
@@ -48,6 +48,7 @@
                 @change="requestSceneChange"
                 :disabled="switchCoolingDown"
                 :value="currentScene"
+                style="pointer-events: all"
             >
                 <option
                     v-for="scene in availableScenes"
