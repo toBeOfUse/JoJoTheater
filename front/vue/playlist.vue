@@ -109,6 +109,7 @@ import {
 import { defineComponent, PropType, ref, computed, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 import OptImage from "./image.vue";
+import { APIPath, endpoints } from "../../endpoints";
 
 export default defineComponent({
     props: {
@@ -249,7 +250,7 @@ export default defineComponent({
         });
 
         const addVideo = (url: string) => {
-            props.socket.emit("add_video", url);
+            endpoints[APIPath.addVideo].dispatch({ url });
             videoURL.value = "";
             placeholder.value = defaultPlaceholder;
         };
