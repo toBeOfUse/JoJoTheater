@@ -48,6 +48,9 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
             },
             body: JSON.stringify(body),
         });
+        if (!response.ok) {
+            throw response.statusText;
+        }
         const text = await response.text();
         try {
             return JSON.parse(text);

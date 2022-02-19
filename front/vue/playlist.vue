@@ -245,14 +245,15 @@ export default defineComponent({
         const defaultPlaceholder =
             "Type a Youtube, Vimeo, or Dailymotion URL...";
         const placeholder = ref(defaultPlaceholder);
-        props.socket.on("add_video_failed", () => {
-            placeholder.value = "I couldn't use that URL :(";
-        });
 
         const addVideo = (url: string) => {
-            endpoints[APIPath.addVideo].dispatch({ url });
-            videoURL.value = "";
-            placeholder.value = defaultPlaceholder;
+            if (url.trim()) {
+                endpoints[APIPath.addVideo].dispatch({ url }).catch(() => {
+                    placeholder.value = "I couldn't use that URL :(";
+                });
+                videoURL.value = "";
+                placeholder.value = defaultPlaceholder;
+            }
         };
 
         const durationToString = (duration: number) => {
