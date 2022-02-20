@@ -387,18 +387,18 @@ class Theater {
                     res.status(200);
                     res.end();
                 });
-                if (/\bhm+\b/.test(message.messageHTML)) {
-                    setTimeout(() => {
-                        const villagerMessage: ChatMessage = {
-                            isAnnouncement: false,
-                            messageHTML: "<em>hmmm...</em>",
-                            senderID: "fake-villager-user",
-                            senderName: "Minecraft Villager",
-                            senderAvatarURL: "/images/avatars/villager.jpg",
-                        };
-                        this.sendToChat(villagerMessage);
-                    }, 500);
-                }
+                // if (/\bhm+\b/.test(message.messageHTML)) {
+                //     setTimeout(() => {
+                //         const villagerMessage: ChatMessage = {
+                //             isAnnouncement: false,
+                //             messageHTML: "<em>hmmm...</em>",
+                //             senderID: "fake-villager-user",
+                //             senderName: "Minecraft Villager",
+                //             senderAvatarURL: "/images/avatars/villager.jpg",
+                //         };
+                //         this.sendToChat(villagerMessage);
+                //     }, 500);
+                // }
                 this.graphics.stopTyping(member.id);
             }
         } else {
