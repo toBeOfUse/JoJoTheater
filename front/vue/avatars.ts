@@ -9,10 +9,7 @@ const { left, right, forward } = Direction;
 class Avatar {
     filename: string;
     facing: Direction;
-    constructor(
-        filename: string,
-        facing: Direction,
-    ) {
+    constructor(filename: string, facing: Direction) {
         this.filename = filename;
         this.facing = facing;
     }
@@ -20,10 +17,7 @@ class Avatar {
         return this.filename.toLowerCase().endsWith(".png");
     }
     get path() {
-        return (
-            "/images/avatars/" +
-            this.filename
-        );
+        return "/images/avatars/" + this.filename;
     }
 }
 
@@ -41,7 +35,7 @@ const avatars = [
     new Avatar("treehouse_emoji/strongseal.jpg", right),
     new Avatar("treehouse_emoji/fear.jpg", right),
     new Avatar("treehouse_emoji/yeehaw.png", left),
-    new Avatar("treehouse_emoji/sparklewink.jpg", right),
+    new Avatar("treehouse_emoji/sparklewink.jpg", left),
     // page 2: animals in hats
     new Avatar("animals/hedgehog.jpg", forward),
     new Avatar("animals/badger.jpg", right),
