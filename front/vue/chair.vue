@@ -110,7 +110,12 @@ export default defineComponent({
             const keyboard = svgElement.querySelector(
                 ".seated-keyboard"
             ) as HTMLElement;
-            if (keyboard && keyboard.tagName == "image") {
+            if (
+                keyboard &&
+                keyboard.tagName == "image" &&
+                !keyboard.getAttribute("href")?.startsWith("data:image") &&
+                !keyboard.getAttribute("xlink:href")?.startsWith("data:image")
+            ) {
                 keyboard.setAttribute("href", "/images/rooms/keyboard.png");
             }
             setChairVisuals();
@@ -137,8 +142,11 @@ export default defineComponent({
                     ) as HTMLElement;
                     if (keyboard) {
                         keyboard.style.opacity = props.typing ? "1" : "";
+                        const animation =
+                            keyboard.getAttribute("data-animation") ??
+                            "verticalshake";
                         keyboard.style.animationName = props.typing
-                            ? "verticalshake"
+                            ? animation
                             : "";
                     }
                 }

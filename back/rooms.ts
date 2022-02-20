@@ -63,6 +63,11 @@ const propCollections: Record<string, RoomProps> = {
         background: "spacebg.jpg",
         chairs: ["spacesuit", "spacesuit2", "spacesuit3", "spacesuit4"],
     },
+    "rock 'n' roll": {
+        name: "rock 'n' roll",
+        background: "stage.jpg",
+        chairs: ["chimes", "drums", "frenchhorn", "guitar", "saxophone"],
+    },
 };
 
 interface RoomInhabitant extends ChatUserInfo {
