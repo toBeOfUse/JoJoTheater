@@ -3,20 +3,20 @@
         &lt; +{{ visibleCount.left }}
     </div>
     <div
-        id="inhabitant-space"
-        ref="inhabitantSpace"
+        id="inhabited-space"
+        ref="inhabitedSpace"
         :style="{
             backgroundImage: 'url(' + optImageLayerURL(backgroundURL) + ')',
         }"
     >
-        <div id="musical-inhabitants" v-if="backgroundURL && users.length">
+        <div id="musical-chairs" v-if="backgroundURL && users.length">
             <transition-group
-                :name="curtainState == 'open' ? 'musical-inhabitants' : ''"
+                :name="curtainState == 'open' ? 'musical-chairs' : ''"
                 @before-leave="beforeLeave"
             >
                 <div
                     key="left-spacer"
-                    class="musical-inhabitants-item"
+                    class="musical-chairs-item"
                     style="width: 100%"
                 />
                 <Inhabitant
@@ -25,13 +25,13 @@
                     :title="user.name"
                     :avatarURL="user.avatarURL"
                     :typing="user.typing"
-                    :inhabitantMarkup="user.svgMarkup"
-                    class="musical-inhabitants-item"
+                    :propsMarkup="user.svgMarkup"
+                    class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
                 />
                 <div
                     key="right-spacer"
-                    class="musical-inhabitants-item"
+                    class="musical-chairs-item"
                     style="width: 100%"
                 />
             </transition-group>
@@ -117,7 +117,7 @@ export default defineComponent({
     components: { Inhabitant, Curtains },
     setup(props) {
         // receive an array of the Inhabitant components as a template ref and track
-        // their visibility within our inhabitant-space:
+        // their visibility within our inhabited-space:
         const inhabitants = ref<typeof Inhabitant[]>([]);
         onBeforeUpdate(() => (inhabitants.value = []));
         const visibleCount = ref<{ left: number; right: number }>({
@@ -136,13 +136,10 @@ export default defineComponent({
             }
             visibleCount.value = result;
         };
-        const inhabitantSpace = ref<null | HTMLDivElement>(null);
-        watch(inhabitantSpace, () => {
-            if (!inhabitantSpace.value) return;
-            inhabitantSpace.value.addEventListener(
-                "scroll",
-                updateVisibleCount
-            );
+        const inhabitedSpace = ref<null | HTMLDivElement>(null);
+        watch(inhabitedSpace, () => {
+            if (!inhabitedSpace.value) return;
+            inhabitedSpace.value.addEventListener("scroll", updateVisibleCount);
         });
 
         // Load and cache the SVG markup for each of the "inhabitants" that the Inhabitant
@@ -246,13 +243,13 @@ export default defineComponent({
             });
         };
         const optImageLayerURL = (url: string) => {
-            if (!url || !inhabitantSpace.value) {
+            if (!url || !inhabitedSpace.value) {
                 return "";
             } else if (url.endsWith(".svg")) {
                 return url;
             } else {
                 const width =
-                    inhabitantSpace.value.offsetWidth * window.devicePixelRatio;
+                    inhabitedSpace.value.offsetWidth * window.devicePixelRatio;
                 return getOptimizedImageURL({
                     path: url,
                     width,
@@ -303,7 +300,7 @@ export default defineComponent({
             beforeLeave,
             visibleCount,
             inhabitants,
-            inhabitantSpace,
+            inhabitedSpace,
             backgroundURL,
             foregroundURL,
             requestSceneChange,
@@ -322,7 +319,7 @@ export default defineComponent({
 <style scoped lang="scss">
 @use "../scss/vars";
 
-#inhabitant-space {
+#inhabited-space {
     margin: 10px auto;
     border: 2px solid black;
     border-radius: 10px;
@@ -340,7 +337,7 @@ export default defineComponent({
     background-size: cover;
     background-position: center;
 }
-#musical-inhabitants {
+#musical-chairs {
     position: absolute;
     left: 0;
     top: 0;
@@ -403,15 +400,15 @@ export default defineComponent({
 }
 </style>
 <style lang="scss">
-.musical-inhabitants-item {
+.musical-chairs-item {
     transition: transform 0.2s, opacity 0.2s;
 }
-.musical-inhabitants-enter-from,
-.musical-inhabitants-leave-to {
+.musical-chairs-enter-from,
+.musical-chairs-leave-to {
     opacity: 0;
     transform: translateY(-30px);
 }
-.musical-inhabitants-leave-active {
+.musical-chairs-leave-active {
     position: absolute;
 }
 </style>

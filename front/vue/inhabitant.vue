@@ -36,7 +36,7 @@ export default defineComponent({
             type: Boolean,
             required: true,
         },
-        inhabitantMarkup: {
+        propsMarkup: {
             type: String,
             required: true,
         },
@@ -60,12 +60,12 @@ export default defineComponent({
             // set to -1)
             if (
                 height == prevParentSpaceHeight &&
-                props.inhabitantMarkup == prevMarkup
+                props.propsMarkup == prevMarkup
             ) {
                 return;
             } else {
                 prevParentSpaceHeight = height;
-                prevMarkup = props.inhabitantMarkup;
+                prevMarkup = props.propsMarkup;
             }
             const nativeWidth = Number(svgElement.getAttribute("width"));
             const nativeHeight = Number(svgElement.getAttribute("height"));
@@ -79,11 +79,11 @@ export default defineComponent({
         window.addEventListener("resize", setSizes);
         onUnmounted(() => window.removeEventListener("resize", setSizes));
         const initializeSVG = async () => {
-            const markup = props.inhabitantMarkup;
+            const markup = props.propsMarkup;
             const parentSpace = findParentSpace();
             if (!parentSpace) {
                 console.error(
-                    "could not find #inhabitant-space parent " +
+                    "could not find #inhabited-space parent " +
                         "while initializing inhabitant svg!"
                 );
                 return;
@@ -130,11 +130,11 @@ export default defineComponent({
                 return null;
             }
             let space: HTMLElement = inhabitantContainer.value;
-            while (space.id != "inhabitant-space" && space.parentElement) {
+            while (space.id != "inhabited-space" && space.parentElement) {
                 space = space.parentElement;
             }
             if (!space) {
-                console.error("could not find inhabitant-space element");
+                console.error("could not find inhabited-space element");
             }
             return space;
         };
@@ -161,7 +161,7 @@ export default defineComponent({
         const markup = ref("");
         onMounted(initializeSVG);
         watch(() => props.typing, setInhabitantVisuals);
-        watch(() => props.inhabitantMarkup, initializeSVG);
+        watch(() => props.propsMarkup, initializeSVG);
         // here we can see whether we are visible in the parent element,
         // scrolled offscreen within it to the left, or scrolled offscreen
         // within it to the right; this property is for the consumption of the
@@ -217,7 +217,7 @@ export default defineComponent({
         background-color: white;
     }
     .seated-keyboard {
-        // animation-name: verticalshake is applied in setInhabitantVisuals()
+        // animation-name is set according to svg data in setInhabitantVisuals
         animation-duration: 0.25s;
         animation-iteration-count: infinite;
         animation-direction: alternate;
