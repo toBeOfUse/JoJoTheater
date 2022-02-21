@@ -81,6 +81,7 @@ interface OutputScene {
     foreground?: string;
     sceneName: string;
     inhabitants: SceneInhabitant[];
+    multipleProps: boolean;
 }
 
 class SceneController extends EventEmitter {
@@ -137,6 +138,7 @@ class SceneController extends EventEmitter {
             background: this.background,
             foreground: this.foreground,
             inhabitants: this.inhabitants,
+            multipleProps: this.scene.props.length > 1,
         };
     }
     getNewPropsURL() {

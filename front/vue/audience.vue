@@ -141,8 +141,6 @@ export default defineComponent({
                 overflowing.value =
                     inhabitedSpace.value.scrollWidth >
                     inhabitedSpace.value.clientWidth;
-                console.log(inhabitedSpace.value.scrollWidth);
-                console.log(inhabitedSpace.value.offsetWidth);
             }
         };
         const inhabitedSpace = ref<null | HTMLDivElement>(null);
@@ -165,12 +163,14 @@ export default defineComponent({
         const curtainState = ref<
             "closed" | "slightlyOpen" | "open" | "descended"
         >("closed");
+        const multipleProps = ref(false);
         const loadScene = async (graphics: OutputScene) => {
             const startTime = Date.now();
             if (graphics.inhabitants.length == 0) {
                 curtainState.value = "slightlyOpen";
                 return;
             }
+            multipleProps.value = graphics.multipleProps;
             let sceneChanged = false;
             if (graphics.sceneName != currentScene.value) {
                 sceneChanged = true;
@@ -326,6 +326,7 @@ export default defineComponent({
             overflowing,
             updateVisibleCount,
             updateScrollbarComp,
+            multipleProps,
         };
     },
 });
