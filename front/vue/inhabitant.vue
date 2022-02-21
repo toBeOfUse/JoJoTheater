@@ -120,8 +120,8 @@ export default defineComponent({
                 !keyboard.getAttribute("href")?.startsWith("data:image") &&
                 !keyboard.getAttribute("xlink:href")?.startsWith("data:image")
             ) {
-                keyboard.setAttribute("href", "/images/scenes/keyboard.png");
                 keyboard.removeAttribute("xlink:href");
+                keyboard.setAttribute("href", "/images/scenes/keyboard.png");
             }
             setInhabitantVisuals();
         };
