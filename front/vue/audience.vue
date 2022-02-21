@@ -32,6 +32,7 @@
                     :isSelf="user.id == ownID"
                     class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
+                    :morePosesAvailable="multipleProps"
                 />
             </transition-group>
         </div>

@@ -1,7 +1,21 @@
 <template>
-    <div class="inhabitant-container" ref="inhabitantContainer">
+    <div
+        class="inhabitant-container"
+        ref="inhabitantContainer"
+        @click="menuOpen = false"
+        @mouseleave="menuOpen = false"
+        :style="menuOpen ? { backgroundImage: backgroundGlow } : {}"
+    >
         <div v-html="finalMarkup" />
-        <div v-if="isSelf" id="menu-button">🌟</div>
+        <div v-if="isSelf" id="menu-container">
+            <span @click.stop="menuOpen = !menuOpen">🌟</span>
+            <div id="menu" v-if="menuOpen" @click.stop>
+                That's you!
+                <button v-if="morePosesAvailable" @click="requestNewPose">
+                    Change Pose
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -22,7 +36,7 @@ import {
     ref,
     watch,
 } from "vue";
-import { getOptimizedImageURL } from "../../endpoints";
+import { getOptimizedImageURL, endpoints } from "../../endpoints";
 import { avatars, Direction } from "./avatars";
 
 export default defineComponent({
@@ -40,6 +54,10 @@ export default defineComponent({
             required: true,
         },
         isSelf: {
+            type: Boolean,
+            required: true,
+        },
+        morePosesAvailable: {
             type: Boolean,
             required: true,
         },
@@ -205,12 +223,36 @@ export default defineComponent({
                 }
             }
         };
-        return { inhabitantContainer, placement, finalMarkup };
+
+        const menuOpen = ref(false);
+        // const backgroundGlow =
+        //     "radial-gradient(ellipse closest-side, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%)";
+        const backgroundGlow = `linear-gradient(90deg, 
+            rgba(255,255,255,0) 0%,
+            rgba(255,255,255,0.25) 15%, 
+            rgba(255,255,255,0.5) 50%,
+            rgba(255,255,255,0.25) 85%,
+            rgba(255,255,255,0) 100%
+        )`.replace(/\n/g, " ");
+        const requestNewPose = () => {
+            endpoints["/scene/propSwitch"].dispatch({});
+        };
+
+        return {
+            inhabitantContainer,
+            placement,
+            finalMarkup,
+            menuOpen,
+            backgroundGlow,
+            requestNewPose,
+        };
     },
 });
 </script>
 
 <style lang="scss">
+@use "../scss/vars";
+
 @keyframes verticalshake {
     0% {
         transform: translateY(-3px);
@@ -224,8 +266,10 @@ export default defineComponent({
 }
 .inhabitant-container {
     position: relative;
-    margin: 0 5px;
+    margin: 0 -15px;
     height: 100%;
+    background-size: contain;
+    padding: 0 20px;
 }
 .svg-inhabitant {
     overflow: visible;
@@ -242,15 +286,30 @@ export default defineComponent({
         opacity: 0;
     }
 }
-#menu-button {
+#menu-container {
     position: absolute;
-    right: -10px;
-    bottom: 5px;
+    left: 70%;
+    bottom: 5%;
     cursor: pointer;
     opacity: 0.6;
     z-index: 3;
     &:hover {
         opacity: 1;
+    }
+    display: flex;
+    align-items: flex-end;
+}
+#menu {
+    cursor: default;
+    margin-left: 5px;
+    background-color: white;
+    padding: 5px;
+    width: 100px;
+    font-family: vars.$pilot-font;
+    font-size: 0.8em;
+    border-radius: 3px;
+    & button {
+        margin: 3px 0;
     }
 }
 </style>
