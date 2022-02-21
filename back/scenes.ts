@@ -73,7 +73,7 @@ const scenes: Record<string, Scene> = {
 interface SceneInhabitant extends ChatUserInfo {
     typing: boolean;
     lastTypingTimestamp: number;
-    inhabitantURL: string;
+    propsURL: string;
 }
 
 interface OutputScene {
@@ -139,7 +139,7 @@ class SceneController extends EventEmitter {
             inhabitants: this.inhabitants,
         };
     }
-    getNewInhabitantURL() {
+    getNewPropsURL() {
         const filename = this.propsSequence[this.usedProps];
         this.usedProps++;
         if (this.usedProps >= this.propsSequence.length) {
@@ -172,7 +172,7 @@ class SceneController extends EventEmitter {
         const newScene = new SceneController(scenes[to]);
         newScene._inhabitants = oldScene._inhabitants.map((i) => ({
             ...i,
-            inhabitantURL: newScene.getNewInhabitantURL(),
+            propsURL: newScene.getNewPropsURL(),
         }));
         return newScene;
     }
@@ -182,7 +182,7 @@ class SceneController extends EventEmitter {
                 ...inhabitant,
                 typing: false,
                 lastTypingTimestamp: -1,
-                inhabitantURL: this.getNewInhabitantURL(),
+                propsURL: this.getNewPropsURL(),
             },
         ].concat(this._inhabitants);
         this.emit("change");

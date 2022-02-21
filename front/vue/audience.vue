@@ -215,16 +215,16 @@ export default defineComponent({
             for (const inhabitant of graphics.inhabitants) {
                 inhabitantsLoaded.push(
                     new Promise<LoadedSceneInhabitant>(async (resolve) => {
-                        if (!svgMarkupCache[inhabitant.inhabitantURL]) {
+                        if (!svgMarkupCache[inhabitant.propsURL]) {
                             const markupResponse = await fetch(
-                                inhabitant.inhabitantURL
+                                inhabitant.propsURL
                             );
                             const markup = await markupResponse.text();
-                            svgMarkupCache[inhabitant.inhabitantURL] = markup;
+                            svgMarkupCache[inhabitant.propsURL] = markup;
                         }
                         resolve({
                             ...inhabitant,
-                            svgMarkup: svgMarkupCache[inhabitant.inhabitantURL],
+                            svgMarkup: svgMarkupCache[inhabitant.propsURL],
                         });
                     })
                 );
