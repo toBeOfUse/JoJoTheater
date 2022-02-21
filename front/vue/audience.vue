@@ -9,16 +9,19 @@
             backgroundImage: 'url(' + optImageLayerURL(backgroundURL) + ')',
         }"
     >
-        <div id="musical-chairs" v-if="backgroundURL && users.length">
+        <div
+            id="musical-chairs"
+            v-if="backgroundURL && users.length"
+            :style="{ justifyContent: overflowing ? 'start' : 'center' }"
+        >
             <transition-group
                 :name="curtainState == 'open' ? 'musical-chairs' : ''"
                 @before-leave="beforeLeave"
+                @after-leave="
+                    updateVisibleCount();
+                    updateScrollbarComp();
+                "
             >
-                <div
-                    key="left-spacer"
-                    class="musical-chairs-item"
-                    style="width: 100%"
-                />
                 <Inhabitant
                     v-for="user in users"
                     :key="user.id"
@@ -26,13 +29,9 @@
                     :avatarURL="user.avatarURL"
                     :typing="user.typing"
                     :propsMarkup="user.svgMarkup"
+                    :isSelf="user.id == ownID"
                     class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
-                />
-                <div
-                    key="right-spacer"
-                    class="musical-chairs-item"
-                    style="width: 100%"
                 />
             </transition-group>
         </div>
@@ -58,32 +57,28 @@
                     {{ scene.charAt(0).toUpperCase() + scene.slice(1) }}
                 </option>
             </select>
-            <div
-                class="image-layer"
-                id="curtain"
-                :style="{
-                    backgroundColor: curtainState != 'open' ? '#000f' : '#0000',
-                    visibility: showCurtain ? 'visible' : 'hidden',
-                }"
-            >
-                <img
-                    v-if="curtainState == 'slightlyOpen'"
-                    src="/images/eyes.svg"
-                />
-                <Curtains
-                    style="
-                        position: absolute;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        top: 0;
-                        height: 100%;
-                    "
-                    :state="curtainState"
-                    @outoftheway="showCurtain = false"
-                    @backintheway="showCurtain = true"
-                />
-            </div>
         </div>
+    </div>
+    <div
+        id="curtain"
+        :style="{
+            backgroundColor: curtainState != 'open' ? '#000f' : '#0000',
+            visibility: showCurtain ? 'visible' : 'hidden',
+        }"
+    >
+        <img v-if="curtainState == 'slightlyOpen'" src="/images/eyes.svg" />
+        <Curtains
+            style="
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                top: 0;
+                height: 100%;
+            "
+            :state="curtainState"
+            @outoftheway="showCurtain = false"
+            @backintheway="showCurtain = true"
+        />
     </div>
     <div class="counter" id="offToTheRightCount" v-if="visibleCount.right">
         +{{ visibleCount.right }} &gt;
@@ -135,6 +130,20 @@ export default defineComponent({
                 }
             }
             visibleCount.value = result;
+        };
+        const scrollBarHeight = ref(0);
+        const overflowing = ref(false);
+        const updateScrollbarComp = () => {
+            if (inhabitedSpace.value) {
+                scrollBarHeight.value =
+                    inhabitedSpace.value.offsetHeight -
+                    inhabitedSpace.value.clientHeight;
+                overflowing.value =
+                    inhabitedSpace.value.scrollWidth >
+                    inhabitedSpace.value.clientWidth;
+                console.log(inhabitedSpace.value.scrollWidth);
+                console.log(inhabitedSpace.value.offsetWidth);
+            }
         };
         const inhabitedSpace = ref<null | HTMLDivElement>(null);
         watch(inhabitedSpace, () => {
@@ -237,6 +246,7 @@ export default defineComponent({
                         nextTick().then(() => {
                             curtainState.value = "open";
                             updateVisibleCount();
+                            updateScrollbarComp();
                         });
                     }
                 );
@@ -311,6 +321,11 @@ export default defineComponent({
             availableScenes,
             currentScene,
             showCurtain,
+            ownID: props.socket.id,
+            scrollBarHeight,
+            overflowing,
+            updateVisibleCount,
+            updateScrollbarComp,
         };
     },
 });
@@ -327,11 +342,11 @@ export default defineComponent({
     position: relative;
     overflow-x: auto;
     overflow-y: hidden;
-    height: 25vh;
+    height: calc(25vh + v-bind("scrollBarHeight+'px'"));
     // max 5:1 aspect ratio to avoid stretching art assets
     max-width: 25vh * 5;
     @media (max-width: 450px) {
-        height: 80px;
+        height: calc(80px + v-bind("scrollBarHeight+'px'"));
         max-width: 80px * 5;
     }
     background-size: cover;
@@ -345,7 +360,6 @@ export default defineComponent({
     width: 100%;
     display: flex;
     flex-direction: row;
-    justify-content: start;
 }
 .counter {
     position: absolute;
@@ -382,6 +396,14 @@ export default defineComponent({
         width: auto;
     }
     transition: background-color 0.5s linear;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    border: 2px solid black;
+    border-radius: 10px;
+    z-index: 5;
 }
 #offToTheLeftCount {
     left: 7px;
