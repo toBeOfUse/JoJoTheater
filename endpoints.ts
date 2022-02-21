@@ -12,6 +12,7 @@ enum APIPath {
     getMessages = "/get/messages",
     getScenes = "/get/scenes",
     optimizedImage = "/imgopt",
+    switchProps = "/scene/propSwitch",
 }
 
 interface PostBody {}
@@ -126,6 +127,7 @@ const endpoints: Record<APIPath, Endpoint<PostBody>> = {
         APIPath.optimizedImage,
         false
     ),
+    [APIPath.switchProps]: new PostEndpoint<{}>(APIPath.switchProps, true),
 };
 
 /**

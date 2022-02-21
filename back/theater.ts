@@ -291,6 +291,7 @@ class Theater {
             [APIPath.getMessages]: this.getMessages,
             [APIPath.getStats]: this.getStats,
             [APIPath.getScenes]: this.getScenes,
+            [APIPath.switchProps]: this.newProps,
         };
     }
 
@@ -459,6 +460,12 @@ class Theater {
             res.status(400);
             res.end();
         }
+    }
+
+    newProps(_req: Request, res: Response, member: AudienceMember) {
+        this.graphics.changeInhabitantProps(member.id);
+        res.status(200);
+        res.end();
     }
 
     logOut(_req: Request, res: Response, member: AudienceMember) {

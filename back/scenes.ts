@@ -189,6 +189,13 @@ class SceneController extends EventEmitter {
         ].concat(this._inhabitants);
         this.emit("change");
     }
+    changeInhabitantProps(userID: string) {
+        const user = this._inhabitants.find((i) => i.id == userID);
+        if (user) {
+            user.propsURL = this.getNewPropsURL();
+            this.emit("change");
+        }
+    }
     removeInhabitant(userID: string) {
         this._inhabitants = this._inhabitants.filter((i) => i.id != userID);
         this.emit("change");
