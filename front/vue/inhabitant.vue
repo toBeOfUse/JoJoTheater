@@ -1,9 +1,7 @@
 <template>
-    <div
-        class="inhabitant-container"
-        ref="inhabitantContainer"
-        v-html="markup"
-    ></div>
+    <div class="inhabitant-container" ref="inhabitantContainer">
+        <div v-html="finalMarkup" />
+    </div>
 </template>
 
 <script lang="ts">
@@ -44,16 +42,23 @@ export default defineComponent({
     setup(props) {
         const inhabitantContainer = ref<null | HTMLDivElement>(null);
         let prevParentSpaceHeight = -1;
+        const finalMarkup = ref("");
         let prevMarkup = "";
 
-        const setSizes = () => {
-            const parentSpace = findParentSpace();
-            if (!parentSpace || !inhabitantContainer.value) return;
-            const svgElement = inhabitantContainer.value.querySelector(
+        const setSizes = (svgElement?: SVGSVGElement) => {
+            if (!svgElement) {
+                if (inhabitantContainer.value) {
+                    svgElement = inhabitantContainer.value.querySelector(
                 "svg"
             ) as SVGSVGElement;
             if (!svgElement) return;
-            const height = parentSpace.offsetHeight;
+                } else {
+                    return;
+                }
+            }
+            const parentSpace = findParentSpace();
+            if (!parentSpace || !inhabitantContainer.value) return;
+            const height = parentSpace.clientHeight;
             // only create new sizes for the SVG if the parent element's height
             // or incoming svg file have actually changed (or this is the first
             // time this function is running and prevParentSpaceHeight is still
@@ -76,8 +81,10 @@ export default defineComponent({
                 String(nativeHeight * scaleFactor)
             );
         };
-        window.addEventListener("resize", setSizes);
-        onUnmounted(() => window.removeEventListener("resize", setSizes));
+        window.addEventListener("resize", () => setSizes());
+        onUnmounted(() =>
+            window.removeEventListener("resize", () => setSizes())
+        );
         const initializeSVG = async () => {
             const markup = props.propsMarkup;
             const parentSpace = findParentSpace();
@@ -92,16 +99,21 @@ export default defineComponent({
                 console.error("premature inhabitant svg initialization!");
                 return;
             }
-            inhabitantContainer.value.innerHTML = markup;
-            await nextTick();
-            const svgElement = inhabitantContainer.value.querySelector(
+            const placeholder = document.createElement("div");
+            placeholder.insertAdjacentHTML("afterbegin", markup);
+            const svgElement = placeholder.querySelector(
                 "svg"
             ) as SVGSVGElement;
-            const avatarImage = svgElement.querySelector(
+            svgElement.classList.add("svg-inhabitant");
+            setSizes(svgElement);
+            finalMarkup.value = placeholder.innerHTML;
+            // await next tick so when the avatar is measured to get the width
+            // for the image, below, it can draw on its actual size in the
+            // document
+            await nextTick();
+            const avatarImage = inhabitantContainer.value.querySelector(
                 ".seated-avatar"
             ) as SVGImageElement;
-            svgElement.classList.add("svg-inhabitant");
-            setSizes();
             const avatar = avatars.find((a2) => a2.path == props.avatarURL);
             const avatarURL = getOptimizedImageURL({
                 path: props.avatarURL,
@@ -158,7 +170,6 @@ export default defineComponent({
                 }
             }
         };
-        const markup = ref("");
         onMounted(initializeSVG);
         watch(() => props.typing, setInhabitantVisuals);
         watch(() => props.propsMarkup, initializeSVG);
@@ -189,7 +200,7 @@ export default defineComponent({
                 }
             }
         };
-        return { inhabitantContainer, placement, markup };
+        return { inhabitantContainer, placement, finalMarkup };
     },
 });
 </script>
