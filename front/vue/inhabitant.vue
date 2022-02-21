@@ -1,6 +1,7 @@
 <template>
     <div class="inhabitant-container" ref="inhabitantContainer">
         <div v-html="finalMarkup" />
+        <div v-if="isSelf" id="menu-button">🌟</div>
     </div>
 </template>
 
@@ -38,6 +39,10 @@ export default defineComponent({
             type: String,
             required: true,
         },
+        isSelf: {
+            type: Boolean,
+            required: true,
+        },
     },
     setup(props) {
         const inhabitantContainer = ref<null | HTMLDivElement>(null);
@@ -49,9 +54,9 @@ export default defineComponent({
             if (!svgElement) {
                 if (inhabitantContainer.value) {
                     svgElement = inhabitantContainer.value.querySelector(
-                "svg"
-            ) as SVGSVGElement;
-            if (!svgElement) return;
+                        "svg"
+                    ) as SVGSVGElement;
+                    if (!svgElement) return;
                 } else {
                     return;
                 }
@@ -235,6 +240,17 @@ export default defineComponent({
         animation-timing-function: linear;
         transition: opacity 0.1s linear;
         opacity: 0;
+    }
+}
+#menu-button {
+    position: absolute;
+    right: -10px;
+    bottom: 5px;
+    cursor: pointer;
+    opacity: 0.6;
+    z-index: 3;
+    &:hover {
+        opacity: 1;
     }
 }
 </style>
