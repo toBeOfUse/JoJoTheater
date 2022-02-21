@@ -158,7 +158,7 @@ export default defineComponent({
                 keyboard.removeAttribute("xlink:href");
                 keyboard.setAttribute("href", "/images/scenes/keyboard.png");
             }
-            setInhabitantVisuals();
+            updateTypingIndicator();
         };
         const findParentSpace = (): null | HTMLElement => {
             if (!inhabitantContainer.value) {
@@ -173,7 +173,7 @@ export default defineComponent({
             }
             return space;
         };
-        const setInhabitantVisuals = () => {
+        const updateTypingIndicator = () => {
             if (inhabitantContainer.value) {
                 const svgElement =
                     inhabitantContainer.value.querySelector("svg");
@@ -194,7 +194,7 @@ export default defineComponent({
             }
         };
         onMounted(initializeSVG);
-        watch(() => props.typing, setInhabitantVisuals);
+        watch(() => props.typing, updateTypingIndicator);
         watch(() => props.propsMarkup, initializeSVG);
         // here we can see whether we are visible in the parent element,
         // scrolled offscreen within it to the left, or scrolled offscreen
@@ -277,7 +277,7 @@ export default defineComponent({
         background-color: white;
     }
     .seated-keyboard {
-        // animation-name is set according to svg data in setInhabitantVisuals
+        // animation-name is set according to svg data in updateTypingIndicator
         animation-duration: 0.25s;
         animation-iteration-count: infinite;
         animation-direction: alternate;
