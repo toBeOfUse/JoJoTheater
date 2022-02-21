@@ -1,6 +1,6 @@
 # MitchBot Streams
 
-MitchBot Streams is a useful platform for watching different kinds of videos in sync with a group of people that spun off from my Discord bot MitchBot as a simple service for a Discord server I was in. In addition to synchronizing multiple clients as they watch a Youtube, Vimeo, Dailymotion, or native HTML5 video that is either user-submitted or from a built-in playlist, MitchBot Streams provides social features such as a chat client and an elegant visualization of the virtual room you are watching the video in.
+MitchBot Streams is a useful platform for watching different kinds of videos in sync with a group of people that spun off from my Discord bot MitchBot as a simple service for a Discord server I was in. In addition to synchronizing multiple clients as they watch a Youtube, Vimeo, Dailymotion, or native HTML5 video that is either user-submitted or from a built-in playlist, MitchBot Streams provides social features such as a chat client and an elegant visualization of the virtual scene you are watching the video in.
 
 ## How to Use
 

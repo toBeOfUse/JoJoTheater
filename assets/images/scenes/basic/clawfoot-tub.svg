@@ -94,7 +94,7 @@
     <path style="fill:none;stroke:#898989;stroke-width:1.62346649;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" d="M12.51 182.046s-1.494.444.048.68c1.544.237 4.228.223 11.54.474 7.236.248 41.978.624 60.52.891 18.537.267 72.013-1.068 97.95-4.099 25.935-3.03 58.795-8.057 74.33-10.012 15.534-1.953 35.072-6.963 44.557-9.359 9.484-2.394 22.207-6.19 22.207-6.19s4.57-1.562 3.292-2.059" id="clawfoot-tub_vue_svg__path147"/>
     <g transform="translate(-77.572 106.58)" clip-path="url(#clawfoot-tub_vue_svg__clipPath971)" id="clawfoot-tub_vue_svg__g153">
         <circle style="fill:#fff;stroke:#1a191e;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4" cx="287.148" cy="35.498" r="53.173" id="clawfoot-tub_vue_svg__circle149"/>
-        <image transform="translate(660.957 194.605) scale(.60721)" clip-path="url(#clawfoot-tub_vue_svg__id-31o)" width="179.261" height="179.261" preserveAspectRatio="none" xlink:href="placeholder.png" x="-705.249" y="-351.662" id="clawfoot-tub_vue_svg__image151" class="seated-avatar" />
+        <image transform="translate(660.957 194.605) scale(.60721)" clip-path="url(#clawfoot-tub_vue_svg__id-31o)" width="179.261" height="179.261" preserveAspectRatio="none" xlink:href="" x="-705.249" y="-351.662" id="clawfoot-tub_vue_svg__image151" class="seated-avatar" />
     </g>
-    <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="keyboard.png" id="clawfoot-tub_vue_svg__keyboard" x="117.415" y="160.599"/>
+    <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="" id="clawfoot-tub_vue_svg__keyboard" x="117.415" y="160.599"/>
 </svg>

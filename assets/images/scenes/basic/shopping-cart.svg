@@ -373,7 +373,7 @@
         <path style="fill:none;stroke:#999;stroke-width:10;stroke-linecap:round" d="m601.878 514.079-314.483 79.944c-17.602 6.656-31.657 8.483-47.088 4.783l-186.579-39.87c-4.077-2.192-3.451-3.506-3.351-4.958" id="shopping-cart_vue_svg__path512"/>
         <path style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;filter:url(#shopping-cart_vue_svg__id-113aq)" transform="matrix(.99917 .00526 .04072 1.00104 -1133.389 -21.172)" d="m1715.282 525.672-318.067 81.534c-17.891 6.742-32.036 8.642-47.332 5.026l-185.15-38.856c-3.926-.817-5.215-3.944-1.977-6.49.308-.242 2.074-1.317 2.465-1.546" id="shopping-cart_vue_svg__path514"/>
         <circle r="205.989" cy="326.209" cx="-337.849" style="fill:#fff;stroke:#1a191e;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" transform="scale(-1 1)" id="shopping-cart_vue_svg__circle516"/>
-        <image class="seated-avatar" transform="matrix(-2.35231 0 0 2.35231 -1110.277 942.587)" clip-path="url(#shopping-cart_vue_svg__id-129aG)" width="179.261" height="179.261" preserveAspectRatio="none" xlink:href="placeholder.png" x="-705.249" y="-351.662" style="fill:none" id="shopping-cart_vue_svg__image518"/>
+        <image class="seated-avatar" transform="matrix(-2.35231 0 0 2.35231 -1110.277 942.587)" clip-path="url(#shopping-cart_vue_svg__id-129aG)" width="179.261" height="179.261" preserveAspectRatio="none" xlink:href="" x="-705.249" y="-351.662" style="fill:none" id="shopping-cart_vue_svg__image518"/>
         <path style="fill:none;stroke:#999;stroke-width:10;stroke-linecap:round" d="M648.842 274.6 281.55 423.119c-19.448 8.073-34.601 10.997-50.62 8.443L26.668 395.15c-6.787-1.462-1.307-7.372 7.337-11.202" id="shopping-cart_vue_svg__path520"/>
         <path style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;filter:url(#shopping-cart_vue_svg__id-112ap)" transform="matrix(.99917 .00526 .04072 1.00104 -1178.874 6.192)" d="m1818.695 258.564-373.724 150.328c-19.797 8.169-35.085 11.17-51.017 8.702l-202.992-35.305c-6.735-1.425-.235-8.132 11.666-13.293" id="shopping-cart_vue_svg__path522"/>
         <path style="fill:none;stroke:#999;stroke-width:10;stroke-linecap:round" d="M624.054 401.117 287.5 520.663c-17.601 6.656-31.657 8.482-47.088 4.783L42.415 480.724c-3.474-1.703-4.39-3.542-3.97-5.194" id="shopping-cart_vue_svg__path524"/>
@@ -412,6 +412,6 @@
         </g>
     </g>
     <g transform="rotate(3.686)">
-        <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="keyboard.png" id="shopping-cart_vue_svg__keyboard" x="27.939" y="172.103"/>
+        <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="" id="shopping-cart_vue_svg__keyboard" x="27.939" y="172.103"/>
     </g>
 </svg>

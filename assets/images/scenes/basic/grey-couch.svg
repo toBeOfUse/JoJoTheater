@@ -219,9 +219,9 @@
     </g>
     <g transform="translate(274.615 125.518)" id="grey-couch_vue_svg__g320">
         <circle style="fill:#fff;stroke:#1a191e;stroke-width:3;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none" r="53.173" cy="24.984" cx="-91.512" id="grey-couch_vue_svg__circle316"/>
-        <image class="seated-avatar" y="-351.662" x="-705.249" xlink:href="placeholder.png" preserveAspectRatio="none" height="179.261" width="179.261" clip-path="url(#grey-couch_vue_svg__id-44j)" transform="translate(282.298 184.092) scale(.60721)" id="grey-couch_vue_svg__image318"/>
+        <image class="seated-avatar" y="-351.662" x="-705.249" xlink:href="" preserveAspectRatio="none" height="179.261" width="179.261" clip-path="url(#grey-couch_vue_svg__id-44j)" transform="translate(282.298 184.092) scale(.60721)" id="grey-couch_vue_svg__image318"/>
     </g>
     <g transform="rotate(-15.465)">
-        <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="keyboard.png" id="grey-couch_vue_svg__keyboard" x="52.295" y="215.965"/>
+        <image class="seated-keyboard" width="209.85" height="46.167" preserveAspectRatio="none" xlink:href="" id="grey-couch_vue_svg__keyboard" x="52.295" y="215.965"/>
     </g>
 </svg>

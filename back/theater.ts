@@ -26,7 +26,7 @@ import {
 } from "../types";
 import logger from "./logger";
 import { password } from "./secrets";
-import { propCollections, RoomController } from "./rooms";
+import { scenes, SceneController } from "./scenes";
 import {
     AddVideoBody,
     APIPath,
@@ -209,7 +209,7 @@ type APIHandler =
 class Theater {
     audience: AudienceMember[] = [];
     playlist: Playlist;
-    graphics: RoomController;
+    graphics: SceneController;
     apiHandlers: Partial<Record<APIPath, APIHandler>>;
 
     _baseState: PlayerState = {
@@ -251,10 +251,10 @@ class Theater {
     constructor(
         io: SocketServer,
         playlist: Playlist,
-        graphics: RoomController
+        graphics: SceneController
     ) {
         this.graphics = graphics;
-        // this will propogate all changes in our RoomController object to the
+        // this will propogate all changes in our SceneController object to the
         // front-end:
         this.graphics.on("change", () => {
             this.emitAll("audience_info_set", this.graphics.outputGraphics);
@@ -439,9 +439,9 @@ class Theater {
     changeScene(req: Request, res: Response, member: AudienceMember) {
         if (
             is<ChangeSceneBody>(req.body) &&
-            RoomController.scenes.includes(req.body.newScene)
+            SceneController.scenes.includes(req.body.newScene)
         ) {
-            this.graphics = RoomController.switchedProps(
+            this.graphics = SceneController.switchedProps(
                 this.graphics,
                 req.body.newScene
             );
@@ -493,7 +493,7 @@ class Theater {
     getScenes(_req: Request, res: Response) {
         res.status(200);
         res.json({
-            scenes: RoomController.scenes,
+            scenes: SceneController.scenes,
             currentScene: this.graphics.currentScene,
         });
         res.end();
@@ -760,7 +760,7 @@ class Theater {
 
 export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
-    const graphics = new RoomController(propCollections.lilypads);
+    const graphics = new SceneController(scenes.lilypads);
 
     // for (let i = 0; i < 10; i++) {
     //     graphics.addInhabitant({

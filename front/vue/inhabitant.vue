@@ -1,14 +1,18 @@
 <template>
-    <div class="chair-container" ref="chairContainer" v-html="markup"></div>
+    <div
+        class="inhabitant-container"
+        ref="inhabitantContainer"
+        v-html="markup"
+    ></div>
 </template>
 
 <script lang="ts">
 /**
  * I will admit, this component is kind of rough. Instead of making dedicated
- * Vue template files for each "chair" that can be displayed, this component
- * receives the source of the SVG for the "chair" as a prop, places it within
- * the root element, and then modifies it imperatively based on the other
- * props.
+ * Vue template files for each inhabitant type that can be displayed, this
+ * component receives the source of the SVG for the "inhabitant" as a prop,
+ * places it within the root element, and then modifies it imperatively based on
+ * the other props.
  */
 
 import {
@@ -32,20 +36,20 @@ export default defineComponent({
             type: Boolean,
             required: true,
         },
-        chairMarkup: {
+        inhabitantMarkup: {
             type: String,
             required: true,
         },
     },
     setup(props) {
-        const chairContainer = ref<null | HTMLDivElement>(null);
+        const inhabitantContainer = ref<null | HTMLDivElement>(null);
         let prevParentSpaceHeight = -1;
         let prevMarkup = "";
 
         const setSizes = () => {
             const parentSpace = findParentSpace();
-            if (!parentSpace || !chairContainer.value) return;
-            const svgElement = chairContainer.value.querySelector(
+            if (!parentSpace || !inhabitantContainer.value) return;
+            const svgElement = inhabitantContainer.value.querySelector(
                 "svg"
             ) as SVGSVGElement;
             if (!svgElement) return;
@@ -56,12 +60,12 @@ export default defineComponent({
             // set to -1)
             if (
                 height == prevParentSpaceHeight &&
-                props.chairMarkup == prevMarkup
+                props.inhabitantMarkup == prevMarkup
             ) {
                 return;
             } else {
                 prevParentSpaceHeight = height;
-                prevMarkup = props.chairMarkup;
+                prevMarkup = props.inhabitantMarkup;
             }
             const nativeWidth = Number(svgElement.getAttribute("width"));
             const nativeHeight = Number(svgElement.getAttribute("height"));
@@ -75,28 +79,28 @@ export default defineComponent({
         window.addEventListener("resize", setSizes);
         onUnmounted(() => window.removeEventListener("resize", setSizes));
         const initializeSVG = async () => {
-            const markup = props.chairMarkup;
+            const markup = props.inhabitantMarkup;
             const parentSpace = findParentSpace();
             if (!parentSpace) {
                 console.error(
-                    "could not find #chair-space parent " +
-                        "while initializing chair svg!"
+                    "could not find #inhabitant-space parent " +
+                        "while initializing inhabitant svg!"
                 );
                 return;
             }
-            if (!chairContainer.value) {
-                console.error("premature chair svg initialization!");
+            if (!inhabitantContainer.value) {
+                console.error("premature inhabitant svg initialization!");
                 return;
             }
-            chairContainer.value.innerHTML = markup;
+            inhabitantContainer.value.innerHTML = markup;
             await nextTick();
-            const svgElement = chairContainer.value.querySelector(
+            const svgElement = inhabitantContainer.value.querySelector(
                 "svg"
             ) as SVGSVGElement;
             const avatarImage = svgElement.querySelector(
                 ".seated-avatar"
             ) as SVGImageElement;
-            svgElement.classList.add("svg-chair");
+            svgElement.classList.add("svg-inhabitant");
             setSizes();
             const avatar = avatars.find((a2) => a2.path == props.avatarURL);
             const avatarURL = getOptimizedImageURL({
@@ -116,26 +120,28 @@ export default defineComponent({
                 !keyboard.getAttribute("href")?.startsWith("data:image") &&
                 !keyboard.getAttribute("xlink:href")?.startsWith("data:image")
             ) {
-                keyboard.setAttribute("href", "/images/rooms/keyboard.png");
+                keyboard.setAttribute("href", "/images/scenes/keyboard.png");
+                keyboard.removeAttribute("xlink:href");
             }
-            setChairVisuals();
+            setInhabitantVisuals();
         };
         const findParentSpace = (): null | HTMLElement => {
-            if (!chairContainer.value) {
+            if (!inhabitantContainer.value) {
                 return null;
             }
-            let space: HTMLElement = chairContainer.value;
-            while (space.id != "chair-space" && space.parentElement) {
+            let space: HTMLElement = inhabitantContainer.value;
+            while (space.id != "inhabitant-space" && space.parentElement) {
                 space = space.parentElement;
             }
             if (!space) {
-                console.error("could not find chair-space element");
+                console.error("could not find inhabitant-space element");
             }
             return space;
         };
-        const setChairVisuals = () => {
-            if (chairContainer.value) {
-                const svgElement = chairContainer.value.querySelector("svg");
+        const setInhabitantVisuals = () => {
+            if (inhabitantContainer.value) {
+                const svgElement =
+                    inhabitantContainer.value.querySelector("svg");
                 if (svgElement) {
                     const keyboard = svgElement.querySelector(
                         ".seated-keyboard"
@@ -154,15 +160,15 @@ export default defineComponent({
         };
         const markup = ref("");
         onMounted(initializeSVG);
-        watch(() => props.typing, setChairVisuals);
-        watch(() => props.chairMarkup, initializeSVG);
+        watch(() => props.typing, setInhabitantVisuals);
+        watch(() => props.inhabitantMarkup, initializeSVG);
         // here we can see whether we are visible in the parent element,
         // scrolled offscreen within it to the left, or scrolled offscreen
         // within it to the right; this property is for the consumption of the
-        // parent element so that it can display a count of how many chairs are
+        // parent element so that it can display a count of how many inhabitants are
         // offscreen
         const placement = (): "left" | "middle" | "right" | null => {
-            if (!chairContainer.value) {
+            if (!inhabitantContainer.value) {
                 return null;
             } else {
                 const space = findParentSpace();
@@ -170,9 +176,9 @@ export default defineComponent({
                     return null;
                 } else {
                     const width = space.offsetWidth;
-                    const ourWidth = chairContainer.value.offsetWidth;
+                    const ourWidth = inhabitantContainer.value.offsetWidth;
                     const scrollPos = space.scrollLeft;
-                    const ourPos = chairContainer.value.offsetLeft;
+                    const ourPos = inhabitantContainer.value.offsetLeft;
                     if (ourPos + ourWidth - ourWidth / 2 < scrollPos) {
                         return "left";
                     } else if (ourPos + ourWidth / 2 > scrollPos + width) {
@@ -183,7 +189,7 @@ export default defineComponent({
                 }
             }
         };
-        return { chairContainer, placement, markup };
+        return { inhabitantContainer, placement, markup };
     },
 });
 </script>
@@ -200,18 +206,18 @@ export default defineComponent({
         transform: translateY(3px);
     }
 }
-.chair-container {
+.inhabitant-container {
     position: relative;
     margin: 0 5px;
     height: 100%;
 }
-.svg-chair {
+.svg-inhabitant {
     overflow: visible;
     image {
         background-color: white;
     }
     .seated-keyboard {
-        // animation-name: verticalshake is applied in setChairVisuals()
+        // animation-name: verticalshake is applied in setInhabitantVisuals()
         animation-duration: 0.25s;
         animation-iteration-count: infinite;
         animation-direction: alternate;

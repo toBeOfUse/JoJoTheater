@@ -4,18 +4,18 @@ import fs from "fs";
 import { ChatUserInfo } from "../types";
 import logger from "./logger";
 
-interface RoomProps {
+interface Scene {
     name: string;
     background: string;
     foreground?: string;
-    chairs: string[];
+    props: string[];
 }
 
-const propCollections: Record<string, RoomProps> = {
+const scenes: Record<string, Scene> = {
     basic: {
         background: "background.svg",
         name: "basic",
-        chairs: [
+        props: [
             "arm-chair",
             "blue-chair",
             "clawfoot-tub",
@@ -30,22 +30,22 @@ const propCollections: Record<string, RoomProps> = {
         name: "soybeans",
         background: "soybeansbg.jpg",
         foreground: "soybeansfg.png",
-        chairs: ["soybeans"],
+        props: ["soybeans"],
     },
     waterfront: {
         name: "waterfront",
         background: "waterfrontbg.jpg",
-        chairs: ["ship"],
+        props: ["ship"],
     },
     trees: {
         name: "trees",
         background: "treesbg.jpg",
-        chairs: ["lift"],
+        props: ["lift"],
     },
     graveyard: {
         name: "graveyard",
         background: "graveyardbg.jpg",
-        chairs: [
+        props: [
             "curly-ghost",
             "fake-ghost",
             "real-ghost",
@@ -56,34 +56,34 @@ const propCollections: Record<string, RoomProps> = {
     lilypads: {
         name: "lilypads",
         background: "frogbg3.jpg",
-        chairs: ["frog"],
+        props: ["frog"],
     },
     space: {
         name: "space",
         background: "spacebg.jpg",
-        chairs: ["spacesuit", "spacesuit2", "spacesuit3", "spacesuit4"],
+        props: ["spacesuit", "spacesuit2", "spacesuit3", "spacesuit4"],
     },
     "rock 'n' roll": {
         name: "rock 'n' roll",
         background: "stage.2.jpg",
-        chairs: ["chimes", "drums", "frenchhorn", "guitar", "saxophone"],
+        props: ["chimes", "drums", "frenchhorn", "guitar", "saxophone"],
     },
 };
 
-interface RoomInhabitant extends ChatUserInfo {
+interface SceneInhabitant extends ChatUserInfo {
     typing: boolean;
     lastTypingTimestamp: number;
-    chairURL: string;
+    inhabitantURL: string;
 }
 
-interface OutputRoom {
+interface OutputScene {
     background: string;
     foreground?: string;
     sceneName: string;
-    inhabitants: RoomInhabitant[];
+    inhabitants: SceneInhabitant[];
 }
 
-class RoomController extends EventEmitter {
+class SceneController extends EventEmitter {
     /**
      * Class that holds all the information needed for rendering the front-end
      * "Audience" component, defined in front/vue/audience.vue. Whenever this
@@ -92,17 +92,17 @@ class RoomController extends EventEmitter {
      * property out to all the clients so they can update their Audience
      * components.
      */
-    private props: RoomProps;
-    private chairSequence: string[];
-    private usedChairs: number = 0;
-    private _inhabitants: RoomInhabitant[] = [];
+    private scene: Scene;
+    private propsSequence: string[];
+    private usedProps: number = 0;
+    private _inhabitants: SceneInhabitant[] = [];
     get inhabitants() {
         return this._inhabitants;
     }
-    constructor(props: RoomProps) {
+    constructor(props: Scene) {
         super();
-        this.props = props;
-        this.chairSequence = RoomController.shuffleArray(this.props.chairs);
+        this.scene = props;
+        this.propsSequence = SceneController.shuffleArray(this.scene.props);
     }
     static shuffleArray(input: any[]) {
         const array = [...input];
@@ -113,25 +113,25 @@ class RoomController extends EventEmitter {
         return array;
     }
     static get scenes() {
-        return Object.keys(propCollections);
+        return Object.keys(scenes);
     }
     get currentScene() {
-        return this.props.name;
+        return this.scene.name;
     }
     getPublicPathFor(assetFileName: string) {
-        return "/images/rooms/" + this.props.name + "/" + assetFileName;
+        return "/images/scenes/" + this.scene.name + "/" + assetFileName;
     }
     get background() {
-        return this.getPublicPathFor(this.props.background);
+        return this.getPublicPathFor(this.scene.background);
     }
     get foreground() {
-        if (!this.props.foreground) {
+        if (!this.scene.foreground) {
             return undefined;
         } else {
-            return this.getPublicPathFor(this.props.foreground);
+            return this.getPublicPathFor(this.scene.foreground);
         }
     }
-    get outputGraphics(): OutputRoom {
+    get outputGraphics(): OutputScene {
         return {
             sceneName: this.currentScene,
             background: this.background,
@@ -139,12 +139,12 @@ class RoomController extends EventEmitter {
             inhabitants: this.inhabitants,
         };
     }
-    getNewChairURL() {
-        const filename = this.chairSequence[this.usedChairs];
-        this.usedChairs++;
-        if (this.usedChairs >= this.chairSequence.length) {
-            this.usedChairs = 0;
-            this.chairSequence = RoomController.shuffleArray(this.props.chairs);
+    getNewInhabitantURL() {
+        const filename = this.propsSequence[this.usedProps];
+        this.usedProps++;
+        if (this.usedProps >= this.propsSequence.length) {
+            this.usedProps = 0;
+            this.propsSequence = SceneController.shuffleArray(this.scene.props);
         }
         let publicPath = this.getPublicPathFor(filename + ".svg");
         const localPath = path.resolve(__dirname, "../assets" + publicPath);
@@ -152,29 +152,29 @@ class RoomController extends EventEmitter {
             const stats = fs.statSync(localPath);
             return publicPath + "?v=" + Math.round(stats.mtimeMs);
         } catch {
-            logger.error("could not find chair file " + localPath);
+            logger.error("could not find inhabitant file " + localPath);
             return "";
         }
     }
     static switchedProps(
-        oldRoom: RoomController,
+        oldScene: SceneController,
         to: string | undefined = undefined
     ) {
         if (!to) {
-            const availableProps = Object.keys(propCollections).filter(
-                (c) => propCollections[c].name != oldRoom.props.name
+            const availableProps = Object.keys(scenes).filter(
+                (c) => scenes[c].name != oldScene.scene.name
             );
             to =
                 availableProps[
                     Math.floor(Math.random() * availableProps.length)
                 ];
         }
-        const newRoom = new RoomController(propCollections[to]);
-        newRoom._inhabitants = oldRoom._inhabitants.map((i) => ({
+        const newScene = new SceneController(scenes[to]);
+        newScene._inhabitants = oldScene._inhabitants.map((i) => ({
             ...i,
-            chairURL: newRoom.getNewChairURL(),
+            inhabitantURL: newScene.getNewInhabitantURL(),
         }));
-        return newRoom;
+        return newScene;
     }
     addInhabitant(inhabitant: ChatUserInfo) {
         this._inhabitants = [
@@ -182,7 +182,7 @@ class RoomController extends EventEmitter {
                 ...inhabitant,
                 typing: false,
                 lastTypingTimestamp: -1,
-                chairURL: this.getNewChairURL(),
+                inhabitantURL: this.getNewInhabitantURL(),
             },
         ].concat(this._inhabitants);
         this.emit("change");
@@ -229,10 +229,4 @@ class RoomController extends EventEmitter {
     }
 }
 
-export {
-    RoomProps,
-    propCollections,
-    RoomController,
-    RoomInhabitant,
-    OutputRoom,
-};
+export { Scene, scenes, SceneController, SceneInhabitant, OutputScene };

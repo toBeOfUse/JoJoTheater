@@ -3,35 +3,35 @@
         &lt; +{{ visibleCount.left }}
     </div>
     <div
-        id="chair-space"
-        ref="chairSpace"
+        id="inhabitant-space"
+        ref="inhabitantSpace"
         :style="{
             backgroundImage: 'url(' + optImageLayerURL(backgroundURL) + ')',
         }"
     >
-        <div id="musical-chairs" v-if="backgroundURL && users.length">
+        <div id="musical-inhabitants" v-if="backgroundURL && users.length">
             <transition-group
-                :name="curtainState == 'open' ? 'musical-chairs' : ''"
+                :name="curtainState == 'open' ? 'musical-inhabitants' : ''"
                 @before-leave="beforeLeave"
             >
                 <div
                     key="left-spacer"
-                    class="musical-chairs-item"
+                    class="musical-inhabitants-item"
                     style="width: 100%"
                 />
-                <Chair
+                <Inhabitant
                     v-for="user in users"
                     :key="user.id"
                     :title="user.name"
                     :avatarURL="user.avatarURL"
                     :typing="user.typing"
-                    :chairMarkup="user.svgMarkup"
-                    class="musical-chairs-item"
-                    :ref="(e) => e && chairs.push(e)"
+                    :inhabitantMarkup="user.svgMarkup"
+                    class="musical-inhabitants-item"
+                    :ref="(e) => e && inhabitants.push(e)"
                 />
                 <div
                     key="right-spacer"
-                    class="musical-chairs-item"
+                    class="musical-inhabitants-item"
                     style="width: 100%"
                 />
             </transition-group>
@@ -100,9 +100,9 @@ import {
     watch,
 } from "vue";
 import { Subscription } from "../../types";
-import Chair from "./chair.vue";
+import Inhabitant from "./inhabitant.vue";
 import type { Socket } from "socket.io-client";
-import type { RoomInhabitant, OutputRoom } from "../../back/rooms";
+import type { SceneInhabitant, OutputScene } from "../../back/scenes";
 import globals from "../globals";
 import { APIPath, endpoints, getOptimizedImageURL } from "../../endpoints";
 import Curtains from "./curtains.vue";
@@ -114,20 +114,20 @@ export default defineComponent({
             type: Object as PropType<Socket>,
         },
     },
-    components: { Chair, Curtains },
+    components: { Inhabitant, Curtains },
     setup(props) {
-        // receive an array of the Chair components as a template ref and track
-        // their visibility within our chair-space:
-        const chairs = ref<typeof Chair[]>([]);
-        onBeforeUpdate(() => (chairs.value = []));
+        // receive an array of the Inhabitant components as a template ref and track
+        // their visibility within our inhabitant-space:
+        const inhabitants = ref<typeof Inhabitant[]>([]);
+        onBeforeUpdate(() => (inhabitants.value = []));
         const visibleCount = ref<{ left: number; right: number }>({
             left: 0,
             right: 0,
         });
         const updateVisibleCount = () => {
             const result = { left: 0, right: 0 };
-            for (const chair of chairs.value) {
-                const visibility = chair.placement();
+            for (const inhabitant of inhabitants.value) {
+                const visibility = inhabitant.placement();
                 if (visibility == "left") {
                     result.left++;
                 } else if (visibility == "right") {
@@ -136,15 +136,18 @@ export default defineComponent({
             }
             visibleCount.value = result;
         };
-        const chairSpace = ref<null | HTMLDivElement>(null);
-        watch(chairSpace, () => {
-            if (!chairSpace.value) return;
-            chairSpace.value.addEventListener("scroll", updateVisibleCount);
+        const inhabitantSpace = ref<null | HTMLDivElement>(null);
+        watch(inhabitantSpace, () => {
+            if (!inhabitantSpace.value) return;
+            inhabitantSpace.value.addEventListener(
+                "scroll",
+                updateVisibleCount
+            );
         });
 
-        // Load and cache the SVG markup for each of the "chairs" that the Chair
+        // Load and cache the SVG markup for each of the "inhabitants" that the Inhabitant
         // components will display:
-        interface LoadedRoomInhabitant extends RoomInhabitant {
+        interface LoadedSceneInhabitant extends SceneInhabitant {
             svgMarkup: string;
         }
         const svgMarkupCache: Record<string, string> = {};
@@ -152,11 +155,11 @@ export default defineComponent({
         const currentScene = ref("");
         const backgroundURL = ref("");
         const foregroundURL = ref<undefined | string>(undefined);
-        const users = ref<LoadedRoomInhabitant[]>([]);
+        const users = ref<LoadedSceneInhabitant[]>([]);
         const curtainState = ref<
             "closed" | "slightlyOpen" | "open" | "descended"
         >("closed");
-        const loadRoom = async (graphics: OutputRoom) => {
+        const loadScene = async (graphics: OutputScene) => {
             const startTime = Date.now();
             if (graphics.inhabitants.length == 0) {
                 curtainState.value = "slightlyOpen";
@@ -202,20 +205,20 @@ export default defineComponent({
                 }
             });
 
-            const inhabitantsLoaded: Promise<LoadedRoomInhabitant>[] = [];
+            const inhabitantsLoaded: Promise<LoadedSceneInhabitant>[] = [];
             for (const inhabitant of graphics.inhabitants) {
                 inhabitantsLoaded.push(
-                    new Promise<LoadedRoomInhabitant>(async (resolve) => {
-                        if (!svgMarkupCache[inhabitant.chairURL]) {
+                    new Promise<LoadedSceneInhabitant>(async (resolve) => {
+                        if (!svgMarkupCache[inhabitant.inhabitantURL]) {
                             const markupResponse = await fetch(
-                                inhabitant.chairURL
+                                inhabitant.inhabitantURL
                             );
                             const markup = await markupResponse.text();
-                            svgMarkupCache[inhabitant.chairURL] = markup;
+                            svgMarkupCache[inhabitant.inhabitantURL] = markup;
                         }
                         resolve({
                             ...inhabitant,
-                            svgMarkup: svgMarkupCache[inhabitant.chairURL],
+                            svgMarkup: svgMarkupCache[inhabitant.inhabitantURL],
                         });
                     })
                 );
@@ -243,13 +246,13 @@ export default defineComponent({
             });
         };
         const optImageLayerURL = (url: string) => {
-            if (!url || !chairSpace.value) {
+            if (!url || !inhabitantSpace.value) {
                 return "";
             } else if (url.endsWith(".svg")) {
                 return url;
             } else {
                 const width =
-                    chairSpace.value.offsetWidth * window.devicePixelRatio;
+                    inhabitantSpace.value.offsetWidth * window.devicePixelRatio;
                 return getOptimizedImageURL({
                     path: url,
                     width,
@@ -258,8 +261,8 @@ export default defineComponent({
         };
 
         // start receiving audience data from the server:
-        props.socket.on("audience_info_set", (graphics: OutputRoom) => {
-            loadRoom(graphics);
+        props.socket.on("audience_info_set", (graphics: OutputScene) => {
+            loadScene(graphics);
         });
         props.socket.emit("ready_for", Subscription.audience);
 
@@ -299,8 +302,8 @@ export default defineComponent({
             users,
             beforeLeave,
             visibleCount,
-            chairs,
-            chairSpace,
+            inhabitants,
+            inhabitantSpace,
             backgroundURL,
             foregroundURL,
             requestSceneChange,
@@ -319,7 +322,7 @@ export default defineComponent({
 <style scoped lang="scss">
 @use "../scss/vars";
 
-#chair-space {
+#inhabitant-space {
     margin: 10px auto;
     border: 2px solid black;
     border-radius: 10px;
@@ -337,7 +340,7 @@ export default defineComponent({
     background-size: cover;
     background-position: center;
 }
-#musical-chairs {
+#musical-inhabitants {
     position: absolute;
     left: 0;
     top: 0;
@@ -400,15 +403,15 @@ export default defineComponent({
 }
 </style>
 <style lang="scss">
-.musical-chairs-item {
+.musical-inhabitants-item {
     transition: transform 0.2s, opacity 0.2s;
 }
-.musical-chairs-enter-from,
-.musical-chairs-leave-to {
+.musical-inhabitants-enter-from,
+.musical-inhabitants-leave-to {
     opacity: 0;
     transform: translateY(-30px);
 }
-.musical-chairs-leave-active {
+.musical-inhabitants-leave-active {
     position: absolute;
 }
 </style>
