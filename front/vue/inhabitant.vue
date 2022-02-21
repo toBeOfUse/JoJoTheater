@@ -128,7 +128,7 @@ export default defineComponent({
                 flip: avatar && avatar.facing == Direction.left,
             });
             avatarImage.setAttribute("href", avatarURL);
-            const keyboard = svgElement.querySelector(
+            const keyboard = inhabitantContainer.value.querySelector(
                 ".seated-keyboard"
             ) as HTMLElement;
             if (
