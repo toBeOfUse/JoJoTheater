@@ -15,9 +15,10 @@ function getConfig(_: any, options: any) {
     const config: webpack.Configuration = {
         mode,
         entry: {
-            index: "./front/index.ts",
+            room: "./front/index.ts",
             upload: "./front/upload.ts",
             stats: "./front/stats.ts",
+            splash: "./front/splash.ts",
         },
         output: {
             filename:
@@ -91,8 +92,14 @@ function getConfig(_: any, options: any) {
         plugins: [
             new HtmlWebpackPlugin({
                 inject: true,
+                template: "./front/html/room.html",
+                chunks: ["room"],
+                filename: "room.html",
+            }),
+            new HtmlWebpackPlugin({
+                inject: true,
                 template: "./front/html/index.html",
-                chunks: ["index"],
+                chunks: ["splash"],
                 filename: "index.html",
             }),
             new HtmlWebpackPlugin({

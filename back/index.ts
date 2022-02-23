@@ -9,7 +9,7 @@ import cdn from "./optimizeimages";
 
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
-import { existsSync } from "fs";
+import path from "path";
 const mode =
     process.env.NODE_ENV == "production" ? "production" : "development";
 logger.info("starting webpack in mode " + mode);
@@ -52,20 +52,19 @@ app.use(function (req, res, next) {
     }
     next();
 });
-app.use(express.static("dist"));
-app.use((req, _res, next) => {
-    if (req.url.startsWith("/images/thumbnails/")) {
-        if (!existsSync("./assets" + req.url)) {
-            req.url = "/images/video-file.svg";
-        }
-    }
-    next();
-});
 app.use(express.static("assets"));
+app.use(express.static("dist"));
 app.use(express.json());
 app.use(cdn());
 app.use(uploads());
-
+app.get("/room", (_req, res) => {
+    res.sendFile(path.resolve(__dirname, "../dist/room.html"), (err) => {
+        if (err) {
+            logger.error("failed to serve room.html");
+            logger.error(err);
+        }
+    });
+});
 const server = http.createServer(app);
 initTheater(server, app);
 

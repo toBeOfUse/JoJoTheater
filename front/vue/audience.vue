@@ -341,7 +341,7 @@ export default defineComponent({
 @use "../scss/vars";
 
 #inhabited-space {
-    margin: 10px auto;
+    margin: 0 auto;
     border: 2px solid black;
     border-radius: 10px;
     width: 100%;
