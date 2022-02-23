@@ -66,7 +66,11 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed } from "vue";
-import type { ConnectionStatus, VideoState, ChatMessage } from "../../types";
+import type {
+    ConnectionStatus,
+    VideoState,
+    ChatMessage,
+} from "../../constants//types";
 import {
     Chart,
     LineController,
@@ -84,7 +88,7 @@ Chart.register(
     PointElement
 );
 import { LineChart } from "vue-chart-3";
-import { APIPath, endpoints } from "../../endpoints";
+import { APIPath, endpoints } from "../../constants/endpoints";
 
 export default defineComponent({
     components: { LineChart },

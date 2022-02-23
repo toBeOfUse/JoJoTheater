@@ -1,5 +1,5 @@
 import { Knex } from "knex";
-import { Video } from "../../../types";
+import { Video } from "../../../constants/types";
 import { Playlist } from "../../queries";
 
 export async function up(knex: Knex): Promise<void> {

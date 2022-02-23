@@ -36,8 +36,8 @@ import {
     ref,
     watch,
 } from "vue";
-import { getOptimizedImageURL, endpoints } from "../../endpoints";
-import { avatars, Direction } from "./avatars";
+import { getOptimizedImageURL, endpoints } from "../../constants/endpoints";
+import { avatars, Direction } from "../../constants/avatars";
 
 export default defineComponent({
     props: {

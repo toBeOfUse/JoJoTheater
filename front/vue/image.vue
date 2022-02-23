@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, ref } from "vue";
-import { getOptimizedImageURL } from "../../endpoints";
+import { getOptimizedImageURL } from "../../constants/endpoints";
 
 export default defineComponent({
     props: {

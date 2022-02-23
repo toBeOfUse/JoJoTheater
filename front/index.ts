@@ -2,7 +2,7 @@ import "normalize.css";
 
 import { io } from "socket.io-client";
 
-import { Video, VideoState } from "../types";
+import { Video, VideoState } from "../constants/types";
 import initVideo from "./video";
 import globals from "./globals";
 const socket = io();

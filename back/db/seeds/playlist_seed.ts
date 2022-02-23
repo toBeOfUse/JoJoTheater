@@ -1,5 +1,5 @@
 import { Knex } from "knex";
-import { Video, UserSubmittedFolderName } from "../../../types";
+import { Video, UserSubmittedFolderName } from "../../../constants/types";
 
 export async function seed(knex: Knex): Promise<void> {
     // Ensures seed entries
@@ -61,20 +61,20 @@ export async function seed(knex: Knex): Promise<void> {
                 captions: false,
                 folder: "MitchBot Recommends",
             },
-			{
-				captions: false,
-				provider: "youtube",
-				src: "NHZr6P1csiY",
-				title: "and the day goes on - bill wurtz",
-				folder: "MitchBot Recommends",
-			},
-			{
-				captions: false,
-				provider: "youtube",
-				src: "mpkf_p71rKY",
-				title: "might quit - bill wurtz",
-				folder: "MitchBot Recommends",
-			},
+            {
+                captions: false,
+                provider: "youtube",
+                src: "NHZr6P1csiY",
+                title: "and the day goes on - bill wurtz",
+                folder: "MitchBot Recommends",
+            },
+            {
+                captions: false,
+                provider: "youtube",
+                src: "mpkf_p71rKY",
+                title: "might quit - bill wurtz",
+                folder: "MitchBot Recommends",
+            },
             {
                 src: "nBHkIWAJitg",
                 title: "Handsome Dancer - Coincidance",

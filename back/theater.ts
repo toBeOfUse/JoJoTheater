@@ -23,7 +23,7 @@ import {
     Subscription,
     Video,
     ConnectionStatus,
-} from "../types";
+} from "../constants/types";
 import logger from "./logger";
 import { password } from "./secrets";
 import { scenes, SceneController } from "./scenes";
@@ -35,7 +35,7 @@ import {
     GetEndpoint,
     LogInBody,
     SendMessageBody,
-} from "../endpoints";
+} from "../constants/endpoints";
 import { assertType, is } from "typescript-is";
 // import { avatars } from "../front/vue/avatars";
 

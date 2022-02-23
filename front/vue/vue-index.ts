@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io-client";
-import { Video } from "../../types";
+import { Video } from "../../constants/types";
 
 async function loadIndexComps(
     socket: Socket,

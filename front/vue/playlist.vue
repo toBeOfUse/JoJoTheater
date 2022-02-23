@@ -105,11 +105,11 @@ import {
     ChangeTypes,
     UserSubmittedFolderName,
     Subscription,
-} from "../../types";
+} from "../../constants/types";
 import { defineComponent, PropType, ref, computed, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 import OptImage from "./image.vue";
-import { APIPath, endpoints } from "../../endpoints";
+import { APIPath, endpoints } from "../../constants/endpoints";
 
 export default defineComponent({
     props: {

@@ -7,8 +7,8 @@ import {
     StateChangeRequest,
     ChangeTypes,
     ControlsFlag,
-} from "../types";
-import { getOptimizedImageURL } from "../endpoints";
+} from "../constants/types";
+import { getOptimizedImageURL } from "../constants/endpoints";
 interface ActionableVideoState extends Omit<VideoState, "video"> {
     video: Video;
 }

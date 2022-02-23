@@ -173,13 +173,13 @@
 </template>
 
 <script lang="ts">
-import { ChatMessage, ChatUserInfo, Subscription } from "../../types";
-import { avatars } from "./avatars";
+import { ChatMessage, ChatUserInfo, Subscription } from "../../constants/types";
+import { avatars } from "../../constants/avatars";
 import OptImage from "./image.vue";
 import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
 import globals from "../globals";
-import { endpoints, APIPath } from "../../endpoints";
+import { endpoints, APIPath } from "../../constants/endpoints";
 export default defineComponent({
     props: {
         socket: {

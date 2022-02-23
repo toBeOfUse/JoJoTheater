@@ -13,7 +13,7 @@ import {
     Video,
     UserSubmittedFolderName,
     ChatUserInfo,
-} from "../types";
+} from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
 
 const streamsDB = knex({

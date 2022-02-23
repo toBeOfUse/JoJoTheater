@@ -7,7 +7,7 @@ import type { RequestHandler } from "express";
 import logger from "./logger";
 import { playlist } from "./queries";
 import { password } from "./secrets";
-import { UserSubmittedFolderName } from "../types";
+import { UserSubmittedFolderName } from "../constants/types";
 
 export default function (options: { maxSizeBytes?: number } = {}) {
     const handler: RequestHandler = (req, res, next) => {

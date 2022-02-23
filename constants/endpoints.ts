@@ -1,5 +1,5 @@
 import { ChatUserInfo } from "./types";
-import globals from "./front/globals";
+import globals from "../front/globals";
 
 enum APIPath {
     logIn = "/api/logIn",

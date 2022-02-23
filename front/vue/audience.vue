@@ -95,12 +95,16 @@ import {
     nextTick,
     watch,
 } from "vue";
-import { Subscription } from "../../types";
+import { Subscription } from "../../constants/types";
 import Inhabitant from "./inhabitant.vue";
 import type { Socket } from "socket.io-client";
 import type { SceneInhabitant, OutputScene } from "../../back/scenes";
 import globals from "../globals";
-import { APIPath, endpoints, getOptimizedImageURL } from "../../endpoints";
+import {
+    APIPath,
+    endpoints,
+    getOptimizedImageURL,
+} from "../../constants/endpoints";
 import Curtains from "./curtains.vue";
 
 export default defineComponent({
