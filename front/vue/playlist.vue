@@ -97,7 +97,6 @@
 </template>
 
 <script lang="ts">
-import type { Socket } from "socket.io-client";
 import {
     Video,
     VideoState,
@@ -105,16 +104,17 @@ import {
     ChangeTypes,
     UserSubmittedFolderName,
     Subscription,
+    StreamsSocket,
 } from "../../constants/types";
 import { defineComponent, PropType, ref, computed, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 import OptImage from "./image.vue";
-import { APIPath, endpoints } from "../../constants/endpoints";
+import { APIPath } from "../../constants/endpoints";
 
 export default defineComponent({
     props: {
         socket: {
-            type: Object as PropType<Socket>,
+            type: Object as PropType<StreamsSocket>,
             required: true,
         },
         initialActiveVideo: {
@@ -248,7 +248,7 @@ export default defineComponent({
 
         const addVideo = (url: string) => {
             if (url.trim()) {
-                endpoints[APIPath.addVideo].dispatch({ url }).catch(() => {
+                props.socket.http(APIPath.addVideo, { url }).catch(() => {
                     placeholder.value = "I couldn't use that URL :(";
                 });
                 videoURL.value = "";

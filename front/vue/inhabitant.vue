@@ -33,11 +33,13 @@ import {
     nextTick,
     onMounted,
     onUnmounted,
+    PropType,
     ref,
     watch,
 } from "vue";
-import { getOptimizedImageURL, endpoints } from "../../constants/endpoints";
+import { getOptimizedImageURL, APIPath } from "../../constants/endpoints";
 import { avatars, Direction } from "../../constants/avatars";
+import { StreamsSocket } from "../../constants/types";
 
 export default defineComponent({
     props: {
@@ -59,6 +61,10 @@ export default defineComponent({
         },
         morePosesAvailable: {
             type: Boolean,
+            required: true,
+        },
+        socket: {
+            type: Object as PropType<StreamsSocket>,
             required: true,
         },
     },
@@ -235,7 +241,7 @@ export default defineComponent({
             rgba(255,255,255,0) 100%
         )`.replace(/\n/g, " ");
         const requestNewPose = () => {
-            endpoints["/scene/propSwitch"].dispatch({});
+            props.socket.http(APIPath.switchProps);
         };
 
         return {

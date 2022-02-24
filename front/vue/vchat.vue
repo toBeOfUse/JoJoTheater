@@ -173,17 +173,20 @@
 </template>
 
 <script lang="ts">
-import { ChatMessage, ChatUserInfo, Subscription } from "../../constants/types";
+import {
+    ChatMessage,
+    ChatUserInfo,
+    Subscription,
+    StreamsSocket,
+} from "../../constants/types";
 import { avatars } from "../../constants/avatars";
 import OptImage from "./image.vue";
-import type { Socket } from "socket.io-client";
 import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
-import globals from "../globals";
-import { endpoints, APIPath } from "../../constants/endpoints";
+import { APIPath } from "../../constants/endpoints";
 export default defineComponent({
     props: {
         socket: {
-            type: Object as PropType<Socket>,
+            type: Object as PropType<StreamsSocket>,
             required: true,
         },
     },
@@ -199,7 +202,7 @@ export default defineComponent({
                 const messageText = messageInput.value.value.trim();
                 if (messageText) {
                     outgoing.value = true;
-                    await endpoints[APIPath.sendMessage].dispatch({
+                    await props.socket.http(APIPath.sendMessage, {
                         messageText,
                     });
                     messageInput.value.value = "";
@@ -272,7 +275,7 @@ export default defineComponent({
                 event.key == "Unidentified" // mobile chrome
             ) {
                 if (Date.now() - lastTypingEvent > 1000) {
-                    endpoints[APIPath.typingStart].dispatch({});
+                    props.socket.http(APIPath.typingStart);
                     lastTypingEvent = Date.now();
                 }
             } else if (event.key == "Enter") {
@@ -502,13 +505,13 @@ export default defineComponent({
                     console.log("could not use session storage");
                 }
                 try {
-                    await endpoints[APIPath.logIn].dispatch(info);
+                    await props.socket.http(APIPath.logIn, info);
                 } catch (e) {
                     console.error("Log in failed :(");
                     console.error(e);
                     return;
                 }
-                globals.set("loggedIn", true);
+                socket.setGlobal("inChat", true);
                 loggedIn.value = true;
                 minimized.value = false;
                 await nextTick();
@@ -538,17 +541,17 @@ export default defineComponent({
                 if (lastLogin.name && lastLogin.avatarURL) {
                     // this should only change once (on token acquisition) but
                     // we must watch for when that happens
-                    globals.watch("token", () => attemptLogin(true));
+                    socket.watchGlobal("token", () => attemptLogin(true));
                 }
             } catch {
                 console.log("could not parse previous login info");
             }
         }
         const logout = () => {
-            globals.set("loggedIn", false);
+            socket.setGlobal("inChat", false);
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
-            endpoints[APIPath.logOut].dispatch({});
+            props.socket.http(APIPath.logOut);
         };
 
         // message display logic:

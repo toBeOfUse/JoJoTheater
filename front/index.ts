@@ -1,14 +1,47 @@
 import "normalize.css";
 
 import { io } from "socket.io-client";
+import { is } from "typescript-is";
+import { endpoints } from "../constants/endpoints";
 
-import { Video, VideoState } from "../constants/types";
+import {
+    Video,
+    VideoState,
+    StreamsSocket,
+    ClientGlobalValues as GlobalValues,
+} from "../constants/types";
 import initVideo from "./video";
-import globals from "./globals";
-const socket = io();
+
+const oldToken = localStorage.getItem("token");
+const socket = io() as StreamsSocket;
+socket._globals = {
+    loggedIn: false,
+    inChat: false,
+    token: oldToken ?? "",
+};
+socket._listeners = { loggedIn: [], inChat: [], token: [] };
+socket.setGlobal = function (name, newValue) {
+    const newGlobals = { ...this._globals, [name]: newValue };
+    if (is<GlobalValues>(newGlobals)) {
+        this._globals = newGlobals;
+        this._listeners[name as keyof GlobalValues].forEach((l) => l(newValue));
+    }
+};
+socket.getGlobal = function (name) {
+    return this._globals[name];
+};
+socket.watchGlobal = function (name, callback) {
+    this._listeners[name].push(callback);
+};
+socket.http = function (path, body = {}, headers = {}) {
+    return endpoints[path].dispatch(this._globals.token, body, headers);
+};
+
+socket.emit("log_in", socket.getGlobal("token"));
 
 socket.on("grant_token", (token: string) => {
-    globals.set("token", token);
+    socket.setGlobal("token", token);
+    localStorage.setItem("token", token);
 });
 socket.on("ping", () => {
     socket.emit("pong");

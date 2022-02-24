@@ -67,7 +67,7 @@ export default defineComponent({
     setup() {
         const availableScenes = ref([]);
         const currentScene = ref("");
-        endpoints[APIPath.getScenes].dispatch({}).then((e) => {
+        endpoints[APIPath.getScenes].dispatch("", {}).then((e) => {
             currentScene.value = e.scenes[0];
             availableScenes.value = e.scenes;
         });
@@ -79,7 +79,6 @@ export default defineComponent({
 @use "../scss/vars.scss";
 @mixin box {
     background-color: white;
-    // border-radius: 5px;
     border: 1px solid black;
     padding: 5px;
 }

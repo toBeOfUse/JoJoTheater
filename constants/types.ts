@@ -1,3 +1,6 @@
+import type { Socket } from "socket.io-client";
+import { APIPath } from "./endpoints";
+
 interface ChatMessage {
     isAnnouncement: boolean;
     messageHTML: string;
@@ -95,6 +98,54 @@ interface ControlsFlag {
     endPos?: number;
 }
 
+interface User {
+    id: number;
+    createdAt: Date;
+    lastUsername?: string;
+    lastAvatar?: string;
+    watchTime: number;
+    email?: string;
+    passwordHash?: string;
+    passwordSalt?: string;
+    defaultProps: Record<string, string>;
+}
+
+interface Token {
+    token: string;
+    createdAt: Date;
+    userID: number;
+}
+
+interface Avatar {
+    id: number;
+    group: string;
+    file: string;
+    uploaderID: number;
+}
+
+interface ClientGlobalValues {
+    loggedIn: boolean;
+    inChat: boolean;
+    token: string;
+}
+type GlobalType = boolean | string;
+type GlobalCallback = (newValue: any) => void;
+interface ClientStreamsSocket extends Socket {
+    _globals: ClientGlobalValues;
+    _listeners: Record<keyof ClientGlobalValues, GlobalCallback[]>;
+    setGlobal: (name: string, newValue: GlobalType) => void;
+    getGlobal: (name: keyof ClientGlobalValues) => GlobalType;
+    watchGlobal: (
+        name: keyof ClientGlobalValues,
+        callback: GlobalCallback
+    ) => void;
+    http: (
+        path: APIPath,
+        body?: any,
+        headers?: Record<string, string>
+    ) => Promise<Record<string, any>>;
+}
+
 export {
     ChatMessage,
     Video,
@@ -106,4 +157,9 @@ export {
     Subscription,
     ConnectionStatus,
     ControlsFlag,
+    User,
+    Token,
+    Avatar,
+    ClientStreamsSocket as StreamsSocket,
+    ClientGlobalValues,
 };

@@ -33,6 +33,7 @@
                     class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
                     :morePosesAvailable="multipleProps"
+                    :socket="socket"
                 />
             </transition-group>
         </div>
@@ -95,23 +96,17 @@ import {
     nextTick,
     watch,
 } from "vue";
-import { Subscription } from "../../constants/types";
+import { StreamsSocket, Subscription } from "../../constants/types";
 import Inhabitant from "./inhabitant.vue";
-import type { Socket } from "socket.io-client";
 import type { SceneInhabitant, OutputScene } from "../../back/scenes";
-import globals from "../globals";
-import {
-    APIPath,
-    endpoints,
-    getOptimizedImageURL,
-} from "../../constants/endpoints";
+import { APIPath, getOptimizedImageURL } from "../../constants/endpoints";
 import Curtains from "./curtains.vue";
 
 export default defineComponent({
     props: {
         socket: {
             required: true,
-            type: Object as PropType<Socket>,
+            type: Object as PropType<StreamsSocket>,
         },
     },
     components: { Inhabitant, Curtains },
@@ -286,8 +281,8 @@ export default defineComponent({
         };
 
         const availableScenes = ref<string[]>([]);
-        endpoints[APIPath.getScenes].dispatch({}, {}).then((scenes) => {
-            availableScenes.value = scenes.scenes;
+        props.socket.http(APIPath.getScenes).then((response) => {
+            availableScenes.value = response.scene;
         });
 
         const switchCoolingDown = ref(false);
@@ -296,15 +291,15 @@ export default defineComponent({
             if (!switchCoolingDown.value && newValue != currentScene.value) {
                 switchCoolingDown.value = true;
                 setTimeout(() => (switchCoolingDown.value = false), 1000);
-                endpoints[APIPath.changeScene].dispatch({
-                    newScene: newValue,
-                });
+                props.socket.http(APIPath.changeScene);
             }
         };
 
-        const allowedToSwitch = ref(globals.get("loggedIn"));
-        globals.watch(
-            "loggedIn",
+        const allowedToSwitch = ref<boolean>(
+            props.socket.getGlobal("inChat") as boolean
+        );
+        props.socket.watchGlobal(
+            "inChat",
             (newValue: boolean) => (allowedToSwitch.value = newValue)
         );
 

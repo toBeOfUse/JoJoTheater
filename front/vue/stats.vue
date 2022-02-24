@@ -103,6 +103,7 @@ export default defineComponent({
             const headers = { Admin: password.value };
             try {
                 const info = await endpoints[APIPath.getStats].dispatch(
+                    "",
                     {},
                     headers
                 );
@@ -116,7 +117,11 @@ export default defineComponent({
             }
             try {
                 messages.value = (
-                    await endpoints[APIPath.getMessages].dispatch({}, headers)
+                    await endpoints[APIPath.getMessages].dispatch(
+                        "",
+                        {},
+                        headers
+                    )
                 ).messages;
             } catch (e) {
                 console.log(e);

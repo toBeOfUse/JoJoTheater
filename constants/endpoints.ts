@@ -1,5 +1,4 @@
 import { ChatUserInfo } from "./types";
-import globals from "../front/globals";
 
 enum APIPath {
     logIn = "/api/logIn",
@@ -27,14 +26,18 @@ abstract class Endpoint<BodyType> {
         this.mustBeInChat = mustBeInChat;
     }
     abstract dispatch(
+        token: string,
         body: BodyType,
         headers?: Record<string, string>
     ): Promise<Record<string, any>>;
 }
 
 class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
-    async dispatch(body: BodyType, headers: Record<string, string> = {}) {
-        const token = globals.get("token") as string;
+    async dispatch(
+        token: string,
+        body: BodyType,
+        headers: Record<string, string> = {}
+    ) {
         if (this.mustBeInChat && !token) {
             throw (
                 "Missing authentication token for secure endpoint " + this.path
@@ -71,8 +74,11 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
         }
         return this.path + "?" + params.toString();
     }
-    async dispatch(body: BodyType, headers: Record<string, string> = {}) {
-        const token = globals.get("token") as string;
+    async dispatch(
+        token: string,
+        body: BodyType,
+        headers: Record<string, string> = {}
+    ) {
         if (this.mustBeInChat && !token) {
             throw (
                 "Missing authentication token for secure endpoint " + this.path
