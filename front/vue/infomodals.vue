@@ -11,9 +11,8 @@
         <p>
             MitchBot Streams was created by me, Mitch. It aims to be the most
             interesting platform for watching synchronized videos with other
-            people over the Internet. It is named after a Discord bot (mostly
-            unrelated.) It is written in Typescript with Vue as the primary
-            front-end library. You can view its source code
+            people over the Internet. It was originally created to watch JoJo
+            with Sarah. You can view its source code
             <a-nt href="https://github.com/toBeOfUse/MitchBotStreams">here</a-nt
             >.
         </p>
@@ -24,20 +23,24 @@
             <span class="close" @click="showing = ''">(close)</span>
         </h2>
         <ul style="text-align: left">
+            <li>Create or join a room</li>
             <li>Watch Videos!</li>
             <li>Everyone is synced :D</li>
-            <li>Sign in through the window on the bottom left</li>
+            <li>Sign in through the chat program on the bottom left</li>
             <li>
-                Once you sign in, the window is resizeable (grab the top and
-                bottom)
+                Once you sign in, the chat program window is resizeable (grab
+                the top and bottom)
             </li>
-            <li>The window is still visible in fullscreen unless minimized</li>
+            <li>
+                The window is still visible when the video is fullscreen unless
+                it is minimized
+            </li>
             <li>Add videos to the last playlist folder</li>
             <li>Search videos with the box below that</li>
-            <li>Hold alt to type emojis!</li>
+            <li>Hold alt and press keys to type the emojis shown below!</li>
         </ul>
         <img
-            src="/images/emojikeyboard.svg"
+            src="/images/emojikeyboardsmaller.svg"
             style="width: 100%; height: auto"
         />
     </div>
