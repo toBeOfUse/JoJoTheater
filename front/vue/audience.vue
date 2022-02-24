@@ -282,7 +282,7 @@ export default defineComponent({
 
         const availableScenes = ref<string[]>([]);
         props.socket.http(APIPath.getScenes).then((response) => {
-            availableScenes.value = response.scene;
+            availableScenes.value = response.scenes;
         });
 
         const switchCoolingDown = ref(false);
@@ -291,7 +291,9 @@ export default defineComponent({
             if (!switchCoolingDown.value && newValue != currentScene.value) {
                 switchCoolingDown.value = true;
                 setTimeout(() => (switchCoolingDown.value = false), 1000);
-                props.socket.http(APIPath.changeScene);
+                props.socket.http(APIPath.changeScene, {
+                    newScene: newValue,
+                });
             }
         };
 
