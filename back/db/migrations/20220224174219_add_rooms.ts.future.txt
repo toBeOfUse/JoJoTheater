@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
         table.increments("id");
         table.string("name").notNullable();
         table
-            .foreign("creatorID")
+            .integer("creatorID")
             .references("id")
             .inTable("users")
             .notNullable();
@@ -16,30 +16,33 @@ export async function up(knex: Knex): Promise<void> {
     });
     await knex.schema.createTable("roomsToFolders", (table) => {
         table.primary(["room, folder"]);
-        table.foreign("room").references("id").inTable("rooms").notNullable();
+        table.integer("room").references("id").inTable("rooms").notNullable();
         table
-            .foreign("playlist")
+            .string("playlist")
             .references("folder")
             .inTable("playlist")
             .notNullable();
     });
     await knex.schema.createTable("usersToRooms", (table) => {
         table.primary(["user", "room"]);
-        table.foreign("user").references("id").inTable("users").notNullable();
-        table.foreign("room").references("id").inTable("rooms").notNullable();
+        table.integer("user").references("id").inTable("users").notNullable();
+        table.integer("room").references("id").inTable("rooms").notNullable();
         table.integer("watchTime").notNullable().defaultTo(0);
     });
     await knex.schema.createTable("avatarsToRooms", (table) => {
         table.primary(["room", "avatar"]);
-        table.foreign("room").references("id").inTable("rooms").notNullable();
+        table.integer("room").references("id").inTable("rooms").notNullable();
         table
-            .foreign("avatarGroup")
+            .string("avatarGroup")
             .references("group")
             .inTable("avatars")
             .notNullable();
     });
     await knex.schema.alterTable("messages", (table) => {
-        table.foreign("roomID").references("id").inTable("rooms");
+        table.integer("roomID").references("id").inTable("rooms");
+    });
+    await knex.schema.alterTable("playlist", (table) => {
+        table.integer("creatorID").references("id").inTable("users");
     });
 }
 
@@ -49,6 +52,9 @@ export async function down(knex: Knex): Promise<void> {
     await knex.schema.dropTableIfExists("avatarsToRooms");
     await knex.schema.alterTable("messages", (table) => {
         table.dropColumn("roomID");
+    });
+    await knex.schema.alterTable("playlist", (table) => {
+        table.dropColumn("adderID");
     });
     await knex.schema.dropTableIfExists("rooms");
 }

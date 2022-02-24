@@ -121,6 +121,7 @@ interface Avatar {
     group: string;
     file: string;
     uploaderID: number;
+    facing: "left" | "right" | "forward";
 }
 
 interface ClientGlobalValues {

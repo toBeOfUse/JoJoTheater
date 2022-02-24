@@ -5,13 +5,14 @@ export async function up(knex: Knex): Promise<void> {
         table.increments("id");
         table.string("group").notNullable();
         table.string("file").notNullable();
-        table.foreign("uploaderID").references("id").inTable("users");
+        table.integer("uploaderID").references("id").inTable("users");
+        table.string("facing").notNullable();
     });
     await knex.schema.createTable("users", (table) => {
         table.increments("id");
         table.timestamp("createdAt").notNullable();
         table.string("lastUsername");
-        table.foreign("lastAvatarID").references("id").inTable("avatars");
+        table.integer("lastAvatarID").references("id").inTable("avatars");
         table.integer("watchTime").notNullable().defaultTo(0);
         table.string("email");
         table.string("passwordHash");
@@ -20,11 +21,11 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable("tokens", (table) => {
         table.string("token").primary();
         table.timestamp("createdAt").notNullable();
-        table.foreign("user").references("id").inTable("users").notNullable();
+        table.integer("userID").references("id").inTable("users").notNullable();
     });
     await knex.schema.createTable("usersToProps", (table) => {
         table.primary(["user", "scene"]);
-        table.foreign("user").references("id").inTable("users").notNullable();
+        table.integer("user").references("id").inTable("users").notNullable();
         table.string("scene").notNullable();
         table.string("prop").notNullable();
     });
