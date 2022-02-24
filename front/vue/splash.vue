@@ -1,22 +1,28 @@
 <template>
-    <img id="logo" src="/images/welcome-logo.svg" />
     <div id="container">
+        <img id="logo" src="/images/welcome-logo.svg" />
         <div id="mascot-container">
+            <opt-image path="/images/hogbg.jpg" id="mascot-bg" />
             <opt-image
                 path="/images/avatars/animals/hedgehog.jpg"
                 aspectRatio="1:1"
                 id="mascot"
             />
-            <button>Make a playlist for him</button>
+            <button>Make a playlist for Him</button>
         </div>
         <div id="conversion-container">
             <div class="conversion-column">
-                <h3>Go to a room:</h3>
+                <h3>Or go to a room:</h3>
             </div>
             <div class="conversion-column">
                 <h3>Or create a room:</h3>
                 <label for="room-name">Name:</label>
-                <input type="text" id="room-name" name="room-name" />
+                <input
+                    type="text"
+                    id="room-name"
+                    name="room-name"
+                    placeholder="RUMPUS ROOM"
+                />
                 <label for="scene-select">Backdrop:</label>
                 <select
                     id="scene-select"
@@ -31,33 +37,33 @@
                         {{ scene.charAt(0).toUpperCase() + scene.slice(1) }}
                     </option>
                 </select>
-                <label for="video-url">Add video by URL:</label>
+                <label for="video-url">Add videos by URL:</label>
                 <div style="display: flex">
                     <input
                         style="width: 100%; margin-right: 3px"
                         type="text"
                         id="video-url"
                         name="video-url"
+                        placeholder="youtube/vimeo/dailymotion url"
                     />
                     <button>+</button>
                 </div>
-                <button>Find playlists...</button>
+                And/or
+                <button style="display: inline">Find playlists...</button>
                 <button id="create-room-button">Go</button>
             </div>
         </div>
     </div>
+    <info-modals />
 </template>
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import {
-    endpoints,
-    APIPath,
-    getOptimizedImageURL,
-} from "../../constants/endpoints";
+import { endpoints, APIPath } from "../../constants/endpoints";
 import Image from "./image.vue";
+import InfoModals from "./infomodals.vue";
 
 export default defineComponent({
-    components: { optImage: Image },
+    components: { optImage: Image, InfoModals },
     setup() {
         const availableScenes = ref([]);
         const currentScene = ref("");
@@ -65,11 +71,7 @@ export default defineComponent({
             currentScene.value = e.scenes[0];
             availableScenes.value = e.scenes;
         });
-        const mascotBG = getOptimizedImageURL({
-            path: "/images/hogbg.3.jpg",
-            width: window.innerWidth * 0.7,
-        });
-        return { availableScenes, currentScene, mascotBG };
+        return { availableScenes, currentScene };
     },
 });
 </script>
@@ -80,10 +82,6 @@ export default defineComponent({
     // border-radius: 5px;
     border: 1px solid black;
     padding: 5px;
-}
-#logo {
-    width: 60%;
-    max-width: 800px;
 }
 @font-face {
     font-family: "Anivers";
@@ -98,23 +96,47 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     font-family: "Anivers", sans-serif;
-    width: 60%;
-    margin: 0 auto;
+    max-width: 850px;
+    margin: 0 auto 30px auto;
     text-align: left;
+}
+#logo {
+    width: 70%;
+    @media (max-width: 500px) {
+        width: 95%;
+    }
+    margin: 30px 0;
 }
 h3 {
     margin: 5px 0;
+}
+@keyframes fade-in-out {
+    from {
+        background-color: #fff0;
+    }
+    to {
+        background-color: #fff9;
+    }
 }
 #mascot-container {
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin: 10px 0;
+    justify-content: center;
+    width: 100%;
+    margin: 20px 0;
     @include box;
-    padding: 10px 20px;
-    background-size: cover;
-    background-position: center;
-    background-image: v-bind("'url('+mascotBG+')'");
+    position: relative;
+    animation: fade-in-out 10s ease-in-out 0s infinite alternate;
+}
+#mascot-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
 }
 #mascot {
     height: 50px;
@@ -125,7 +147,10 @@ h3 {
     display: flex;
     justify-content: center;
     width: 100%;
-    margin: 15px 0;
+    @media (max-width: 500px) {
+        flex-direction: column;
+        padding: 0 10px;
+    }
 }
 input[type="text"] {
     background-color: transparent;
@@ -133,7 +158,8 @@ input[type="text"] {
 .conversion-column {
     @include box;
     &:first-child {
-        margin-right: 10px;
+        margin-right: 2.5%;
+        margin-bottom: 15px;
     }
     & h3 {
         font-weight: normal;
@@ -152,7 +178,7 @@ input[type="text"] {
     }
     width: 100%;
     padding: 5px 10px;
-    background-color: #ededed;
+    background-color: #f5f5f5;
 }
 #create-room-button {
     margin-left: auto;
