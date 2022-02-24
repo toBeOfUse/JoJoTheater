@@ -36,7 +36,15 @@ export default defineComponent({
                 img.value.addEventListener("load", () => {
                     style.value = {};
                 });
-                const baseWidth = img.value.offsetWidth;
+                let baseWidth = img.value.offsetWidth;
+                if (!baseWidth && props.aspectRatio && img.value.offsetHeight) {
+                    const ratioComps = props.aspectRatio.split(":").map(Number);
+                    if (ratioComps[0] && ratioComps[1]) {
+                        baseWidth =
+                            img.value.offsetHeight *
+                            (ratioComps[0] / ratioComps[1]);
+                    }
+                }
                 const width = baseWidth * (window.devicePixelRatio || 1);
                 cdnURL.value = getOptimizedImageURL({
                     path: props.path,
