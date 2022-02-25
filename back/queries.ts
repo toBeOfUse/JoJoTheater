@@ -348,6 +348,29 @@ async function saveToken(token: Token) {
     await streamsDB.table<Token>("tokens").insert(token);
 }
 
+async function getUserSceneProp(
+    user: Pick<User, "id">,
+    scene: string
+): Promise<string | undefined> {
+    const result = await streamsDB
+        .table<{ prop: string; userID: number; scene: string }>("usersToProps")
+        .where({ userID: user.id, scene: scene })
+        .select(["prop"]);
+    return result[0]?.prop;
+}
+
+async function saveUserSceneProp(
+    user: Pick<User, "id">,
+    scene: string,
+    prop: string
+) {
+    await streamsDB
+        .table<{ prop: string; userID: number; scene: string }>("usersToProps")
+        .insert({ prop, scene, userID: user.id })
+        .onConflict(["userID", "scene"])
+        .merge();
+}
+
 /**
  * Serves as the global singleton playlist object at the moment. Could be divided up
  * into multiple instances of the playlist class later.
@@ -364,4 +387,6 @@ export {
     saveToken,
     getAvatar,
     getAllAvatars,
+    getUserSceneProp,
+    saveUserSceneProp,
 };

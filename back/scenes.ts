@@ -1,14 +1,16 @@
 import EventEmitter from "events";
 import path from "path";
 import fs from "fs";
-import { ChatUserInfo } from "../constants/types";
+import { ChatUserInfo, User } from "../constants/types";
 import logger from "./logger";
 import { scenes, Scene } from "../constants/scenes";
+import { getUserSceneProp, saveUserSceneProp } from "./queries";
 
 interface SceneInhabitant extends ChatUserInfo {
     typing: boolean;
     lastTypingTimestamp: number;
     propsURL: string;
+    userID: number;
 }
 
 interface OutputScene {
@@ -76,13 +78,7 @@ class SceneController extends EventEmitter {
             multipleProps: this.scene.props.length > 1,
         };
     }
-    getNewPropsURL() {
-        const filename = this.propsSequence[this.usedProps];
-        this.usedProps++;
-        if (this.usedProps >= this.propsSequence.length) {
-            this.usedProps = 0;
-            this.propsSequence = SceneController.shuffleArray(this.scene.props);
-        }
+    getPropsURL(filename: string) {
         let publicPath = this.getPublicPathFor(filename + ".svg");
         const localPath = path.resolve(__dirname, "../assets" + publicPath);
         try {
@@ -92,6 +88,15 @@ class SceneController extends EventEmitter {
             logger.error("could not find inhabitant file " + localPath);
             return "";
         }
+    }
+    getNewProp() {
+        const filename = this.propsSequence[this.usedProps];
+        this.usedProps++;
+        if (this.usedProps >= this.propsSequence.length) {
+            this.usedProps = 0;
+            this.propsSequence = SceneController.shuffleArray(this.scene.props);
+        }
+        return filename;
     }
     static switchedProps(
         oldScene: SceneController,
@@ -107,46 +112,56 @@ class SceneController extends EventEmitter {
                 ];
         }
         const newScene = new SceneController(scenes[to]);
-        newScene._inhabitants = oldScene._inhabitants.map((i) => ({
-            ...i,
-            propsURL: newScene.getNewPropsURL(),
-        }));
+        for (const inhabitant of oldScene._inhabitants) {
+            newScene.addInhabitant(inhabitant, { id: inhabitant.userID });
+        }
         return newScene;
     }
-    addInhabitant(inhabitant: ChatUserInfo) {
-        this._inhabitants = [
-            {
-                ...inhabitant,
-                typing: false,
-                lastTypingTimestamp: -1,
-                propsURL: this.getNewPropsURL(),
-            },
-        ].concat(this._inhabitants);
+    async addInhabitant(inhabitant: ChatUserInfo, user: Pick<User, "id">) {
+        let prop = await getUserSceneProp(user, this.scene.name);
+        let newProp = false;
+        if (!prop) {
+            newProp = true;
+            prop = this.getNewProp();
+        }
+        const newInhabitant = {
+            ...inhabitant,
+            typing: false,
+            lastTypingTimestamp: -1,
+            propsURL: this.getPropsURL(prop),
+            userID: user.id,
+        };
+        this._inhabitants = [newInhabitant].concat(this._inhabitants);
+        if (newProp) {
+            saveUserSceneProp(user, this.scene.name, prop);
+        }
         this.emit("change");
     }
-    changeInhabitantProps(userID: string) {
-        const user = this._inhabitants.find((i) => i.id == userID);
+    async changeInhabitantProps(userID: number) {
+        const user = this._inhabitants.find((i) => i.userID == userID);
         if (user) {
-            user.propsURL = this.getNewPropsURL();
+            const newProp = this.getNewProp();
+            saveUserSceneProp({ id: userID }, this.scene.name, newProp);
+            user.propsURL = this.getPropsURL(newProp);
             this.emit("change");
         }
     }
-    removeInhabitant(userID: string) {
-        this._inhabitants = this._inhabitants.filter((i) => i.id != userID);
+    removeInhabitant(userID: number) {
+        this._inhabitants = this._inhabitants.filter((i) => i.userID != userID);
         this.emit("change");
     }
     /**
      * This method will automatically call `stopTyping` if it is not called
      * for two seconds.
      */
-    startTyping(userID: string) {
-        const typer = this._inhabitants.find((i) => i.id == userID);
+    startTyping(userID: number) {
+        const typer = this._inhabitants.find((i) => i.userID == userID);
         if (typer && Date.now() - typer.lastTypingTimestamp > 500) {
             // if they have just started typing - move them to the front of the
             // audience line so that can be seen
             if (!typer.typing) {
                 this._inhabitants = [typer].concat(
-                    this._inhabitants.filter((i) => i.id != userID)
+                    this._inhabitants.filter((i) => i.userID != userID)
                 );
                 typer.typing = true;
                 this.emit("change");
@@ -164,8 +179,8 @@ class SceneController extends EventEmitter {
      * This only needs to be called externally when an inhabitant sends a
      * message (which naturally should dismiss the typing indicator)
      */
-    stopTyping(userID: string) {
-        const typer = this._inhabitants.find((i) => i.id == userID);
+    stopTyping(userID: number) {
+        const typer = this._inhabitants.find((i) => i.userID == userID);
         if (typer && typer.typing) {
             typer.typing = false;
             this.emit("change");
