@@ -168,7 +168,6 @@ export default defineComponent({
             const startTime = Date.now();
             if (graphics.inhabitants.length == 0) {
                 curtainState.value = "slightlyOpen";
-                return;
             }
             multipleProps.value = graphics.multipleProps;
             let sceneChanged = false;
@@ -234,7 +233,11 @@ export default defineComponent({
                 Promise.all(inhabitantsLoaded).then(
                     async (loadedInhabitants) => {
                         const timePassed = Date.now() - startTime;
-                        if (sceneChanged && timePassed < 1000) {
+                        if (
+                            sceneChanged &&
+                            loadedInhabitants.length &&
+                            timePassed < 1000
+                        ) {
                             // leave enough time for the curtain animation not to look jerky
                             await new Promise((resolve) =>
                                 setTimeout(resolve, 1000 - timePassed)
@@ -243,11 +246,13 @@ export default defineComponent({
                         backgroundURL.value = graphics.background;
                         foregroundURL.value = graphics.foreground;
                         users.value = loadedInhabitants;
-                        nextTick().then(() => {
-                            curtainState.value = "open";
-                            updateVisibleCount();
-                            updateScrollbarComp();
-                        });
+                        if (loadedInhabitants.length) {
+                            nextTick().then(() => {
+                                curtainState.value = "open";
+                                updateVisibleCount();
+                                updateScrollbarComp();
+                            });
+                        }
                     }
                 );
             });
