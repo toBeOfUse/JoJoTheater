@@ -1,7 +1,7 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import type { Express, Request, RequestHandler, Response } from "express";
+import type { Express, Request, Response } from "express";
 import escapeHTML from "escape-html";
 import { nanoid } from "nanoid";
 
@@ -10,9 +10,11 @@ import {
     playlist,
     getRecentMessages,
     addMessage,
-    getSession,
-    saveSession,
-    clearSession,
+    saveToken,
+    saveUser,
+    getUser,
+    getAvatar,
+    getAllAvatars,
 } from "./queries";
 import {
     ChatMessage,
@@ -23,6 +25,9 @@ import {
     Subscription,
     Video,
     ConnectionStatus,
+    User,
+    Token,
+    Avatar,
 } from "../constants/types";
 import logger from "./logger";
 import { password } from "./secrets";
@@ -32,6 +37,7 @@ import {
     APIPath,
     ChangeSceneBody,
     endpoints,
+    getAvatarImageURL,
     GetEndpoint,
     LogInBody,
     SendMessageBody,
@@ -62,8 +68,8 @@ type ClientSentEvent =
 class AudienceMember {
     private socket: Socket;
     location: string = "";
+    user: User;
     id: string;
-    token: string;
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
@@ -130,12 +136,10 @@ class AudienceMember {
         };
     }
 
-    constructor(socket: Socket) {
+    constructor(socket: Socket, user: User) {
         this.socket = socket;
         this.id = socket.id;
-        this.token = nanoid();
-        this.emit("grant_token", this.token);
-        saveSession(this.token, this.id);
+        this.user = user;
         this.socket.onAny((eventName: string) => {
             if (
                 eventName !== "pong" &&
@@ -151,9 +155,6 @@ class AudienceMember {
                 ...state,
                 receivedTimeISO: new Date().toISOString(),
             };
-        });
-        socket.on("disconnect", () => {
-            clearSession(this.token);
         });
         this.socket.on("ready_for", (sub: Subscription) => {
             this.subscriptions.add(sub);
@@ -172,6 +173,12 @@ class AudienceMember {
                     );
                 });
         }
+    }
+
+    get avatarURL() {
+        return this.chatInfo
+            ? getAvatarImageURL(this.chatInfo?.avatar.file)
+            : "";
     }
 
     startPinging() {
@@ -248,11 +255,7 @@ class Theater {
         };
     }
 
-    constructor(
-        io: SocketServer,
-        playlist: Playlist,
-        graphics: SceneController
-    ) {
+    constructor(playlist: Playlist, graphics: SceneController) {
         this.graphics = graphics;
         // this will propogate all changes in our SceneController object to the
         // front-end:
@@ -274,13 +277,6 @@ class Theater {
                 r.emit("playlist_set", await this.playlist.getVideos())
             );
         });
-        io.on("connection", (socket: Socket) => {
-            const newMember = new AudienceMember(socket);
-            this.initializeMember(newMember);
-            logger.info(
-                "new client added: " + this.audience.length + " total connected"
-            );
-        });
         this.apiHandlers = {
             [APIPath.logIn]: this.logIn,
             [APIPath.sendMessage]: this.sendMessage,
@@ -292,6 +288,8 @@ class Theater {
             [APIPath.getStats]: this.getStats,
             [APIPath.getScenes]: this.getScenes,
             [APIPath.switchProps]: this.newProps,
+            [APIPath.getAvatars]: this.getAvatars,
+            [APIPath.getIdentity]: this.getIdentity,
         };
     }
 
@@ -317,17 +315,29 @@ class Theater {
         }
     }
 
-    logIn(req: Request, res: Response, member: AudienceMember) {
+    async logIn(req: Request, res: Response, member: AudienceMember) {
         if (!member) {
-            console.warn("logIn called without AudienceMember argument");
+            console.error("logIn called without AudienceMember argument");
             res.status(400);
             res.end();
             return;
         }
-        const info = assertType<LogInBody>(req.body);
+        let info, loadedAvatar;
+        try {
+            info = assertType<LogInBody>(req.body);
+            loadedAvatar = assertType<Avatar>(await getAvatar(info.avatarID));
+        } catch {
+            console.warn(
+                "invalid LogInBody in logIn: " +
+                    JSON.stringify(req.body).slice(0, 1000)
+            );
+            res.status(400);
+            res.end();
+            return;
+        }
         if (
             member.chatInfo &&
-            member.chatInfo.avatarURL == info.avatarURL &&
+            member.chatInfo.avatar.id == info.avatarID &&
             member.chatInfo.name == info.name
         ) {
             logger.warn(
@@ -338,13 +348,10 @@ class Theater {
             // marking the second one as resuming a session so that an
             // announcement doesn't get sent out announcing a new one
             info.resumed = true;
-        } else if (
-            info.avatarURL.startsWith("/images/avatars/") &&
-            info.name.trim().length < 30
-        ) {
+        } else if (info.name.trim().length < 30) {
             info.name = info.name.trim();
             info.name = escapeHTML(info.name);
-            member.chatInfo = { ...info, id: member.id };
+            member.chatInfo = { ...info, id: member.id, avatar: loadedAvatar };
             logger.debug(
                 "audience member successfully set their chat info to:"
             );
@@ -359,6 +366,12 @@ class Theater {
             this.graphics.addInhabitant(member.chatInfo);
             // just in case
             member.subscriptions.add(Subscription.chat);
+            member.user = {
+                ...member.user,
+                lastUsername: info.name,
+                lastAvatarID: info.avatarID,
+            };
+            saveUser(member.user);
             res.status(200);
             res.end();
         } else {
@@ -382,7 +395,7 @@ class Theater {
                     messageHTML: escapeHTML(messageText),
                     senderID: member.chatInfo.id,
                     senderName: member.chatInfo.name,
-                    senderAvatarURL: member.chatInfo.avatarURL,
+                    senderAvatarURL: member.avatarURL,
                 };
                 this.sendToChat(message).then(() => {
                     res.status(200);
@@ -488,13 +501,11 @@ class Theater {
             players: this.audience.map((a) => a.getConnectionInfo()),
             server: this.currentState,
         });
-        res.end();
     }
 
     async getMessages(_req: Request, res: Response) {
         res.status(200);
         res.json({ messages: await getRecentMessages(50) });
-        res.end();
     }
 
     getScenes(_req: Request, res: Response) {
@@ -503,10 +514,24 @@ class Theater {
             scenes: SceneController.scenes,
             currentScene: this.graphics.currentScene,
         });
-        res.end();
     }
 
-    handleAPICall(req: Request, res: Response) {
+    getAvatars(_req: Request, res: Response) {
+        getAllAvatars().then((avatars) => {
+            res.json({ avatars });
+        });
+    }
+
+    getIdentity(_req: Request, res: Response, member: AudienceMember) {
+        if (member && member.user) {
+            res.json(member.user);
+        } else {
+            res.status(403);
+            res.end();
+        }
+    }
+
+    async handleAPICall(req: Request, res: Response) {
         if (req.path in this.apiHandlers) {
             const handler = (
                 this.apiHandlers[req.path as APIPath] as APIHandler
@@ -516,8 +541,10 @@ class Theater {
             if (!is<string>(auth)) {
                 member = null;
             } else {
-                const memberID = getSession(auth);
-                member = this.audience.find((m) => m.id == memberID);
+                const user = await getUser(auth);
+                if (user) {
+                    member = this.audience.find((m) => m.user.id == user.id);
+                }
             }
             if (
                 member?.loggedIn ||
@@ -602,7 +629,7 @@ class Theater {
                     if (oldState != change.newValue) {
                         this.emitAll("set_controls_flag", {
                             target: "play",
-                            imagePath: member.chatInfo?.avatarURL,
+                            imagePath: member.avatarURL,
                         });
                     }
                 } else if (change.changeType == ChangeTypes.time) {
@@ -618,7 +645,7 @@ class Theater {
                     ) {
                         this.emitAll("set_controls_flag", {
                             target: "seek",
-                            imagePath: member.chatInfo?.avatarURL,
+                            imagePath: member.avatarURL,
                             startPos: oldTime / 1000 / currentDuration,
                             endPos:
                                 newState.currentTimeMs / 1000 / currentDuration,
@@ -643,7 +670,7 @@ class Theater {
                     );
                     this.emitAll("set_controls_flag", {
                         target: "next_video",
-                        imagePath: member.chatInfo?.avatarURL,
+                        imagePath: member.avatarURL,
                     });
                 } else if (change.changeType == ChangeTypes.prevVideo) {
                     this.startNewVideo(
@@ -651,10 +678,9 @@ class Theater {
                     );
                     this.emitAll("set_controls_flag", {
                         target: "prev_video",
-                        imagePath: member.chatInfo?.avatarURL,
+                        imagePath: member.avatarURL,
                     });
                 }
-
                 this.setNextVideoTimer();
             }
         );
@@ -778,7 +804,37 @@ export default function init(server: Server, app: Express) {
     //     });
     // }
 
-    const theater = new Theater(io, playlist, graphics);
+    const theater = new Theater(playlist, graphics);
+    io.on("connection", (socket: Socket) => {
+        // In the multi-room future a room id will also be sent
+        socket.on("log_in", async (token: string) => {
+            let user: User | undefined;
+            if (token) {
+                user = await getUser(token);
+            }
+            if (!user) {
+                const userInit = {
+                    defaultProps: {},
+                    watchTime: 0,
+                };
+                user = { ...userInit, ...(await saveUser(userInit)) };
+                const newToken: Token = {
+                    createdAt: new Date(),
+                    token: nanoid(),
+                    userID: user.id,
+                };
+                await saveToken(newToken);
+                socket.emit("grant_token", newToken.token);
+            }
+            const newMember = new AudienceMember(socket, user);
+            theater.initializeMember(newMember);
+            logger.info(
+                "new client added: " +
+                    theater.audience.length +
+                    " total connected"
+            );
+        });
+    });
 
     for (const endpoint of Object.values(APIPath)) {
         // a kludge, but, the optimize image endpoint is handled by back/optimizeimages.ts

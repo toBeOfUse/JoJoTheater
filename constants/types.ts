@@ -56,15 +56,6 @@ interface StateChangeRequest {
     newValue?: boolean | number;
 }
 
-interface ChatUserInfo {
-    id: string;
-    name: string;
-    avatarURL: string;
-    // if they are resuming a previous login session (this is indicated by the
-    // client) and so we do not need to announce them
-    resumed: boolean;
-}
-
 const UserSubmittedFolderName = "The Unrestrained Id of the Audience";
 
 enum Subscription {
@@ -102,7 +93,7 @@ interface User {
     id: number;
     createdAt: Date;
     lastUsername?: string;
-    lastAvatar?: string;
+    lastAvatarID?: number;
     watchTime: number;
     email?: string;
     passwordHash?: string;
@@ -120,8 +111,17 @@ interface Avatar {
     id: number;
     group: string;
     file: string;
-    uploaderID: number;
+    uploaderID: number | null;
     facing: "left" | "right" | "forward";
+}
+
+interface ChatUserInfo {
+    id: string;
+    name: string;
+    avatar: Avatar;
+    // if they are resuming a previous login session (this is indicated by the
+    // client) and so we do not need to announce them
+    resumed: boolean;
 }
 
 interface ClientGlobalValues {
@@ -129,7 +129,7 @@ interface ClientGlobalValues {
     inChat: boolean;
     token: string;
 }
-type GlobalType = boolean | string;
+type GlobalType = any;
 type GlobalCallback = (newValue: any) => void;
 interface ClientStreamsSocket extends Socket {
     _globals: ClientGlobalValues;

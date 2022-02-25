@@ -68,14 +68,16 @@
                     <div>
                         <div class="avatar-row" v-for="row in 2" :key="row">
                             <opt-image
-                                v-for="image in avatarRow(row)"
-                                :key="image"
+                                v-for="avatar in avatarRow(row)"
+                                :key="avatar.id"
                                 class="avatar-option"
                                 :class="
-                                    image == selectedAvatar ? 'selected' : ''
+                                    avatar.id == selectedAvatar?.id
+                                        ? 'selected'
+                                        : ''
                                 "
-                                :path="image"
-                                @click="selectedAvatar = image"
+                                :path="avatar.path"
+                                @click="selectedAvatar = avatar"
                                 @dblclick="attemptLogin(false)"
                             />
                         </div>
@@ -178,11 +180,16 @@ import {
     ChatUserInfo,
     Subscription,
     StreamsSocket,
+    Avatar,
+    User,
 } from "../../constants/types";
-import { avatars } from "../../constants/avatars";
 import OptImage from "./image.vue";
 import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
-import { APIPath } from "../../constants/endpoints";
+import {
+    APIPath,
+    getAvatarImageURL,
+    LogInBody,
+} from "../../constants/endpoints";
 export default defineComponent({
     props: {
         socket: {
@@ -457,14 +464,36 @@ export default defineComponent({
         // login session logic:
         const loggedIn = ref(false);
 
-        const selectedAvatar = ref("");
+        const nameInput = ref<string>("");
+        const selectedAvatar = ref<Avatar | null>(null);
         const avatarPage = ref(0);
         const avatarsPerRow = 6;
         const rowsPerPage = 2;
+        const avatars = ref<Avatar[]>([]);
+
+        props.socket.http(APIPath.getAvatars).then((response) => {
+            avatars.value = response.avatars;
+            socket.http(APIPath.getIdentity).then((response) => {
+                if (!nameInput.value && response.lastUsername) {
+                    nameInput.value = response.lastUsername;
+                }
+                if (!selectedAvatar.value && response.lastAvatarID) {
+                    const avatarIndex = avatars.value.findIndex(
+                        (a) => a.id == response.lastAvatarID
+                    );
+                    if (avatarIndex) {
+                        selectedAvatar.value = avatars.value[avatarIndex];
+                        avatarPage.value = Math.floor(avatarIndex / 12);
+                    }
+                }
+            });
+        });
+
         const nextPageAvailable = computed<boolean>(() => {
             return (
+                avatars.value.length != 0 &&
                 (avatarPage.value + 1) * avatarsPerRow * rowsPerPage <
-                avatars.length - 1
+                    avatars.value.length - 1
             );
         });
         const changePage = (direction: 1 | -1) => {
@@ -477,12 +506,10 @@ export default defineComponent({
         const avatarRow = (which: number) => {
             let offset = avatarsPerRow * rowsPerPage * avatarPage.value;
             if (which == 2) offset += avatarsPerRow;
-            return avatars
+            return avatars.value
                 .slice(offset, offset + avatarsPerRow)
-                .map((a) => a.path);
+                .map((a) => ({ path: getAvatarImageURL(a.file), ...a }));
         };
-
-        const nameInput = ref("");
 
         const loginInfoKey = "loginInfo";
 
@@ -494,9 +521,9 @@ export default defineComponent({
                 nameInput.value.length < 30 &&
                 selectedAvatar.value
             ) {
-                const info: Omit<ChatUserInfo, "id"> = {
+                const info: LogInBody = {
                     name: nameInput.value,
-                    avatarURL: selectedAvatar.value,
+                    avatarID: selectedAvatar.value.id,
                     resumed,
                 };
                 try {
@@ -542,7 +569,6 @@ export default defineComponent({
                     if (socket.getGlobal("token")) {
                         attemptLogin(true);
                     }
-                    socket.watchGlobal("token", () => attemptLogin(true));
                 }
             } catch {
                 console.log("could not parse previous login info");

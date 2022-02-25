@@ -12,6 +12,8 @@ enum APIPath {
     getScenes = "/get/scenes",
     optimizedImage = "/imgopt",
     switchProps = "/scene/propSwitch",
+    getAvatars = "/get/avatars",
+    getIdentity = "/get/identity",
 }
 
 interface PostBody {}
@@ -96,7 +98,11 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
     }
 }
 
-interface LogInBody extends PostBody, Omit<ChatUserInfo, "id"> {}
+interface LogInBody extends PostBody {
+    name: string;
+    avatarID: number;
+    resumed: boolean;
+}
 interface SendMessageBody extends PostBody {
     messageText: string;
 }
@@ -134,6 +140,11 @@ const endpoints: Record<APIPath, Endpoint<PostBody>> = {
         false
     ),
     [APIPath.switchProps]: new PostEndpoint<{}>(APIPath.switchProps, true),
+    [APIPath.getAvatars]: new GetEndpoint<{ room: string }>(
+        APIPath.getAvatars,
+        false
+    ),
+    [APIPath.getIdentity]: new GetEndpoint<{}>(APIPath.getIdentity, false),
 };
 
 /**
@@ -152,6 +163,10 @@ function getOptimizedImageURL(params: OptimizedImageBody): string {
     ).fullPath(params);
 }
 
+function getAvatarImageURL(avatarFile: string) {
+    return "/images/avatars/" + avatarFile;
+}
+
 export {
     LogInBody,
     SendMessageBody,
@@ -163,4 +178,5 @@ export {
     endpoints,
     OptimizedImageBody,
     getOptimizedImageURL,
+    getAvatarImageURL,
 };

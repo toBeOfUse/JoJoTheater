@@ -26,7 +26,7 @@
                     v-for="user in users"
                     :key="user.id"
                     :title="user.name"
-                    :avatarURL="user.avatarURL"
+                    :avatar="user.avatar"
                     :typing="user.typing"
                     :propsMarkup="user.svgMarkup"
                     :isSelf="user.id == ownID"

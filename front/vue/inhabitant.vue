@@ -37,14 +37,17 @@ import {
     ref,
     watch,
 } from "vue";
-import { getOptimizedImageURL, APIPath } from "../../constants/endpoints";
-import { avatars, Direction } from "../../constants/avatars";
-import { StreamsSocket } from "../../constants/types";
+import {
+    getOptimizedImageURL,
+    APIPath,
+    getAvatarImageURL,
+} from "../../constants/endpoints";
+import { Avatar, StreamsSocket } from "../../constants/types";
 
 export default defineComponent({
     props: {
-        avatarURL: {
-            type: String,
+        avatar: {
+            type: Object as PropType<Avatar>,
             required: true,
         },
         typing: {
@@ -143,13 +146,12 @@ export default defineComponent({
             const avatarImage = inhabitantContainer.value.querySelector(
                 ".seated-avatar"
             ) as SVGImageElement;
-            const avatar = avatars.find((a2) => a2.path == props.avatarURL);
             const avatarURL = getOptimizedImageURL({
-                path: props.avatarURL,
+                path: getAvatarImageURL(props.avatar.file),
                 width:
                     avatarImage.getBoundingClientRect().width *
                     window.devicePixelRatio,
-                flip: avatar && avatar.facing == Direction.left,
+                flip: props.avatar && props.avatar.facing == "left",
             });
             avatarImage.setAttribute("href", avatarURL);
             const keyboard = inhabitantContainer.value.querySelector(
