@@ -12,7 +12,9 @@ import {
     ChatMessage,
     Video,
     UserSubmittedFolderName,
-    ChatUserInfo,
+    User,
+    Token,
+    Avatar,
 } from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
 
@@ -297,17 +299,55 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
     ).reverse();
 }
 
-const tokens: Record<string, string> = {};
-function getSession(token: string) {
-    return tokens[token] || null;
+async function saveUser(user: Omit<User, "id" | "createdAt">) {
+    const { defaultProps, ...rest } = user;
+    // TODO: save default props in default props table
+    return (
+        await streamsDB
+            .table<User>("users")
+            .insert(
+                {
+                    ...rest,
+                    createdAt: new Date(),
+                },
+                ["id", "createdAt"]
+            )
+            .onConflict(["id"])
+            .merge()
+    )[0];
 }
-function saveSession(token: string, socketID: string) {
-    tokens[token] = socketID;
-}
-function clearSession(token: string) {
-    if (token in tokens) {
-        delete tokens[token];
+
+async function getUser(token: string): Promise<User | undefined> {
+    const userID = await streamsDB
+        .table<Token>("tokens")
+        .where("token", token)
+        .select(["userID"]);
+    if (!userID.length) {
+        return undefined;
+    } else {
+        return (
+            await streamsDB
+                .table<User>("users")
+                .where("id", userID[0].userID)
+                .select("*")
+        )[0];
     }
+}
+
+async function getAvatar(id: number): Promise<Avatar | undefined> {
+    const avatar = await streamsDB
+        .table<Avatar>("avatars")
+        .where("id", id)
+        .select("*");
+    return avatar[0];
+}
+
+async function getAllAvatars(): Promise<Avatar[]> {
+    return await streamsDB.table<Avatar>("avatars").select("*");
+}
+
+async function saveToken(token: Token) {
+    await streamsDB.table<Token>("tokens").insert(token);
 }
 
 /**
@@ -321,7 +361,9 @@ export {
     playlist,
     getRecentMessages,
     addMessage,
-    getSession,
-    saveSession,
-    clearSession,
+    saveUser,
+    getUser,
+    saveToken,
+    getAvatar,
+    getAllAvatars,
 };
