@@ -6,7 +6,6 @@
         @mouseleave="menuOpen = false"
         :style="menuOpen ? { backgroundImage: backgroundGlow } : {}"
     >
-        <div v-html="finalMarkup" />
         <div v-if="isSelf" id="menu-container">
             <span @click.stop="menuOpen = !menuOpen">🌟</span>
             <div id="menu" v-if="menuOpen" @click.stop>
@@ -74,7 +73,6 @@ export default defineComponent({
     setup(props) {
         const inhabitantContainer = ref<null | HTMLDivElement>(null);
         let prevParentSpaceHeight = -1;
-        const finalMarkup = ref("");
         let prevMarkup = "";
 
         const setSizes = (svgElement?: SVGSVGElement) => {
@@ -138,12 +136,12 @@ export default defineComponent({
             ) as SVGSVGElement;
             svgElement.classList.add("svg-inhabitant");
             setSizes(svgElement);
-            finalMarkup.value = placeholder.innerHTML;
-            // await next tick so when the avatar is measured to get the width
-            // for the image, below, it can draw on its actual size in the
-            // document
-            await nextTick();
-            const avatarImage = inhabitantContainer.value.querySelector(
+            // risky to directly add an element? it doesn't seem to ever get removed though
+            inhabitantContainer.value
+                .querySelectorAll(".svg-inhabitant")
+                .forEach((e) => e.remove());
+            inhabitantContainer.value.prepend(svgElement);
+            const avatarImage = svgElement.querySelector(
                 ".seated-avatar"
             ) as SVGImageElement;
             const avatarURL = getOptimizedImageURL({
@@ -154,7 +152,7 @@ export default defineComponent({
                 flip: props.avatar && props.avatar.facing == "left",
             });
             avatarImage.setAttribute("href", avatarURL);
-            const keyboard = inhabitantContainer.value.querySelector(
+            const keyboard = svgElement.querySelector(
                 ".seated-keyboard"
             ) as HTMLElement;
             if (
@@ -249,7 +247,6 @@ export default defineComponent({
         return {
             inhabitantContainer,
             placement,
-            finalMarkup,
             menuOpen,
             backgroundGlow,
             requestNewPose,
