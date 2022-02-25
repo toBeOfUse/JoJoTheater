@@ -300,14 +300,12 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
 }
 
 async function saveUser(user: Omit<User, "id" | "createdAt">) {
-    const { defaultProps, ...rest } = user;
-    // TODO: save default props in default props table
     return (
         await streamsDB
             .table<User>("users")
             .insert(
                 {
-                    ...rest,
+                    ...user,
                     createdAt: new Date(),
                 },
                 ["id", "createdAt"]

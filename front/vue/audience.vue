@@ -24,12 +24,12 @@
             >
                 <Inhabitant
                     v-for="user in users"
-                    :key="user.id"
+                    :key="user.userID"
                     :title="user.name"
                     :avatar="user.avatar"
                     :typing="user.typing"
                     :propsMarkup="user.svgMarkup"
-                    :isSelf="user.id == ownID"
+                    :isSelf="user.connectionID == ownID"
                     class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
                     :morePosesAvailable="multipleProps"

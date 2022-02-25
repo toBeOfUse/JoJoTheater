@@ -5,7 +5,7 @@ interface ChatMessage {
     isAnnouncement: boolean;
     messageHTML: string;
     // the below are missing or null for announcements
-    senderID?: string;
+    senderID?: number;
     senderName?: string;
     senderAvatarURL?: string;
 }
@@ -98,7 +98,6 @@ interface User {
     email?: string;
     passwordHash?: string;
     passwordSalt?: string;
-    defaultProps: Record<string, string>;
 }
 
 interface Token {
@@ -116,7 +115,7 @@ interface Avatar {
 }
 
 interface ChatUserInfo {
-    id: string;
+    connectionID: string;
     name: string;
     avatar: Avatar;
     // if they are resuming a previous login session (this is indicated by the

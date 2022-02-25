@@ -583,12 +583,12 @@ export default defineComponent({
 
         // message display logic:
         const groupedMessages = ref<ChatMessage[][]>([]);
-        let lastSender = "";
+        let lastSender = -1;
         socket.on("chat_announcement", async (announcement: string) => {
             groupedMessages.value.push([
                 { isAnnouncement: true, messageHTML: announcement },
             ]);
-            lastSender = "";
+            lastSender = -1;
             await nextTick();
             scrollMessagePanelToBottom();
         });
@@ -603,7 +603,7 @@ export default defineComponent({
                     message
                 );
             }
-            lastSender = message.senderID as string;
+            lastSender = message.senderID as number;
             await nextTick();
             scrollMessagePanelToBottom();
         });

@@ -351,7 +351,11 @@ class Theater {
         } else if (info.name.trim().length < 30) {
             info.name = info.name.trim();
             info.name = escapeHTML(info.name);
-            member.chatInfo = { ...info, id: member.id, avatar: loadedAvatar };
+            member.chatInfo = {
+                ...info,
+                connectionID: member.id,
+                avatar: loadedAvatar,
+            };
             logger.debug(
                 "audience member successfully set their chat info to:"
             );
@@ -363,7 +367,7 @@ class Theater {
                 };
                 this.sendToChat(announcement);
             }
-            this.graphics.addInhabitant(member.chatInfo);
+            this.graphics.addInhabitant(member.chatInfo, member.user);
             // just in case
             member.subscriptions.add(Subscription.chat);
             member.user = {
@@ -393,7 +397,7 @@ class Theater {
                 const message: ChatMessage = {
                     isAnnouncement: false,
                     messageHTML: escapeHTML(messageText),
-                    senderID: member.chatInfo.id,
+                    senderID: member.user.id,
                     senderName: member.chatInfo.name,
                     senderAvatarURL: member.avatarURL,
                 };
@@ -413,7 +417,7 @@ class Theater {
                 //         this.sendToChat(villagerMessage);
                 //     }, 500);
                 // }
-                this.graphics.stopTyping(member.id);
+                this.graphics.stopTyping(member.user.id);
             }
         } else {
             logger.warn(
@@ -445,7 +449,7 @@ class Theater {
     }
 
     typingStart(req: Request, res: Response, member: AudienceMember) {
-        this.graphics.startTyping(member.id);
+        this.graphics.startTyping(member.user.id);
         res.status(200);
         res.end();
     }
@@ -476,14 +480,14 @@ class Theater {
     }
 
     newProps(_req: Request, res: Response, member: AudienceMember) {
-        this.graphics.changeInhabitantProps(member.id);
+        this.graphics.changeInhabitantProps(member.user.id);
         res.status(200);
         res.end();
     }
 
     logOut(_req: Request, res: Response, member: AudienceMember) {
         logger.debug(`member ${member.chatInfo?.name} logged out`);
-        this.graphics.removeInhabitant(member.id);
+        this.graphics.removeInhabitant(member.user.id);
         member.chatInfo = undefined;
         res.status(200);
         res.end();
@@ -687,7 +691,7 @@ class Theater {
 
         member.on("disconnect", () => {
             this.removeMember(member);
-            this.graphics.removeInhabitant(member.id);
+            this.graphics.removeInhabitant(member.user.id);
             logger.info(
                 "client disconnected: " + this.audience.length + " remaining"
             );
@@ -814,7 +818,6 @@ export default function init(server: Server, app: Express) {
             }
             if (!user) {
                 const userInit = {
-                    defaultProps: {},
                     watchTime: 0,
                 };
                 user = { ...userInit, ...(await saveUser(userInit)) };

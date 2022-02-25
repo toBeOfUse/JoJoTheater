@@ -24,8 +24,8 @@ export async function up(knex: Knex): Promise<void> {
         table.integer("userID").references("id").inTable("users").notNullable();
     });
     await knex.schema.createTable("usersToProps", (table) => {
-        table.primary(["user", "scene"]);
-        table.integer("user").references("id").inTable("users").notNullable();
+        table.primary(["userID", "scene"]);
+        table.integer("userID").references("id").inTable("users").notNullable();
         table.string("scene").notNullable();
         table.string("prop").notNullable();
     });
