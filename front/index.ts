@@ -33,6 +33,19 @@ socket.getGlobal = function (name) {
 socket.watchGlobal = function (name, callback) {
     this._listeners[name].push(callback);
 };
+socket.ifAndWhenGlobalAvailable = function (name, callback) {
+    if (this._globals[name]) {
+        callback(this._globals[name]);
+    } else {
+        const whenListener = (newValue: any) => {
+            callback(newValue);
+            this._listeners[name] = this._listeners[name].filter(
+                (l) => l != whenListener
+            );
+        };
+        this.watchGlobal(name, whenListener);
+    }
+};
 socket.http = function (path, body = {}, headers = {}) {
     return endpoints[path].dispatch(this._globals.token, body, headers);
 };

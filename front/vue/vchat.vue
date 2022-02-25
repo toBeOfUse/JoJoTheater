@@ -473,20 +473,46 @@ export default defineComponent({
 
         props.socket.http(APIPath.getAvatars).then((response) => {
             avatars.value = response.avatars;
-            socket.http(APIPath.getIdentity).then((response) => {
-                if (!nameInput.value && response.lastUsername) {
-                    nameInput.value = response.lastUsername;
-                }
-                if (!selectedAvatar.value && response.lastAvatarID) {
-                    const avatarIndex = avatars.value.findIndex(
-                        (a) => a.id == response.lastAvatarID
-                    );
-                    if (avatarIndex) {
-                        selectedAvatar.value = avatars.value[avatarIndex];
-                        avatarPage.value = Math.floor(avatarIndex / 12);
+            // attempt to resume previous session saved in browser
+            const lastLoginString = sessionStorage.getItem(loginInfoKey);
+            if (lastLoginString) {
+                try {
+                    const lastLogin = JSON.parse(lastLoginString);
+                    if (lastLogin.name) {
+                        nameInput.value = lastLogin.name;
                     }
+                    if (lastLogin.avatarID) {
+                        const found = avatars.value.find(
+                            (a) => a.id == lastLogin.avatarID
+                        );
+                        if (found) selectedAvatar.value = found;
+                    }
+                    if (lastLogin.name && lastLogin.avatarID) {
+                        socket.ifAndWhenGlobalAvailable("token", () =>
+                            attemptLogin(true)
+                        );
+                    }
+                } catch {
+                    console.log("could not parse previous login info");
                 }
-            });
+                // if we don't have a previous session saved in the browser to
+                // reference, pull from the server's identity information
+            } else {
+                socket.http(APIPath.getIdentity).then((response) => {
+                    if (!nameInput.value && response.lastUsername) {
+                        nameInput.value = response.lastUsername;
+                    }
+                    if (!selectedAvatar.value && response.lastAvatarID) {
+                        const avatarIndex = avatars.value.findIndex(
+                            (a) => a.id == response.lastAvatarID
+                        );
+                        if (avatarIndex) {
+                            selectedAvatar.value = avatars.value[avatarIndex];
+                            avatarPage.value = Math.floor(avatarIndex / 12);
+                        }
+                    }
+                });
+            }
         });
 
         const nextPageAvailable = computed<boolean>(() => {
@@ -554,26 +580,6 @@ export default defineComponent({
                 }
             }
         };
-        // attempt to restore previous chat session
-        const lastLoginString = sessionStorage.getItem(loginInfoKey);
-        if (lastLoginString) {
-            try {
-                const lastLogin = JSON.parse(lastLoginString);
-                if (lastLogin.name) {
-                    nameInput.value = lastLogin.name;
-                }
-                if (lastLogin.avatarURL) {
-                    selectedAvatar.value = lastLogin.avatarURL;
-                }
-                if (lastLogin.name && lastLogin.avatarURL) {
-                    if (socket.getGlobal("token")) {
-                        attemptLogin(true);
-                    }
-                }
-            } catch {
-                console.log("could not parse previous login info");
-            }
-        }
         const logout = () => {
             socket.setGlobal("inChat", false);
             loggedIn.value = false;

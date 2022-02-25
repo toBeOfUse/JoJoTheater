@@ -139,6 +139,10 @@ interface ClientStreamsSocket extends Socket {
         name: keyof ClientGlobalValues,
         callback: GlobalCallback
     ) => void;
+    ifAndWhenGlobalAvailable: (
+        name: keyof ClientGlobalValues,
+        callback: GlobalCallback
+    ) => void;
     http: (
         path: APIPath,
         body?: any,
