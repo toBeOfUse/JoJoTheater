@@ -140,7 +140,10 @@ class SceneController extends EventEmitter {
     async changeInhabitantProps(userID: number) {
         const user = this._inhabitants.find((i) => i.userID == userID);
         if (user) {
-            const newProp = this.getNewProp();
+            let newProp = this.getNewProp();
+            while (user.propsURL == this.getPropsURL(newProp)) {
+                newProp = this.getNewProp();
+            }
             saveUserSceneProp({ id: userID }, this.scene.name, newProp);
             user.propsURL = this.getPropsURL(newProp);
             this.emit("change");
