@@ -364,6 +364,7 @@ export default defineComponent({
     border-radius: 3px;
     & button {
         margin: 3px 0;
+        width: 100%;
     }
 }
 </style>

@@ -37,6 +37,8 @@
             </li>
             <li>Add videos to the last playlist folder</li>
             <li>Search videos with the box below that</li>
+            <li>Click the little star to edit your character!</li>
+            <li>Hold alt and press "J" to jump!</li>
             <li>Hold alt and press keys to type the emojis shown below!</li>
         </ul>
         <img
@@ -396,6 +398,7 @@ export default defineComponent({
     @media (max-width: 500px) {
         width: 95%;
     }
+    z-index: 10;
 }
 .close {
     font-size: 0.7em;
