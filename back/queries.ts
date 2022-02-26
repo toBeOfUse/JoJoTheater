@@ -274,12 +274,9 @@ class Playlist extends EventEmitter {
 async function addMessage(m: ChatMessage) {
     await streamsDB
         .table<ChatMessage & { createdAt: Date }>("messages")
-        // hack to make the better-sqlite3 driver live up to its name and
-        // process booleans as sqlite3's native boolean type, int
         .insert({
             ...m,
             createdAt: new Date(),
-            isAnnouncement: Number(m.isAnnouncement) as any,
         });
 }
 
@@ -290,7 +287,7 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
             .select([
                 "isAnnouncement",
                 "messageHTML",
-                "senderID",
+                "userID",
                 "senderName",
                 "senderAvatarURL",
             ])
