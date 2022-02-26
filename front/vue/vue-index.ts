@@ -1,8 +1,7 @@
-import type { Socket } from "socket.io-client";
-import { Video } from "../../constants/types";
+import type { StreamsSocket, Video } from "../../constants/types";
 
 async function loadIndexComps(
-    socket: Socket,
+    socket: StreamsSocket,
     initialActiveVideo: Video | undefined
 ) {
     import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
@@ -24,11 +23,11 @@ async function loadIndexComps(
             AudiencePromise,
             InfoPromise,
         ]);
-        // ensure socket is connected before Vue components are created so they
-        // can all use it without fear
-        if (!socket.connected) {
-            await new Promise<void>((resolve) => socket.on("connect", resolve));
-        }
+        // ensure socket is connected and authenticated before Vue components
+        // are created so they can all use it without fear
+        await new Promise<void>((resolve) =>
+            socket.ifAndWhenGlobalAvailable("token", resolve)
+        );
         Vue.createApp(Chat.default, { socket }).mount("#chat-container");
         Vue.createApp(Playlist.default, { socket, initialActiveVideo }).mount(
             "#playlist-container"

@@ -149,8 +149,13 @@ class SceneController extends EventEmitter {
             this.emit("change");
         }
     }
-    removeInhabitant(userID: number) {
-        this._inhabitants = this._inhabitants.filter((i) => i.userID != userID);
+    removeInhabitant(connectionID: string) {
+        // for this to operate most securely, all currently pending member
+        // additions should probably be awaited here, so we don't try (and fail)
+        // to remove someone before we've finished adding them
+        this._inhabitants = this._inhabitants.filter(
+            (i) => i.connectionID != connectionID
+        );
         this.emit("change");
     }
     /**

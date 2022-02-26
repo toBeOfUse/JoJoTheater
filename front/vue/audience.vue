@@ -164,7 +164,12 @@ export default defineComponent({
             "closed" | "slightlyOpen" | "open" | "descended"
         >("closed");
         const multipleProps = ref(false);
-        const loadScene = async (graphics: OutputScene) => {
+        let lastUpdateTimestamp = 0;
+        const loadScene = async (
+            graphics: OutputScene,
+            thisTimestamp: number
+        ) => {
+            console.log("received " + graphics.inhabitants.length + " blorbos");
             const startTime = Date.now();
             if (graphics.inhabitants.length == 0) {
                 curtainState.value = "slightlyOpen";
@@ -176,11 +181,7 @@ export default defineComponent({
                 if (curtainState.value == "open") {
                     curtainState.value = "descended";
                 }
-                console.log(
-                    "scene changing! received " +
-                        graphics.inhabitants.length +
-                        " blorbos"
-                );
+                console.log("scene changing!");
             }
 
             currentScene.value = graphics.sceneName;
@@ -243,6 +244,9 @@ export default defineComponent({
                                 setTimeout(resolve, 1000 - timePassed)
                             );
                         }
+                        if (thisTimestamp < lastUpdateTimestamp) {
+                            return;
+                        }
                         backgroundURL.value = graphics.background;
                         foregroundURL.value = graphics.foreground;
                         users.value = loadedInhabitants;
@@ -274,7 +278,9 @@ export default defineComponent({
 
         // start receiving audience data from the server:
         props.socket.on("audience_info_set", (graphics: OutputScene) => {
-            loadScene(graphics);
+            const thisTimestamp = Date.now();
+            lastUpdateTimestamp = thisTimestamp;
+            loadScene(graphics, thisTimestamp);
         });
         props.socket.emit("ready_for", Subscription.audience);
 

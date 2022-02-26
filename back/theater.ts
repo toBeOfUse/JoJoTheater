@@ -494,7 +494,7 @@ class Theater {
 
     logOut(_req: Request, res: Response, member: AudienceMember) {
         logger.debug(`member ${member.chatInfo?.name} logged out`);
-        this.graphics.removeInhabitant(member.user.id);
+        this.graphics.removeInhabitant(member.connectionID);
         member.chatInfo = undefined;
         res.status(200);
         res.end();
@@ -702,7 +702,7 @@ class Theater {
 
         member.on("disconnect", () => {
             this.removeMember(member);
-            this.graphics.removeInhabitant(member.user.id);
+            this.graphics.removeInhabitant(member.connectionID);
             logger.info(
                 "client disconnected: " + this.audience.length + " remaining"
             );
