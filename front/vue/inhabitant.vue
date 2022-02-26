@@ -2,7 +2,7 @@
     <div
         class="inhabitant-container"
         ref="inhabitantContainer"
-        @click="menuOpen = false"
+        @click="isSelf && socket.emit('jump')"
         @mouseleave="menuOpen = false"
         :style="menuOpen ? { backgroundImage: backgroundGlow } : {}"
     >
@@ -13,6 +13,7 @@
                 <button v-if="morePosesAvailable" @click="requestNewPose">
                     Change Pose
                 </button>
+                <button @click="socket.emit('jump')">Jump!</button>
             </div>
         </div>
     </div>
@@ -29,7 +30,6 @@
 
 import {
     defineComponent,
-    nextTick,
     onMounted,
     onUnmounted,
     PropType,
@@ -57,8 +57,8 @@ export default defineComponent({
             type: String,
             required: true,
         },
-        isSelf: {
-            type: Boolean,
+        connectionID: {
+            type: String,
             required: true,
         },
         morePosesAvailable: {
@@ -115,6 +115,29 @@ export default defineComponent({
         onUnmounted(() =>
             window.removeEventListener("resize", () => setSizes())
         );
+        let jumping = false;
+        document.body.addEventListener("keydown", (e) => {
+            console.log(e.key);
+            if (e.key.toLowerCase() != "j" || !e.altKey) {
+                return;
+            }
+            props.socket.emit("jump");
+        });
+        props.socket.on("jump", (fromConnection: string) => {
+            if (
+                fromConnection == props.connectionID &&
+                !jumping &&
+                inhabitantContainer.value
+            ) {
+                jumping = true;
+                console.log("jumping");
+                const svg = inhabitantContainer.value.querySelector("svg");
+                if (svg) {
+                    console.log("playing");
+                    svg.style.animationName = "jump";
+                }
+            }
+        });
         const initializeSVG = async () => {
             const markup = props.propsMarkup;
             const parentSpace = findParentSpace();
@@ -140,6 +163,12 @@ export default defineComponent({
             inhabitantContainer.value
                 .querySelectorAll(".svg-inhabitant")
                 .forEach((e) => e.remove());
+            svgElement.addEventListener("animationend", function (event) {
+                if (event.target == this && event.animationName == "jump") {
+                    jumping = false;
+                    svgElement.style.animationName = "";
+                }
+            });
             inhabitantContainer.value.prepend(svgElement);
             const avatarImage = svgElement.querySelector(
                 ".seated-avatar"
@@ -250,6 +279,7 @@ export default defineComponent({
             menuOpen,
             backgroundGlow,
             requestNewPose,
+            isSelf: props.socket.id == props.connectionID,
         };
     },
 });
@@ -267,6 +297,23 @@ export default defineComponent({
     }
     100% {
         transform: translateY(3px);
+    }
+}
+@keyframes jump {
+    0% {
+        transform: translateY(0%);
+    }
+    40% {
+        transform: translateY(-20%);
+    }
+    // 50% {
+    //     transform: translateY(-20%);
+    // }
+    60% {
+        transform: translateY(-20%);
+    }
+    100% {
+        transform: translateY(0%);
     }
 }
 .inhabitant-container {
@@ -290,6 +337,8 @@ export default defineComponent({
         transition: opacity 0.1s linear;
         opacity: 0;
     }
+    animation-duration: 0.3s;
+    animation-iteration-count: 1;
 }
 #menu-container {
     position: absolute;

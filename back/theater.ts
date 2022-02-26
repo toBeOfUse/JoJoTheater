@@ -55,7 +55,8 @@ type ServerSentEvent =
     | "set_controls_flag"
     | "audience_info_set"
     | "request_state_report"
-    | "alert";
+    | "alert"
+    | "jump";
 
 type ClientSentEvent =
     | "state_change_request"
@@ -63,13 +64,14 @@ type ClientSentEvent =
     | "error_report"
     | "state_report"
     | "state_update_request"
-    | "ready_for";
+    | "ready_for"
+    | "jump";
 
 class AudienceMember {
     private socket: Socket;
     location: string = "";
     user: User;
-    id: string;
+    connectionID: string;
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
@@ -138,7 +140,7 @@ class AudienceMember {
 
     constructor(socket: Socket, user: User) {
         this.socket = socket;
-        this.id = socket.id;
+        this.connectionID = socket.id;
         this.user = user;
         this.socket.onAny((eventName: string) => {
             if (
@@ -146,7 +148,7 @@ class AudienceMember {
                 eventName != "state_report" &&
                 eventName != "typing_start"
             ) {
-                logger.debug(eventName + " event from id " + this.id);
+                logger.debug(eventName + " event from id " + this.connectionID);
             }
         });
         this.startPinging();
@@ -160,7 +162,9 @@ class AudienceMember {
             this.subscriptions.add(sub);
         });
         socket.on("error_report", (error_desc: string) => {
-            logger.error(`client side error from ${this.id}: ${error_desc}`);
+            logger.error(
+                `client side error from ${this.connectionID}: ${error_desc}`
+            );
         });
         const remoteIP = socket.handshake.headers["x-real-ip"] as string;
         if (remoteIP) {
@@ -348,12 +352,13 @@ class Theater {
             // marking the second one as resuming a session so that an
             // announcement doesn't get sent out announcing a new one
             info.resumed = true;
-        } else if (info.name.trim().length < 30) {
+        }
+        if (info.name.trim().length < 30) {
             info.name = info.name.trim();
             info.name = escapeHTML(info.name);
             member.chatInfo = {
                 ...info,
-                connectionID: member.id,
+                connectionID: member.connectionID,
                 avatar: loadedAvatar,
             };
             logger.debug(
@@ -388,7 +393,9 @@ class Theater {
 
     sendMessage(req: Request, res: Response, member: AudienceMember) {
         if (!member.chatInfo) {
-            logger.warn("chat message from un-logged-in user " + member.id);
+            logger.warn(
+                "chat message from un-logged-in user " + member.connectionID
+            );
         } else if (is<SendMessageBody>(req.body)) {
             // just in case
             member.subscriptions.add(Subscription.chat);
@@ -612,6 +619,10 @@ class Theater {
             member.emit("state_set", this.currentState);
         });
 
+        member.on("jump", () => {
+            this.emitAll("jump", member.connectionID);
+        });
+
         member.on(
             "state_change_request",
             async (change: StateChangeRequest) => {
@@ -778,7 +789,7 @@ class Theater {
                     }
                 } else if (difference > 1000) {
                     logger.debug(
-                        `correcting currentTime for player ${member.id}, ` +
+                        `correcting currentTime for player ${member.connectionID}, ` +
                             `who is off by ${difference} ms`
                     );
                     member.emit("state_set", this.currentState);
@@ -791,7 +802,9 @@ class Theater {
     }
 
     removeMember(member: AudienceMember) {
-        this.audience = this.audience.filter((a) => a.id != member.id);
+        this.audience = this.audience.filter(
+            (a) => a.connectionID != member.connectionID
+        );
     }
 }
 

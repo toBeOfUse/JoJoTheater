@@ -276,6 +276,8 @@ export default defineComponent({
             if (outgoing.value) {
                 event.preventDefault();
             } else if (handleEmoji(event)) {
+            } else if (event.key.toLowerCase() == "j" && event.altKey) {
+                // handled by inhabitant.vue sorry
             } else if (
                 /^[a-z0-9]$/i.test(event.key) ||
                 event.key == "Backspace" ||

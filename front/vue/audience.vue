@@ -29,7 +29,7 @@
                     :avatar="user.avatar"
                     :typing="user.typing"
                     :propsMarkup="user.svgMarkup"
-                    :isSelf="user.connectionID == ownID"
+                    :connectionID="user.connectionID"
                     class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
                     :morePosesAvailable="multipleProps"
