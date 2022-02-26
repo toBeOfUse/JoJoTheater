@@ -7,7 +7,11 @@
         :style="menuOpen ? { backgroundImage: backgroundGlow } : {}"
     >
         <div v-if="isSelf" id="menu-container">
-            <span @click.stop="menuOpen = !menuOpen">🌟</span>
+            <img
+                id="menu-button"
+                @click.stop="menuOpen = !menuOpen"
+                src="/images/star.svg"
+            />
             <div id="menu" v-if="menuOpen" @click.stop>
                 That's you!
                 <button v-if="morePosesAvailable" @click="requestNewPose">
@@ -352,6 +356,10 @@ export default defineComponent({
     }
     display: flex;
     align-items: flex-end;
+}
+#menu-button {
+    height: 20px;
+    width: 20px;
 }
 #menu {
     cursor: default;
