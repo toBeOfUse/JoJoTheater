@@ -13,9 +13,10 @@
         <div id="conversion-container">
             <div class="conversion-column">
                 <h3>Or go to a room:</h3>
+                <a href="/room"><button>Tanya's Treehouse Room</button></a>
             </div>
             <div class="conversion-column">
-                <h3>Or create a room:</h3>
+                <h3>Or create a room (this doesn't work yet):</h3>
                 <label for="room-name">Name:</label>
                 <input
                     type="text"
