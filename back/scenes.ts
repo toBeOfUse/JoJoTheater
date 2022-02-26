@@ -98,22 +98,22 @@ class SceneController extends EventEmitter {
         }
         return filename;
     }
-    static switchedProps(
+    static async switchScene(
         oldScene: SceneController,
         to: string | undefined = undefined
     ) {
         if (!to) {
-            const availableProps = Object.keys(scenes).filter(
+            const availableScenes = Object.keys(scenes).filter(
                 (c) => scenes[c].name != oldScene.scene.name
             );
             to =
-                availableProps[
-                    Math.floor(Math.random() * availableProps.length)
+                availableScenes[
+                    Math.floor(Math.random() * availableScenes.length)
                 ];
         }
         const newScene = new SceneController(scenes[to]);
         for (const inhabitant of oldScene._inhabitants) {
-            newScene.addInhabitant(inhabitant, { id: inhabitant.userID });
+            await newScene.addInhabitant(inhabitant, { id: inhabitant.userID });
         }
         return newScene;
     }

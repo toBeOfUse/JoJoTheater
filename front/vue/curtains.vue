@@ -330,6 +330,7 @@ export default defineComponent({
         };
 
         const playCloseMostly = async () => {
+            console.log("playing close mostly animation");
             context.emit("backintheway");
             await nextTick();
             await applyPos(fullyOpenPos);
@@ -341,6 +342,7 @@ export default defineComponent({
         };
 
         const playCloseFully = async () => {
+            console.log("playing close fully animation");
             context.emit("backintheway");
             await nextTick();
             await applyPos(fullyOpenPos);
@@ -352,6 +354,7 @@ export default defineComponent({
         };
 
         const playDescend = async () => {
+            console.log("playing drop down animation");
             context.emit("backintheway");
             await nextTick();
             await applyPos(raisedPos);
@@ -359,6 +362,7 @@ export default defineComponent({
         };
 
         const playAscend = async () => {
+            console.log("playing rise up animation");
             await applyPos(closedPos);
             applyPos(raisedPos, descendDuration);
             setTimeout(() => {
