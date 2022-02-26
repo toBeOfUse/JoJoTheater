@@ -600,7 +600,7 @@ export default defineComponent({
         });
         socket.on("chat_message", async (message: ChatMessage) => {
             if (
-                message.senderID != lastSender ||
+                message.userID != lastSender ||
                 groupedMessages.value.length == 0
             ) {
                 groupedMessages.value.push([message]);
@@ -609,7 +609,7 @@ export default defineComponent({
                     message
                 );
             }
-            lastSender = message.senderID as number;
+            lastSender = message.userID as number;
             await nextTick();
             scrollMessagePanelToBottom();
         });

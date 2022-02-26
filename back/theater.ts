@@ -397,7 +397,7 @@ class Theater {
                 const message: ChatMessage = {
                     isAnnouncement: false,
                     messageHTML: escapeHTML(messageText),
-                    senderID: member.user.id,
+                    userID: member.user.id,
                     senderName: member.chatInfo.name,
                     senderAvatarURL: member.avatarURL,
                 };
@@ -454,12 +454,12 @@ class Theater {
         res.end();
     }
 
-    changeScene(req: Request, res: Response, member: AudienceMember) {
+    async changeScene(req: Request, res: Response, member: AudienceMember) {
         if (
             is<ChangeSceneBody>(req.body) &&
             SceneController.scenes.includes(req.body.newScene)
         ) {
-            this.graphics = SceneController.switchedProps(
+            this.graphics = await SceneController.switchScene(
                 this.graphics,
                 req.body.newScene
             );

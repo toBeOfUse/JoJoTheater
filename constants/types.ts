@@ -5,7 +5,7 @@ interface ChatMessage {
     isAnnouncement: boolean;
     messageHTML: string;
     // the below are missing or null for announcements
-    senderID?: number;
+    userID?: number;
     senderName?: string;
     senderAvatarURL?: string;
 }

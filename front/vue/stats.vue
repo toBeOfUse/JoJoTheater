@@ -169,9 +169,8 @@ export default defineComponent({
                     result += "  ◦  ";
                 }
                 if (
-                    message.senderID &&
-                    (i == 0 ||
-                        messages.value[i - 1].senderID != message.senderID)
+                    message.userID &&
+                    (i == 0 || messages.value[i - 1].userID != message.userID)
                 ) {
                     result += message.senderName + ": ";
                 }
