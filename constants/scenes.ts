@@ -62,6 +62,11 @@ const scenes: Record<string, Scene> = {
         background: "stage.2.jpg",
         props: ["chimes", "drums", "frenchhorn", "guitar", "saxophone"],
     },
+    ruins: {
+        name: "ruins",
+        background: "statuesbg.2.jpg",
+        props: ["statue"],
+    },
 };
 
 export { scenes, Scene };
