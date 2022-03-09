@@ -16,21 +16,6 @@
     margin: 0 auto;
 }
 
-#toast {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 50px;
-    background-color: gray;
-    color: white;
-    text-align: center;
-    font-family: sans-serif;
-    border-radius: 10px;
-    padding: 10px 10px;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
-}
-
 #big-loading-spinner {
     position: absolute;
     left: 50%;
