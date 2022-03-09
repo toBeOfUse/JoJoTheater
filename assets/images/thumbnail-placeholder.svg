@@ -1,0 +1,24 @@
+<svg version="1.1" viewBox="0 0 177.8 100" xmlns="http://www.w3.org/2000/svg">
+ <style type="text/css">.st1{fill:#4f5d73}</style>
+ <g transform="matrix(.3775 0 0 .3775 16.92 14.56)">
+  <g transform="matrix(4.139 0 0 4.139 59.02 -38.58)">
+   <circle cx="31.8" cy="32" r="32" fill="#c75c5c"/>
+   <path class="st1" d="m16 30h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m16 37h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m16 44h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m16 23h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m16 16h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m44 30h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m44 37h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m44 44h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m44 23h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m44 16h4v4h-4z" fill="#4f5d73"/>
+   <path class="st1" d="m24 16h16v14h-16z" fill="#4f5d73"/>
+   <path class="st1" d="m24 34h16v14h-16z" fill="#4f5d73"/>
+   <g opacity=".2">
+    <path d="m48 14h-32c-2.2 0-4 1.8-4 4v32c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4v-32c0-2.2-1.8-4-4-4zm-28 36h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm20 28h-16v-14h16zm0-18h-16v-14h16zm8 18h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4z" fill="#231f20"/>
+   </g>
+   <path d="m48 12h-32c-2.2 0-4 1.8-4 4v32c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4v-32c0-2.2-1.8-4-4-4zm-28 36h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm20 28h-16v-14h16zm0-18h-16v-14h16zm8 18h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4zm0-7h-4v-4h4z" fill="#e0e0d1"/>
+  </g>
+ </g>
+</svg>

@@ -121,7 +121,7 @@ export default function (
             if ((req.query.path as string).startsWith("/images/thumbnails/")) {
                 const thumbnailFallback = path.join(
                     __dirname,
-                    "../assets/images/video-file.svg"
+                    "../assets/images/thumbnail-placeholder.svg"
                 );
                 logger.warn(
                     "missing thumbnail at path: " +
@@ -131,6 +131,7 @@ export default function (
                         " instead"
                 );
                 res.status(200);
+                res.header("Content-Type", "image/svg+xml");
                 res.sendFile(thumbnailFallback);
                 return;
             } else {
