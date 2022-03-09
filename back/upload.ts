@@ -8,6 +8,7 @@ import logger from "./logger";
 import { playlist } from "./queries";
 import { password } from "./secrets";
 import { UserSubmittedFolderName } from "../constants/types";
+import { nanoid } from "nanoid";
 
 export default function (options: { maxSizeBytes?: number } = {}) {
     const handler: RequestHandler = (req, res, next) => {
@@ -52,21 +53,31 @@ export default function (options: { maxSizeBytes?: number } = {}) {
                         "./uploads/",
                         videoFile.originalFilename + ".meta.json"
                     ),
-                    JSON.stringify({ videoFile, fields }, null, 4)
+                    JSON.stringify(
+                        { videoFile, fields, thumbnailFile },
+                        null,
+                        4
+                    )
                 );
                 if (
                     fields.password == password &&
                     !Array.isArray(fields.folder) &&
                     !Array.isArray(fields.title)
                 ) {
-                    const filename = path.basename(videoFile.filepath);
+                    const fileext = path.extname(videoFile.filepath);
+                    const filename =
+                        path.basename(videoFile.filepath, fileext) +
+                        "." +
+                        nanoid() +
+                        fileext;
+
                     await asyncFS.rename(
                         videoFile.filepath,
                         path.resolve("./assets/videos/", filename)
                     );
                     await playlist.addFromFile(
                         {
-                            src: "/videos/" + videoFile.originalFilename,
+                            src: "/videos/" + filename,
                             title:
                                 fields.title ||
                                 videoFile.originalFilename ||
@@ -75,6 +86,9 @@ export default function (options: { maxSizeBytes?: number } = {}) {
                         },
                         thumbnail
                     );
+                    if (thumbnailFile && thumbnail) {
+                        await asyncFS.unlink(thumbnailFile.filepath);
+                    }
                 }
             }
             res.end();
