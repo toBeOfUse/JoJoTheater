@@ -35,6 +35,20 @@ const NPCs: NPC[] = [
             }
         },
     },
+    {
+        senderName: "thunder",
+        senderAvatarURL: "/images/avatars/npcs/lightning.jpg",
+        userID: -3,
+        responder(messageHTML: string) {
+            if (!/thunder/i.test(messageHTML)) {
+                return undefined;
+            } else {
+                return ["CRACK", "BOOM", "KA-BOOM", "OEIFUIOJE"][
+                    Math.floor(Math.random() * 4)
+                ];
+            }
+        },
+    },
 ];
 
 ensureUserIDs(NPCs.map((n) => n.userID));
