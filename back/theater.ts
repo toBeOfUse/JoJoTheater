@@ -45,7 +45,6 @@ import {
     SendMessageBody,
 } from "../constants/endpoints";
 import NPCs from "./npcs";
-// import { avatars } from "../front/vue/avatars";
 
 declare global {
     namespace Express {
@@ -829,14 +828,20 @@ export default function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const graphics = new SceneController(scenes.lilypads);
 
-    // for (let i = 0; i < 10; i++) {
-    //     graphics.addInhabitant({
-    //         id: "test" + i,
-    //         name: "Test User " + i,
-    //         avatarURL: avatars[Math.floor(Math.random() * avatars.length)].path,
-    //         resumed: false,
-    //     });
-    // }
+    // (async () => {
+    //     const avatars = await getAllAvatars();
+    //     for (let i = 0; i < 10; i++) {
+    //         graphics.addInhabitant(
+    //             {
+    //                 connectionID: "connectionID" + i,
+    //                 name: "Test User " + i,
+    //                 resumed: false,
+    //                 avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    //             },
+    //             { id: -1 }
+    //         );
+    //     }
+    // })();
 
     const theater = new Theater(playlist, graphics);
     io.on("connection", (socket: Socket) => {

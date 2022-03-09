@@ -24,7 +24,7 @@
             >
                 <Inhabitant
                     v-for="user in users"
-                    :key="user.userID"
+                    :key="user.connectionID"
                     :title="user.name"
                     :avatar="user.avatar"
                     :typing="user.typing"
