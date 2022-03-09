@@ -21,6 +21,20 @@ const NPCs: NPC[] = [
             }
         },
     },
+    {
+        senderName: "the rain",
+        senderAvatarURL: "/images/avatars/npcs/rain.jpg",
+        userID: -2,
+        responder(messageHTML: string) {
+            if (!/\brain(ing|ed|s|y)?\b/i.test(messageHTML)) {
+                return undefined;
+            } else {
+                return ["splish", "sploosh", "kasplish", "kasploosh", "plash"][
+                    Math.floor(Math.random() * 5)
+                ];
+            }
+        },
+    },
 ];
 
 ensureUserIDs(NPCs.map((n) => n.userID));
