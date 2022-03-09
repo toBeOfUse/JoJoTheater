@@ -294,6 +294,7 @@ class Theater {
             [APIPath.switchProps]: this.newProps,
             [APIPath.getAvatars]: this.getAvatars,
             [APIPath.getIdentity]: this.getIdentity,
+            [APIPath.setIdle]: this.setIdle,
         };
     }
 
@@ -540,6 +541,19 @@ class Theater {
             res.status(403);
             res.end();
         }
+    }
+
+    setIdle(req: Request, res: Response, member: AudienceMember) {
+        if (member && member.user) {
+            if (is<{ idle: boolean }>(req.body)) {
+                this.graphics.setIdle(member.user.id, req.body.idle);
+                res.status(200);
+                res.end();
+                return;
+            }
+        }
+        res.status(400);
+        res.end();
     }
 
     async handleAPICall(req: Request, res: Response) {

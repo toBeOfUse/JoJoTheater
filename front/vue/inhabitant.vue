@@ -4,7 +4,10 @@
         ref="inhabitantContainer"
         @click="isSelf && socket.emit('jump')"
         @mouseleave="menuOpen = false"
-        :style="menuOpen ? { backgroundImage: backgroundGlow } : {}"
+        :style="{
+            backgroundImage: menuOpen ? backgroundGlow : '',
+            opacity: idle ? 0.6 : 1,
+        }"
     >
         <div v-if="isSelf" id="menu-container">
             <img
@@ -18,6 +21,9 @@
                     Change Pose
                 </button>
                 <button @click="socket.emit('jump')">Jump!</button>
+                <button @click="toggleIdle">
+                    {{ idle ? "Stop idling " : "Idle" }}
+                </button>
             </div>
         </div>
     </div>
@@ -66,6 +72,10 @@ export default defineComponent({
             required: true,
         },
         morePosesAvailable: {
+            type: Boolean,
+            required: true,
+        },
+        idle: {
             type: Boolean,
             required: true,
         },
@@ -121,11 +131,9 @@ export default defineComponent({
         );
         let jumping = false;
         document.body.addEventListener("keydown", (e) => {
-            console.log(e.key);
-            if (e.key.toLowerCase() != "j" || !e.altKey) {
-                return;
+            if (e.key.toLowerCase() == "j" && e.altKey) {
+                props.socket.emit("jump");
             }
-            props.socket.emit("jump");
         });
         props.socket.on("jump", (fromConnection: string) => {
             if (
@@ -277,6 +285,10 @@ export default defineComponent({
             props.socket.http(APIPath.switchProps);
         };
 
+        const toggleIdle = () => {
+            props.socket.http(APIPath.setIdle, { idle: !props.idle });
+        };
+
         return {
             inhabitantContainer,
             placement,
@@ -284,6 +296,7 @@ export default defineComponent({
             backgroundGlow,
             requestNewPose,
             isSelf: props.socket.id == props.connectionID,
+            toggleIdle,
         };
     },
 });
@@ -350,7 +363,7 @@ export default defineComponent({
     bottom: 5%;
     cursor: pointer;
     opacity: 0.6;
-    z-index: 3;
+    z-index: 4;
     &:hover {
         opacity: 1;
     }

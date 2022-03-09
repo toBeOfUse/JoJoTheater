@@ -33,6 +33,7 @@
                     class="musical-chairs-item"
                     :ref="(e) => e && inhabitants.push(e)"
                     :morePosesAvailable="multipleProps"
+                    :idle="user.idle"
                     :socket="socket"
                 />
             </transition-group>

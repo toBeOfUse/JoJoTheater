@@ -8,6 +8,7 @@ import { getUserSceneProp, saveUserSceneProp } from "./queries";
 
 interface SceneInhabitant extends ChatUserInfo {
     typing: boolean;
+    idle: boolean;
     lastTypingTimestamp: number;
     propsURL: string;
     userID: number;
@@ -70,11 +71,26 @@ class SceneController extends EventEmitter {
         }
     }
     get outputGraphics(): OutputScene {
+        const radixInhabitants: [
+            SceneInhabitant[],
+            SceneInhabitant[],
+            SceneInhabitant[]
+        ] = [[], [], []]; // typing, normal, idle
+        for (const inhabitant of this.inhabitants) {
+            if (inhabitant.typing) {
+                radixInhabitants[0].push(inhabitant);
+            } else if (inhabitant.idle) {
+                radixInhabitants[2].push(inhabitant);
+            } else {
+                radixInhabitants[1].push(inhabitant);
+            }
+        }
+        const sortedInhabitants = radixInhabitants.flat();
         return {
             sceneName: this.currentScene,
             background: this.background,
             foreground: this.foreground,
-            inhabitants: this.inhabitants,
+            inhabitants: sortedInhabitants,
             multipleProps: this.scene.props.length > 1,
         };
     }
@@ -127,6 +143,7 @@ class SceneController extends EventEmitter {
         const newInhabitant = {
             ...inhabitant,
             typing: false,
+            idle: false,
             lastTypingTimestamp: -1,
             propsURL: this.getPropsURL(prop),
             userID: user.id,
@@ -165,13 +182,9 @@ class SceneController extends EventEmitter {
     startTyping(userID: number) {
         const typer = this._inhabitants.find((i) => i.userID == userID);
         if (typer && Date.now() - typer.lastTypingTimestamp > 500) {
-            // if they have just started typing - move them to the front of the
-            // audience line so that can be seen
-            if (!typer.typing) {
-                this._inhabitants = [typer].concat(
-                    this._inhabitants.filter((i) => i.userID != userID)
-                );
+            if (!typer.typing || typer.idle) {
                 typer.typing = true;
+                typer.idle = false;
                 this.emit("change");
             }
             // either way, postpone the typing animation cancel (again)
@@ -181,6 +194,13 @@ class SceneController extends EventEmitter {
                     this.stopTyping(userID);
                 }
             }, 2000);
+        }
+    }
+    setIdle(userID: number, idle: boolean) {
+        const idler = this._inhabitants.find((i) => i.userID == userID);
+        if (idler && idler.idle != idle) {
+            idler.idle = idle;
+            this.emit("change");
         }
     }
     /**

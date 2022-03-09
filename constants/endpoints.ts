@@ -14,6 +14,7 @@ enum APIPath {
     switchProps = "/scene/propSwitch",
     getAvatars = "/get/avatars",
     getIdentity = "/get/identity",
+    setIdle = "/events/idle",
 }
 
 interface PostBody {}
@@ -145,6 +146,10 @@ const endpoints: Record<APIPath, Endpoint<PostBody>> = {
         false
     ),
     [APIPath.getIdentity]: new GetEndpoint<{}>(APIPath.getIdentity, false),
+    [APIPath.setIdle]: new PostEndpoint<{ idle: boolean }>(
+        APIPath.setIdle,
+        true
+    ),
 };
 
 /**
