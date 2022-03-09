@@ -24,6 +24,7 @@
     "@vimeo/player": "^2.16.2",
     "better-sqlite3": "^7.4.6",
     "chart.js": "^3.7.0",
+    "check-disk-space": "^3.3.0",
     "clean-webpack-plugin": "^4.0.0",
     "compression": "^1.7.4",
     "css-loader": "^6.2.0",

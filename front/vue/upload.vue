@@ -64,6 +64,8 @@
             >
                 UPLOAD
             </button>
+            <p v-if="diskSpace">({{ diskSpace }} free)</p>
+            <p v-else>(loading...)</p>
             <div id="in-progress-container">
                 <div
                     v-for="(inProgress, i) in uploadsInProgress"
@@ -95,6 +97,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
+import { APIPath } from "../../constants/endpoints";
 
 export default defineComponent({
     setup() {
@@ -183,6 +186,13 @@ export default defineComponent({
             folder.value = "";
             clearThumbnail();
         };
+
+        const diskSpace = ref("");
+        fetch(APIPath.getFreeSpace).then(async (resp) => {
+            const stats = await resp.json();
+            diskSpace.value = (stats.free / 1_073_741_824).toFixed(2) + " GB";
+        });
+
         return {
             upload,
             fileInput,
@@ -198,6 +208,7 @@ export default defineComponent({
             clearThumbnail,
             thumbnailPlaceholderImage,
             uploadsInProgress,
+            diskSpace,
         };
     },
 });
