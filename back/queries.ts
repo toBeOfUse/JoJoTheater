@@ -273,12 +273,7 @@ class Playlist extends EventEmitter {
 }
 
 async function addMessage(m: ChatMessage) {
-    await streamsDB
-        .table<ChatMessage & { createdAt: Date }>("messages")
-        .insert({
-            ...m,
-            createdAt: new Date(),
-        });
+    await streamsDB.table<ChatMessage>("messages").insert(m);
 }
 
 async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
@@ -291,6 +286,7 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
                 "userID",
                 "senderName",
                 "senderAvatarURL",
+                "createdAt",
             ])
             .orderBy("createdAt", "desc")
             .limit(howMany)

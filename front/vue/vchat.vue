@@ -130,14 +130,15 @@
                 <article id="messages" role="tabpanel" ref="messagePanel">
                     <div
                         class="chat-section"
-                        v-for="(group, i) in groupedMessages"
-                        :key="i"
+                        v-for="group in groupedMessages"
+                        :key="group[0].createdAt"
                     >
                         <div
                             v-if="group[0].isAnnouncement"
-                            :key="i"
+                            :key="group[0].createdAt"
                             class="announcement"
                             v-html="group[0].messageHTML"
+                            :title="group[0].time"
                         ></div>
                         <template v-else>
                             <opt-image
@@ -151,9 +152,10 @@
                                 />
                                 <div
                                     class="message"
-                                    v-for="(message, j) in group"
+                                    v-for="message in group"
                                     v-html="message.messageHTML"
-                                    :key="j"
+                                    :key="message.createdAt"
+                                    :title="message.time"
                                 ></div>
                             </div>
                         </template>
@@ -177,11 +179,9 @@
 <script lang="ts">
 import {
     ChatMessage,
-    ChatUserInfo,
     Subscription,
     StreamsSocket,
     Avatar,
-    User,
 } from "../../constants/types";
 import OptImage from "./image.vue";
 import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
@@ -467,7 +467,7 @@ export default defineComponent({
             }
         };
 
-        const maximize = async () => {
+        const maximize = () => {
             minimized.value = false;
             scrollMessagePanelToBottom();
         };
@@ -598,27 +598,59 @@ export default defineComponent({
         };
 
         // message display logic:
-        const groupedMessages = ref<ChatMessage[][]>([]);
+        const groupedMessages = ref<({ time: string } & ChatMessage)[][]>([]);
         let lastSender = -1;
-        socket.on("chat_announcement", async (announcement: string) => {
-            groupedMessages.value.push([
-                { isAnnouncement: true, messageHTML: announcement },
-            ]);
-            lastSender = -1;
-            scrollMessagePanelToBottom(true);
-        });
-        socket.on("chat_message", async (message: ChatMessage) => {
+        let lastTime = 0;
+        socket.on("chat_message", (message: ChatMessage) => {
+            const timePassedMinutes =
+                (message.createdAt - lastTime) / 1000 / 60;
+            let timeAnnouncementInserted = false;
+            if (lastTime != 0 && timePassedMinutes > 10) {
+                let timePassageNumber: number;
+                let timePassageUnit: string;
+                if (timePassedMinutes < 60) {
+                    timePassageNumber = Math.round(timePassedMinutes);
+                    timePassageUnit = "minute";
+                } else if (timePassedMinutes < 24 * 60) {
+                    timePassageNumber = Math.round(timePassedMinutes / 60);
+                    timePassageUnit = "hour";
+                } else {
+                    timePassageNumber = Math.round(timePassedMinutes / 60 / 24);
+                    timePassageUnit = "day";
+                }
+                // genius pluralization filter
+                if (timePassageNumber != 1) {
+                    timePassageUnit += "s";
+                }
+                const timePassageIndicator =
+                    `And so ${timePassageNumber} untapped ` +
+                    `${timePassageUnit} whistled by...`;
+                groupedMessages.value.push([
+                    {
+                        isAnnouncement: true,
+                        messageHTML: timePassageIndicator,
+                        createdAt: (message.createdAt + lastTime) / 2, // shrug
+                        time: "this is liminal 🥺",
+                    },
+                ]);
+                timeAnnouncementInserted = true;
+            }
+            lastTime = message.createdAt;
+            const timedMessage = {
+                ...message,
+                time: new Date(message.createdAt).toLocaleString(),
+            };
             if (
+                timeAnnouncementInserted ||
+                message.isAnnouncement ||
                 message.userID != lastSender ||
                 groupedMessages.value.length == 0
             ) {
-                groupedMessages.value.push([message]);
+                groupedMessages.value.push([timedMessage]);
             } else {
-                groupedMessages.value[groupedMessages.value.length - 1].push(
-                    message
-                );
+                groupedMessages.value.slice(-1)[0].push(timedMessage);
             }
-            lastSender = message.userID as number;
+            lastSender = message.userID || -1;
             scrollMessagePanelToBottom(true);
         });
 

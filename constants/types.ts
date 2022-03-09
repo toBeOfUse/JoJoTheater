@@ -8,6 +8,7 @@ interface ChatMessage {
     userID?: number;
     senderName?: string;
     senderAvatarURL?: string;
+    createdAt: number;
 }
 
 interface Video {

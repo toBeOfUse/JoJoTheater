@@ -59,7 +59,6 @@ type ServerSentEvent =
     | "grant_token"
     | "playlist_set"
     | "chat_message"
-    | "chat_announcement"
     | "state_set"
     | "set_controls_flag"
     | "audience_info_set"
@@ -319,22 +318,15 @@ class Theater {
         this.audience.forEach((a) => a.emit(event, ...args));
     }
 
-    async sendToChat(message: ChatMessage) {
+    async sendToChat(messageIn: Omit<ChatMessage, "createdAt">) {
+        const message = { ...messageIn, createdAt: new Date().getTime() };
         await addMessage(message);
         const receivers = this.audience.filter((a) =>
             a.subscriptions.has(Subscription.chat)
         );
-        if (message.isAnnouncement) {
-            logger.debug("emitting chat announcement:");
-            logger.debug(JSON.stringify(message));
-            receivers.forEach((a) =>
-                a.emit("chat_announcement", message.messageHTML)
-            );
-        } else {
-            logger.debug("emitting chat message:");
-            logger.debug(JSON.stringify(message));
-            receivers.forEach((a) => a.emit("chat_message", message));
-        }
+        logger.debug("emitting chat message:");
+        logger.debug(JSON.stringify(message));
+        receivers.forEach((a) => a.emit("chat_message", message));
     }
 
     async logIn(req: Request, res: Response, member: AudienceMember) {
@@ -419,7 +411,7 @@ class Theater {
             member.subscriptions.add(Subscription.chat);
             const messageText = req.body.messageText.trim();
             if (member.chatInfo && messageText) {
-                const message: ChatMessage = {
+                const message: Omit<ChatMessage, "createdAt"> = {
                     isAnnouncement: false,
                     messageHTML: escapeHTML(messageText),
                     userID: member.user.id,
@@ -618,12 +610,7 @@ class Theater {
             if (sub == Subscription.chat) {
                 getRecentMessages().then((messages) =>
                     messages.forEach((m) => {
-                        member.emit(
-                            m.isAnnouncement
-                                ? "chat_announcement"
-                                : "chat_message",
-                            m.isAnnouncement ? m.messageHTML : m
-                        );
+                        member.emit("chat_message", m);
                     })
                 );
             } else if (sub == Subscription.audience) {
