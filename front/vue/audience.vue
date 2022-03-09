@@ -132,13 +132,9 @@ export default defineComponent({
             }
             visibleCount.value = result;
         };
-        const scrollBarHeight = ref(0);
         const overflowing = ref(false);
         const updateScrollbarComp = () => {
             if (inhabitedSpace.value) {
-                scrollBarHeight.value =
-                    inhabitedSpace.value.offsetHeight -
-                    inhabitedSpace.value.clientHeight;
                 overflowing.value =
                     inhabitedSpace.value.scrollWidth >
                     inhabitedSpace.value.clientWidth;
@@ -336,7 +332,6 @@ export default defineComponent({
             currentScene,
             showCurtain,
             ownID: props.socket.id,
-            scrollBarHeight,
             overflowing,
             updateVisibleCount,
             updateScrollbarComp,
@@ -352,20 +347,28 @@ export default defineComponent({
 #inhabited-space {
     margin: 0 auto;
     border: 2px solid black;
-    border-radius: 10px;
     width: 100%;
     position: relative;
-    overflow-x: auto;
+    overflow-x: scroll;
     overflow-y: hidden;
-    height: calc(25vh + v-bind("scrollBarHeight+'px'"));
+    height: 25vh;
     // max 5:1 aspect ratio to avoid stretching art assets
     max-width: 25vh * 5;
     @media (max-width: 450px) {
-        height: calc(80px + v-bind("scrollBarHeight+'px'"));
+        height: 80px;
         max-width: 80px * 5;
     }
     background-size: cover;
     background-position: center;
+    border-radius: 10px 10px 0 0;
+    scrollbar-width: thin;
+    &::-webkit-scrollbar {
+        height: 4px;
+        background-color: #aaa;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #fff;
+    }
 }
 #musical-chairs {
     position: absolute;
@@ -417,7 +420,7 @@ export default defineComponent({
     height: 100%;
     width: 100%;
     border: 2px solid black;
-    border-radius: 10px;
+    border-radius: 10px 10px 0 0;
     z-index: 5;
 }
 #offToTheLeftCount {
