@@ -17,6 +17,7 @@ import {
     Avatar,
 } from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
+import { is } from "typescript-is";
 
 const streamsDB = knex({
     client: "better-sqlite3",
@@ -31,10 +32,10 @@ const streamsDB = knex({
  * is successfully added.
  */
 class Playlist extends EventEmitter {
-    connection: Knex;
+    connection: Knex<any, unknown[]>;
     static thumbnailPath = path.join(__dirname, "../assets/images/thumbnails/");
 
-    constructor(dbConnection: Knex) {
+    constructor(dbConnection: Knex<any, unknown[]>) {
         super();
         this.connection = dbConnection;
     }
@@ -313,6 +314,9 @@ async function saveUser(user: Omit<User, "id" | "createdAt">) {
 }
 
 async function getUser(token: string): Promise<User | undefined> {
+    if (!is<string>(token)) {
+        return undefined;
+    }
     const userID = await streamsDB
         .table<Token>("tokens")
         .where("token", token)

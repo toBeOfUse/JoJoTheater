@@ -1,9 +1,10 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import type { Express, Request, Response } from "express";
+import type { Express, Request, RequestHandler, Response } from "express";
 import escapeHTML from "escape-html";
 import { nanoid } from "nanoid";
+import checkDiskSpace from "check-disk-space";
 
 import {
     Playlist,
@@ -44,6 +45,14 @@ import {
 } from "../constants/endpoints";
 import { assertType, is } from "typescript-is";
 // import { avatars } from "../front/vue/avatars";
+
+declare global {
+    namespace Express {
+        interface Request {
+            user?: User;
+        }
+    }
+}
 
 type ServerSentEvent =
     | "ping"
@@ -146,7 +155,8 @@ class AudienceMember {
             if (
                 eventName !== "pong" &&
                 eventName != "state_report" &&
-                eventName != "typing_start"
+                eventName != "typing_start" &&
+                eventName != "jump"
             ) {
                 logger.debug(eventName + " event from id " + this.connectionID);
             }
@@ -214,8 +224,16 @@ class AudienceMember {
 }
 
 type APIHandler =
-    | ((req: Request, res: Response, member: AudienceMember | null) => void)
-    | ((req: Request, res: Response, member: AudienceMember) => void);
+    | ((
+          req: Request,
+          res: Response,
+          member: AudienceMember | null
+      ) => void | Promise<void>)
+    | ((
+          req: Request,
+          res: Response,
+          member: AudienceMember
+      ) => void | Promise<void>);
 
 class Theater {
     audience: AudienceMember[] = [];
@@ -293,7 +311,6 @@ class Theater {
             [APIPath.getScenes]: this.getScenes,
             [APIPath.switchProps]: this.newProps,
             [APIPath.getAvatars]: this.getAvatars,
-            [APIPath.getIdentity]: this.getIdentity,
             [APIPath.setIdle]: this.setIdle,
         };
     }
@@ -435,7 +452,7 @@ class Theater {
         }
     }
 
-    addVideo(req: Request, res: Response, member: AudienceMember) {
+    addVideo(req: Request, res: Response) {
         if (is<AddVideoBody>(req.body)) {
             const url = req.body.url;
             logger.debug(
@@ -534,15 +551,6 @@ class Theater {
         });
     }
 
-    getIdentity(_req: Request, res: Response, member: AudienceMember) {
-        if (member && member.user) {
-            res.json(member.user);
-        } else {
-            res.status(403);
-            res.end();
-        }
-    }
-
     setIdle(req: Request, res: Response, member: AudienceMember) {
         if (member && member.user) {
             if (is<{ idle: boolean }>(req.body)) {
@@ -562,21 +570,19 @@ class Theater {
                 this.apiHandlers[req.path as APIPath] as APIHandler
             ).bind(this);
             let member;
-            const auth = req.header("Auth");
-            if (!is<string>(auth)) {
+            if (req.user) {
+                member =
+                    this.audience.find((m) => m.user.id == req.user?.id) ||
+                    null;
+            } else if (req.user !== undefined) {
                 member = null;
-            } else {
-                const user = await getUser(auth);
-                if (user) {
-                    member = this.audience.find((m) => m.user.id == user.id);
-                }
             }
             if (
                 member?.loggedIn ||
-                !endpoints[req.path as APIPath].mustBeInChat
+                !endpoints[req.path as APIPath]?.chatDependent
             ) {
                 try {
-                    handler(req, res, (member || null) as any);
+                    await handler(req, res, (member || null) as any);
                 } catch (e: any) {
                     logger.warn(
                         "exception during " + handler.name + " api handler"
@@ -737,7 +743,8 @@ class Theater {
         if (this.baseState.video && this.baseState.playing) {
             const timeUntil = Math.max(
                 this.baseState.video.duration * 1000 -
-                    this.currentState.currentTimeMs,
+                    this.currentState.currentTimeMs +
+                    1000,
                 0
             );
             logger.debug(
@@ -749,8 +756,13 @@ class Theater {
                 );
                 if (nextVideo) {
                     this.startNewVideo(nextVideo);
-                } else {
-                    this.baseState = { ...this.currentState, playing: false };
+                } else if (this.baseState.video) {
+                    this.baseState = {
+                        ...this.currentState,
+                        currentTimeMs:
+                            this.baseState.video.duration * 1000 + 1000,
+                        playing: false,
+                    };
                     this.broadcastState();
                 }
             }, timeUntil);
@@ -866,13 +878,33 @@ export default function init(server: Server, app: Express) {
         });
     });
 
-    for (const endpoint of Object.values(APIPath)) {
-        // a kludge, but, the optimize image endpoint is handled by back/optimizeimages.ts
-        if (endpoint != endpoints[APIPath.optimizedImage].path) {
-            app[endpoints[endpoint] instanceof GetEndpoint ? "get" : "post"](
-                endpoint,
+    const getUserMiddleware: RequestHandler = async (req, _res, next) => {
+        req.user = await getUser(req.header("Auth") as string);
+        next();
+    };
+
+    for (const endpoint of Object.values(endpoints)) {
+        if (endpoint.roomDependent) {
+            app[endpoint instanceof GetEndpoint ? "get" : "post"](
+                endpoint.path,
+                getUserMiddleware,
                 (req: Request, res: Response) => theater.handleAPICall(req, res)
             );
+        } else if (endpoint.path == APIPath.getIdentity) {
+            app.get(endpoint.path, getUserMiddleware, async (req, res) => {
+                if (req.user) {
+                    res.status(200);
+                    res.json(req.user);
+                    res.end();
+                } else {
+                    res.status(400);
+                    res.end();
+                }
+            });
+        } else if (endpoint.path == APIPath.getFreeSpace) {
+            app.get(endpoint.path, async (_req, res) => {
+                res.json(await checkDiskSpace(__dirname));
+            });
         }
     }
 }

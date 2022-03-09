@@ -1,5 +1,3 @@
-import { ChatUserInfo } from "./types";
-
 enum APIPath {
     logIn = "/api/logIn",
     logOut = "/api/logOut",
@@ -15,6 +13,7 @@ enum APIPath {
     getAvatars = "/get/avatars",
     getIdentity = "/get/identity",
     setIdle = "/events/idle",
+    getFreeSpace = "/get/gb",
 }
 
 interface PostBody {}
@@ -23,10 +22,17 @@ interface GetBody
 
 abstract class Endpoint<BodyType> {
     path: APIPath;
-    mustBeInChat: boolean;
-    constructor(path: APIPath, mustBeInChat: boolean) {
+    roomDependent: boolean;
+    chatDependent: boolean;
+    static dir: Partial<Record<APIPath, Endpoint<PostBody>>> = {};
+    constructor(
+        path: APIPath,
+        options: { roomDependent: boolean; chatDependent: boolean }
+    ) {
         this.path = path;
-        this.mustBeInChat = mustBeInChat;
+        this.roomDependent = options.roomDependent;
+        this.chatDependent = options.chatDependent;
+        Endpoint.dir[path] = this;
     }
     abstract dispatch(
         token: string,
@@ -41,9 +47,10 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
         body: BodyType,
         headers: Record<string, string> = {}
     ) {
-        if (this.mustBeInChat && !token) {
+        if (this.roomDependent && !token) {
             throw (
-                "Missing authentication token for secure endpoint " + this.path
+                "Missing identification token for room-dependent endpoint " +
+                this.path
             );
         }
         const response = await fetch(this.path, {
@@ -82,7 +89,7 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
         body: BodyType,
         headers: Record<string, string> = {}
     ) {
-        if (this.mustBeInChat && !token) {
+        if (this.roomDependent && !token) {
             throw (
                 "Missing authentication token for secure endpoint " + this.path
             );
@@ -120,37 +127,69 @@ interface OptimizedImageBody extends GetBody {
     ratio?: string;
 }
 
-const endpoints: Record<APIPath, Endpoint<PostBody>> = {
-    [APIPath.logIn]: new PostEndpoint<LogInBody>(APIPath.logIn, false),
-    [APIPath.sendMessage]: new PostEndpoint<SendMessageBody>(
-        APIPath.sendMessage,
-        true
-    ),
-    [APIPath.logOut]: new PostEndpoint<{}>(APIPath.logOut, true),
-    [APIPath.addVideo]: new PostEndpoint<AddVideoBody>(APIPath.addVideo, true),
-    [APIPath.changeScene]: new PostEndpoint<ChangeSceneBody>(
-        APIPath.changeScene,
-        true
-    ),
-    [APIPath.typingStart]: new PostEndpoint<{}>(APIPath.typingStart, true),
-    [APIPath.getStats]: new GetEndpoint<{}>(APIPath.getStats, false),
-    [APIPath.getMessages]: new GetEndpoint<{}>(APIPath.getMessages, false),
-    [APIPath.getScenes]: new GetEndpoint<{}>(APIPath.getScenes, false),
-    [APIPath.optimizedImage]: new GetEndpoint<OptimizedImageBody>(
-        APIPath.optimizedImage,
-        false
-    ),
-    [APIPath.switchProps]: new PostEndpoint<{}>(APIPath.switchProps, true),
-    [APIPath.getAvatars]: new GetEndpoint<{ room: string }>(
-        APIPath.getAvatars,
-        false
-    ),
-    [APIPath.getIdentity]: new GetEndpoint<{}>(APIPath.getIdentity, false),
-    [APIPath.setIdle]: new PostEndpoint<{ idle: boolean }>(
-        APIPath.setIdle,
-        true
-    ),
-};
+new PostEndpoint<LogInBody>(APIPath.logIn, {
+    roomDependent: true,
+    chatDependent: false,
+});
+new PostEndpoint<SendMessageBody>(APIPath.sendMessage, {
+    roomDependent: true,
+    chatDependent: true,
+});
+new PostEndpoint<{}>(APIPath.logOut, {
+    roomDependent: true,
+    chatDependent: true,
+});
+new PostEndpoint<AddVideoBody>(APIPath.addVideo, {
+    roomDependent: true,
+    chatDependent: false,
+});
+new PostEndpoint<ChangeSceneBody>(APIPath.changeScene, {
+    roomDependent: true,
+    chatDependent: true,
+});
+new PostEndpoint<{}>(APIPath.typingStart, {
+    roomDependent: true,
+    chatDependent: true,
+});
+new GetEndpoint<{}>(APIPath.getStats, {
+    roomDependent: true,
+    chatDependent: false,
+});
+new GetEndpoint<{}>(APIPath.getMessages, {
+    roomDependent: true,
+    chatDependent: false,
+});
+new GetEndpoint<{}>(APIPath.getScenes, {
+    roomDependent: true,
+    chatDependent: false,
+});
+new GetEndpoint<OptimizedImageBody>(APIPath.optimizedImage, {
+    roomDependent: false,
+    chatDependent: false,
+});
+new PostEndpoint<{}>(APIPath.switchProps, {
+    roomDependent: true,
+    chatDependent: true,
+});
+new GetEndpoint<{ room: string }>(APIPath.getAvatars, {
+    roomDependent: true,
+    chatDependent: false,
+});
+new GetEndpoint<{}>(APIPath.getIdentity, {
+    roomDependent: false,
+    chatDependent: false,
+});
+new PostEndpoint<{ idle: boolean }>(APIPath.setIdle, {
+    roomDependent: true,
+    chatDependent: true,
+});
+
+new GetEndpoint<{}>(APIPath.getFreeSpace, {
+    roomDependent: false,
+    chatDependent: false,
+});
+
+const endpoints = Endpoint.dir as Record<APIPath, Endpoint<PostBody | GetBody>>;
 
 /**
  * Since the optimized image endpoint is often used by simply setting an img's
