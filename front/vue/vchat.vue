@@ -302,10 +302,20 @@ export default defineComponent({
         // positioning logic:
         const minimized = ref(true);
         const messagePanel = ref<null | HTMLElement>(null);
-        function scrollMessagePanelToBottom() {
-            if (messagePanel.value) {
-                messagePanel.value.scrollTop = messagePanel.value.scrollHeight;
-            }
+        function scrollMessagePanelToBottom(maintainOnly: boolean = false) {
+            const wasAtBottom =
+                messagePanel.value &&
+                Math.abs(
+                    messagePanel.value.scrollTop +
+                        messagePanel.value.clientHeight -
+                        messagePanel.value.scrollHeight
+                ) < 10;
+            nextTick().then(() => {
+                if (messagePanel.value && (!maintainOnly || wasAtBottom)) {
+                    messagePanel.value.scrollTop =
+                        messagePanel.value.scrollHeight;
+                }
+            });
         }
         const chatWindow = ref<null | HTMLElement>(null);
         const chatHeader = ref<null | HTMLElement>(null);
@@ -459,7 +469,6 @@ export default defineComponent({
 
         const maximize = async () => {
             minimized.value = false;
-            await nextTick();
             scrollMessagePanelToBottom();
         };
 
@@ -569,7 +578,6 @@ export default defineComponent({
                 socket.setGlobal("inChat", true);
                 loggedIn.value = true;
                 minimized.value = false;
-                await nextTick();
                 scrollMessagePanelToBottom();
                 if (messageInput.value) {
                     messageInput.value.focus();
@@ -597,8 +605,7 @@ export default defineComponent({
                 { isAnnouncement: true, messageHTML: announcement },
             ]);
             lastSender = -1;
-            await nextTick();
-            scrollMessagePanelToBottom();
+            scrollMessagePanelToBottom(true);
         });
         socket.on("chat_message", async (message: ChatMessage) => {
             if (
@@ -612,8 +619,7 @@ export default defineComponent({
                 );
             }
             lastSender = message.userID as number;
-            await nextTick();
-            scrollMessagePanelToBottom();
+            scrollMessagePanelToBottom(true);
         });
 
         // TODO: re-subscribe on reconnect. But it may take some work to block
