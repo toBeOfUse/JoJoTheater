@@ -309,6 +309,20 @@ async function saveUser(user: Omit<User, "id" | "createdAt">) {
     )[0];
 }
 
+/**
+ * basically for npcs
+ */
+async function ensureUserIDs(ids: number[]) {
+    await streamsDB
+        .table<User>("users")
+        .insert(
+            ids.map((id) => ({ createdAt: new Date(), watchTime: 0, id })),
+            ["id", "createdAt"]
+        )
+        .onConflict(["id"])
+        .ignore();
+}
+
 async function getUser(token: string): Promise<User | undefined> {
     if (!is<string>(token)) {
         return undefined;
@@ -386,4 +400,5 @@ export {
     getAllAvatars,
     getUserSceneProp,
     saveUserSceneProp,
+    ensureUserIDs,
 };

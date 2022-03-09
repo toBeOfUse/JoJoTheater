@@ -4,6 +4,7 @@ import { Server } from "http";
 import type { Express, Request, RequestHandler, Response } from "express";
 import escapeHTML from "escape-html";
 import { nanoid } from "nanoid";
+import { assertType, is } from "typescript-is";
 import checkDiskSpace from "check-disk-space";
 
 import {
@@ -43,7 +44,7 @@ import {
     LogInBody,
     SendMessageBody,
 } from "../constants/endpoints";
-import { assertType, is } from "typescript-is";
+import NPCs from "./npcs";
 // import { avatars } from "../front/vue/avatars";
 
 declare global {
@@ -67,6 +68,7 @@ type ServerSentEvent =
     | "jump";
 
 type ClientSentEvent =
+    | "pong"
     | "state_change_request"
     | "disconnect"
     | "error_report"
@@ -422,18 +424,20 @@ class Theater {
                     res.status(200);
                     res.end();
                 });
-                // if (/\bhm+\b/.test(message.messageHTML)) {
-                //     setTimeout(() => {
-                //         const villagerMessage: ChatMessage = {
-                //             isAnnouncement: false,
-                //             messageHTML: "<em>hmmm...</em>",
-                //             senderID: "fake-villager-user",
-                //             senderName: "Minecraft Villager",
-                //             senderAvatarURL: "/images/avatars/villager.jpg",
-                //         };
-                //         this.sendToChat(villagerMessage);
-                //     }, 500);
-                // }
+                (async () => {
+                    for (const npc of NPCs) {
+                        const { responder, ...npcInfo } = npc;
+                        const response = responder(message.messageHTML);
+                        if (response) {
+                            await new Promise((r) => setTimeout(r, 750));
+                            this.sendToChat({
+                                isAnnouncement: false,
+                                ...npcInfo,
+                                messageHTML: response,
+                            });
+                        }
+                    }
+                })();
                 this.graphics.stopTyping(member.user.id);
             }
         } else {
