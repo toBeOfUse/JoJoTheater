@@ -379,7 +379,9 @@ class Theater {
             if (!info.resumed) {
                 const announcement = {
                     isAnnouncement: true,
-                    messageHTML: `<strong>${member.chatInfo.name}</strong> joined the Chat.`,
+                    messageHTML:
+                        `<strong>${member.chatInfo.name}</strong>` +
+                        " joined the Chat.",
                 };
                 this.sendToChat(announcement);
             }

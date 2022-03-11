@@ -1,60 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="shortcut icon" href="/images/favicon.png" type="image/png" />
+        <meta property="og:image" content="/images/logo.png" />
+        <meta
+            name="description"
+            content="View videos in sync with your fellow MitchBot Enterprises customers."
+        />
+        <title>MitchBot Streams</title>
+        <link rel="stylesheet" href="/css/immediate.css" />
+    </head>
 
-<head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="shortcut icon" href="/images/favicon.png" type="image/png" />
-    <meta property="og:image" content="/images/logo.png" />
-    <meta name="description" content="View videos in sync with your fellow MitchBot Enterprises customers." />
-    <title>MitchBot Streams</title>
-    <link rel="stylesheet" href="/css/immediate.css" />
-</head>
-
-<body>
-    <div style="width: 100%; display: flex; justify-content: center">
-        <div id="initial-loading-spinner" class="lds-heart">
-            <div></div>
-        </div>
-        <div id="container-container" style="display: none">
-            <img class="flavor-image wait-for-load" src="images/logo.svg" id="flavor-image-logo" />
-            <div id="title-container">
-                <span id="video-title">MitchBot Player</span>
+    <body>
+        <div style="width: 100%; display: flex; justify-content: center">
+            <div id="initial-loading-spinner" class="lds-heart">
+                <div></div>
             </div>
-            <div id="audience-container"></div>
-            <div id="video-container">
-                <div class="xp" id="chat-container"></div>
-                <img id="big-loading-spinner" inline src="../assets/images/worm-spinner.svg" />
-                <div id="small-loading-spinner" style="display: none">
-                    <div class="lds-dual-ring"></div>
+            <div id="container-container" style="display: none">
+                <img
+                    class="flavor-image wait-for-load"
+                    src="images/logo.svg"
+                    id="flavor-image-logo"
+                />
+                <div id="title-container">
+                    <span id="video-title">MitchBot Player</span>
                 </div>
-                <div id="controls-overlay">
-                    <div id="bottom-row">
-                        <button id="prev-video-button" style="margin-right: 0">
-                            <img src="/images/video-changer.svg" style="transform: scaleX(-1)" />
-                        </button>
-                        <button id="play-pause-button" style="margin: 0">
-                            <img id="play-pause-image" src="/images/play.svg" />
-                        </button>
-                        <button id="next-video-button" style="margin-left: 0">
-                            <img src="/images/video-changer.svg" />
-                        </button>
-                        <div id="seek-container">
-                            <input type="range" id="seek" min="0" max="100" step="0.01" value="0" />
+                <div id="audience-container"></div>
+                <div id="video-container">
+                    <div class="xp" id="chat-container"></div>
+                    <img
+                        id="big-loading-spinner"
+                        inline
+                        src="../assets/images/worm-spinner.svg"
+                    />
+                    <div id="small-loading-spinner" style="display: none">
+                        <div class="lds-dual-ring"></div>
+                    </div>
+                    <div id="controls-overlay">
+                        <div id="bottom-row">
+                            <button
+                                id="prev-video-button"
+                                style="margin-right: 0"
+                            >
+                                <img
+                                    src="/images/video-changer.svg"
+                                    style="transform: scaleX(-1)"
+                                />
+                            </button>
+                            <button id="play-pause-button" style="margin: 0">
+                                <img
+                                    id="play-pause-image"
+                                    src="/images/play.svg"
+                                />
+                            </button>
+                            <button
+                                id="next-video-button"
+                                style="margin-left: 0"
+                            >
+                                <img src="/images/video-changer.svg" />
+                            </button>
+                            <div id="seek-container">
+                                <input
+                                    type="range"
+                                    id="seek"
+                                    min="0"
+                                    max="100"
+                                    step="0.01"
+                                    value="0"
+                                />
+                            </div>
+                            <button
+                                id="cc-button"
+                                alt="Subtitles toggle button"
+                            >
+                                <img src="/images/cc.svg" />
+                            </button>
+                            <span id="time-display">00:00 / 00:00</span>
+                            <button id="fullscreen-button">
+                                <img
+                                    id="fullscreen-image"
+                                    src="/images/enterfullscreen.svg"
+                                />
+                            </button>
                         </div>
-                        <span id="time-display">00:00 / 00:00</span>
-                        <button id="fullscreen-button">
-                            <img id="fullscreen-image" src="/images/enterfullscreen.svg" />
-                        </button>
                     </div>
                 </div>
+                <div id="playlist-container"></div>
+                <div id="info-container"></div>
+                <div id="toast">pop up message here</div>
             </div>
-            <div id="playlist-container"></div>
-            <div id="info-container"></div>
-            <div id="toast">pop up message here</div>
         </div>
-    </div>
-</body>
-
+    </body>
 </html>

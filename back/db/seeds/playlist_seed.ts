@@ -1,10 +1,9 @@
 import { Knex } from "knex";
 import { Video, UserSubmittedFolderName } from "../../../constants/types";
 export async function seed(knex: Knex): Promise<void> {
-    await knex<Video>("playlist")
+    await knex<Omit<Video, "captions">>("playlist")
         .insert([
             {
-                captions: true,
                 duration: 2742,
                 folder: "Couple of Mirrors",
                 id: 1,
@@ -13,7 +12,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "《双镜 Couple of Mirrors》EP01: 3，2，1",
             },
             {
-                captions: true,
                 duration: 2852,
                 folder: "Couple of Mirrors",
                 id: 2,
@@ -22,7 +20,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "《双镜 Couple of Mirrors》EP02: In the cold rainy night",
             },
             {
-                captions: true,
                 duration: 2801,
                 folder: "Couple of Mirrors",
                 id: 3,
@@ -31,7 +28,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "《双镜 Couple of Mirrors》EP03: When the gun is fired",
             },
             {
-                captions: true,
                 duration: 3011,
                 folder: "Couple of Mirrors",
                 id: 4,
@@ -40,7 +36,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "《双镜 Couple of Mirrors》EP04: Welcome to My World",
             },
             {
-                captions: true,
                 duration: 2705,
                 folder: "Couple of Mirrors",
                 id: 5,
@@ -49,7 +44,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "《双镜 Couple of Mirrors》EP05: The Scene of the Third Crime",
             },
             {
-                captions: false,
                 duration: 374,
                 folder: "MitchBot Recommends",
                 id: 6,
@@ -58,7 +52,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Girl Walk // All Day: Chapter 5",
             },
             {
-                captions: false,
                 duration: 317,
                 folder: "MitchBot Recommends",
                 id: 7,
@@ -67,7 +60,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Girl Walk // All Day: Chapter 6",
             },
             {
-                captions: false,
                 duration: 384,
                 folder: "MitchBot Recommends",
                 id: 8,
@@ -76,7 +68,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Girl Walk // All Day: Chapter 7",
             },
             {
-                captions: false,
                 duration: 132,
                 folder: "MitchBot Recommends",
                 id: 9,
@@ -85,7 +76,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "and the day goes on - bill wurtz",
             },
             {
-                captions: false,
                 duration: 165,
                 folder: "MitchBot Recommends",
                 id: 10,
@@ -94,7 +84,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "might quit - bill wurtz",
             },
             {
-                captions: false,
                 duration: 153,
                 folder: UserSubmittedFolderName,
                 id: 11,
@@ -103,7 +92,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Handsome Dancer - Coincidance",
             },
             {
-                captions: false,
                 duration: 481,
                 folder: UserSubmittedFolderName,
                 id: 12,
@@ -112,7 +100,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Pop Danthology 2012 - Mashup of 50+ Pop Songs",
             },
             {
-                captions: false,
                 duration: 149,
                 folder: UserSubmittedFolderName,
                 id: 13,
@@ -121,7 +108,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Crybaby Learns to Swim",
             },
             {
-                captions: false,
                 duration: 9,
                 folder: UserSubmittedFolderName,
                 id: 14,
@@ -130,7 +116,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "small woof",
             },
             {
-                captions: false,
                 duration: 261,
                 folder: UserSubmittedFolderName,
                 id: 15,
@@ -139,7 +124,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "75 Big Mouth Billy Bass fish sing Bee Gees' 'Stayin Alive,' Talking Heads' 'Once in a Lifetime'",
             },
             {
-                captions: false,
                 duration: 848,
                 folder: UserSubmittedFolderName,
                 id: 16,
@@ -148,7 +132,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Taskmaster’s Most Romantic Moments",
             },
             {
-                captions: true,
                 duration: 692,
                 folder: UserSubmittedFolderName,
                 id: 18,
@@ -157,7 +140,6 @@ export async function seed(knex: Knex): Promise<void> {
                 title: "Joe Pera Talks You Back to Sleep (Full Episode) | Joe Pera Talks With You | adult swim",
             },
             {
-                captions: true,
                 duration: 9719,
                 folder: UserSubmittedFolderName,
                 id: 23,

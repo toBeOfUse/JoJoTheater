@@ -11,28 +11,26 @@ interface ChatMessage {
     createdAt: number;
 }
 
+interface Subtitles {
+    file: string;
+    format: string;
+    language: string;
+}
+
 interface Video {
     id: number;
     src: string;
-    /**
-     * only for local files; currently unused anyway
-     */
-    type?: string;
-    /**
-     * only for local files; currently unused anyway
-     */
-    size?: number;
     title: string;
     /**
      * only for youtube/vimeo/dailymotion
      */
     provider?: string;
-    captions: boolean;
     folder: string;
     /**
      * in seconds
      */
     duration: number;
+    captions: Subtitles[];
 }
 
 interface VideoState {
@@ -167,4 +165,5 @@ export {
     Avatar,
     ClientStreamsSocket as StreamsSocket,
     ClientGlobalValues,
+    Subtitles,
 };

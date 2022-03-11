@@ -15,6 +15,7 @@ import {
     User,
     Token,
     Avatar,
+    Subtitles,
 } from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
 import { is } from "typescript-is";
@@ -31,6 +32,7 @@ const streamsDB = knex({
  * files that you wish to add and also emits a "video_added" event when a new video
  * is successfully added.
  */
+type VideoRecord = Omit<Video, "captions">;
 class Playlist extends EventEmitter {
     connection: Knex<any, unknown[]>;
     static thumbnailPath = path.join(__dirname, "../assets/images/thumbnails/");
@@ -40,46 +42,68 @@ class Playlist extends EventEmitter {
         this.connection = dbConnection;
     }
 
+    async hydrate(query: Promise<VideoRecord[]>): Promise<Video[]> {
+        const videos = await query;
+        return await Promise.all(
+            videos.map(
+                (v) =>
+                    new Promise<Video>(async (resolve) => {
+                        resolve({
+                            ...v,
+                            captions: await this.connection
+                                .select(["file", "format"])
+                                .from<Subtitles & { video: number }>(
+                                    "subtitles"
+                                )
+                                .where({ video: v.id }),
+                        });
+                    })
+            )
+        );
+    }
+
     async getVideoByID(id: number): Promise<Video | undefined> {
-        return (
-            await this.connection
-                .select("*")
-                .from<Video>("playlist")
-                .where({ id })
-        )[0];
+        const query = this.connection
+            .select("*")
+            .from<VideoRecord>("playlist")
+            .where({ id });
+        return (await this.hydrate(query))[0];
     }
 
     async getVideos(): Promise<Video[]> {
-        return await this.connection
+        const query = this.connection
             .select("*")
-            .from<Video>("playlist")
+            .from<VideoRecord>("playlist")
             .orderBy("folder", "id");
+        return await this.hydrate(query);
     }
 
     async getNextVideo(v: Video | null): Promise<Video | undefined> {
         if (!v) {
             return undefined;
         }
-        return await this.connection
+        const query = this.connection
             .select("*")
-            .from<Video>("playlist")
+            .from<VideoRecord>("playlist")
             .where({ folder: v.folder })
             .andWhere("id", ">", v.id)
             .orderBy("id")
-            .first();
+            .limit(1);
+        return (await this.hydrate(query))[0];
     }
 
     async getPrevVideo(v: Video | null): Promise<Video | undefined> {
         if (!v) {
             return undefined;
         }
-        return await this.connection
+        const query = this.connection
             .select("*")
-            .from<Video>("playlist")
+            .from<VideoRecord>("playlist")
             .where({ folder: v.folder })
             .andWhere("id", "<", v.id)
             .orderBy("id", "desc")
-            .first();
+            .limit(1);
+        return (await this.hydrate(query))[0];
     }
 
     async addFromURL(url: string) {
@@ -88,13 +112,14 @@ class Playlist extends EventEmitter {
             throw "url was not parseable by npm package get-video-id";
         }
 
-        const rawVideo: Omit<Video, "id" | "duration" | "title" | "thumbnail"> =
-            {
-                provider: providerInfo.service,
-                src: providerInfo.id,
-                captions: true,
-                folder: UserSubmittedFolderName,
-            };
+        const rawVideo: Omit<
+            VideoRecord,
+            "id" | "duration" | "title" | "thumbnail"
+        > = {
+            provider: providerInfo.service,
+            src: providerInfo.id,
+            folder: UserSubmittedFolderName,
+        };
         const {
             durationSeconds: duration,
             title,
@@ -118,14 +143,13 @@ class Playlist extends EventEmitter {
         });
         await this.addRawVideo({
             ...video,
-            captions: false,
             duration: metadata.durationSeconds,
             thumbnail: thumbnail || metadata.thumbnail,
         });
     }
 
     async addRawVideo(
-        v: Omit<Video, "id"> & { thumbnail: Buffer | undefined }
+        v: Omit<VideoRecord, "id"> & { thumbnail: Buffer | undefined }
     ) {
         const existingCount = Number(
             (await this.connection.table("playlist").count({ count: "*" }))[0]
