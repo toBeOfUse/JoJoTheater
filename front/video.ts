@@ -236,7 +236,7 @@ class HTML5VideoController extends VideoController {
             for (const cc of v.video.captions) {
                 if (cc.format == "vtt") {
                     const track = document.createElement("track");
-                    track.src = "/subtitles/" + cc.file;
+                    track.src = "/captions/" + cc.file;
                     track.kind = "subtitles";
                     track.srclang = cc.language;
                 }
