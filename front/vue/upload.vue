@@ -3,8 +3,8 @@
         <div id="panel">
             <input
                 type="file"
-                name="someFile"
-                ref="fileInput"
+                name="video"
+                ref="videoFile"
                 accept="video/mp4"
                 @change="onFileChange"
                 style="width: 100%; max-width: 70vw"
@@ -49,6 +49,16 @@
                     @change="showThumbnail"
                     ref="thumbnailInput"
                     accept="image/jpeg,image/png"
+                    name="thumbnail"
+                />
+                <p>Subtitle files:</p>
+                <input
+                    type="file"
+                    id="subtitleInput"
+                    ref="subtitleInput"
+                    accept="text/vtt"
+                    name="subtitles"
+                    multiple
                 />
                 <p>Password for immediate video availability:</p>
                 <input
@@ -109,15 +119,16 @@ export default defineComponent({
         }
         const uploadsInProgress = ref<UploadInProgress[]>([]);
 
-        const fileInput = ref<HTMLInputElement | null>(null);
+        const videoFile = ref<HTMLInputElement | null>(null);
         const fileSelected = ref(false);
         const onFileChange = () => {
-            fileSelected.value = !!fileInput.value?.files?.length;
+            fileSelected.value = !!videoFile.value?.files?.length;
         };
 
         const fullFormShown = ref(false);
         const videoTitle = ref("");
         const folder = ref("");
+        const subtitleInput = ref<HTMLInputElement | null>(null);
         const thumbnailInput = ref<HTMLInputElement | null>(null);
         const thumbnailPlaceholderImage = "/images/upload-plus.svg";
         const thumbnail = ref(thumbnailPlaceholderImage);
@@ -137,15 +148,22 @@ export default defineComponent({
         const password = ref("");
 
         const upload = () => {
-            if (!fileInput.value?.files?.length) {
+            if (!videoFile.value?.files?.length) {
                 return;
             }
-            const file = fileInput.value.files[0];
+            const file = videoFile.value.files[0];
             const fd = new FormData();
             fd.append("video", file, file.name);
             if (thumbnailInput.value?.files?.length) {
                 const thumbnailFile = thumbnailInput.value.files[0];
                 fd.append("thumbnail", thumbnailFile, thumbnailFile.name);
+            }
+            const subtitlesCount = subtitleInput.value?.files?.length;
+            if (subtitlesCount && subtitleInput.value?.files) {
+                for (let i = 0; i < subtitlesCount; i++) {
+                    const subFile = subtitleInput.value.files[i];
+                    fd.append("captions", subFile, subFile.name);
+                }
             }
             if (videoTitle.value?.trim()) {
                 fd.append("title", videoTitle.value.trim());
@@ -179,8 +197,11 @@ export default defineComponent({
             });
             xhr.open("POST", "/api/upload");
             xhr.send(fd);
-            if (fileInput.value) {
-                fileInput.value.value = "";
+            if (videoFile.value) {
+                videoFile.value.value = "";
+            }
+            if (subtitleInput.value) {
+                subtitleInput.value.value = "";
             }
             videoTitle.value = "";
             folder.value = "";
@@ -195,7 +216,7 @@ export default defineComponent({
 
         return {
             upload,
-            fileInput,
+            videoFile,
             fullFormShown,
             videoTitle,
             folder,
@@ -209,6 +230,7 @@ export default defineComponent({
             thumbnailPlaceholderImage,
             uploadsInProgress,
             diskSpace,
+            subtitleInput,
         };
     },
 });
