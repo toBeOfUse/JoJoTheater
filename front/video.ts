@@ -239,8 +239,10 @@ class HTML5VideoController extends VideoController {
                     track.src = "/captions/" + cc.file;
                     track.kind = "subtitles";
                     track.srclang = cc.language;
+                    this.videoElement.appendChild(track);
                 }
             }
+            setCaptionsOn(false);
             this.prevSrc = v.video.src;
         }
         console.log("setting video current time to", v.currentTimeMs / 1000);
