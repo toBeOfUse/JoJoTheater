@@ -8,6 +8,7 @@ interface DMState {
     playerIsPlaying: boolean;
     playerIsMuted: boolean;
     videoSubtitles: string;
+    videoSubtitlesList: string[];
 }
 
 interface DMPlayer {

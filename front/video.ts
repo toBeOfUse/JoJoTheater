@@ -140,6 +140,14 @@ function playButtonIcon(setTo: "play" | "pause") {
     }
 }
 
+function setCaptionsAvailable(yes: boolean) {
+    DOMControls.captions.style.display = yes ? "initial" : "none";
+}
+
+function setCaptionsOn(on: boolean) {
+    DOMControls.captions.style.opacity = on ? "1" : "0.6";
+}
+
 /**
  * Responsible for creating and removing the DOM element that will directly display
  * the video (i. e. a <video> tag or an iframe containing embedded video), applying
@@ -180,14 +188,6 @@ class HTML5VideoController extends VideoController {
         video.src = "";
         video.id = "player";
         video.controls = false;
-        for (const cc of state.video.captions) {
-            if (cc.format == "vtt") {
-                const track = document.createElement("track");
-                track.src = "/subtitles/" + cc.file;
-                track.kind = "subtitles";
-                track.srclang = cc.language;
-            }
-        }
         video.setAttribute("playsinline", "");
         video.setAttribute("disablePictureInPicture", "");
         DOMControls.videoContainer.prepend(video);
@@ -232,6 +232,15 @@ class HTML5VideoController extends VideoController {
                     width: "max",
                 })
             );
+            setCaptionsAvailable(v.video.captions.length > 0);
+            for (const cc of v.video.captions) {
+                if (cc.format == "vtt") {
+                    const track = document.createElement("track");
+                    track.src = "/subtitles/" + cc.file;
+                    track.kind = "subtitles";
+                    track.srclang = cc.language;
+                }
+            }
             this.prevSrc = v.video.src;
         }
         console.log("setting video current time to", v.currentTimeMs / 1000);
@@ -255,11 +264,16 @@ class HTML5VideoController extends VideoController {
 
     toggleCaptions(): void {
         // TODO: cycle through available captions?
+        if (this.videoElement.textTracks.length == 0) {
+            return;
+        }
         const currentMode = this.videoElement.textTracks[0].mode;
         if (currentMode == "showing") {
             this.videoElement.textTracks[0].mode = "hidden";
+            setCaptionsOn(false);
         } else {
             this.videoElement.textTracks[0].mode = "showing";
+            setCaptionsOn(true);
         }
     }
 
@@ -360,7 +374,7 @@ class YoutubeVideoController extends VideoController {
                 },
             });
             (window as any)._mbyt = this.YTPlayer;
-
+            setCaptionsAvailable(true); // shrug
             this.timeUpdate = setInterval(async () => {
                 await this.videoReady;
                 if (this.YTPlayer) {
@@ -436,6 +450,7 @@ class YoutubeVideoController extends VideoController {
     }
 
     toggleCaptions(): void {
+        setCaptionsOn(true); // we don't actually know so just make it opaque
         if (this._captionsVisible) {
             (this.YTPlayer as any)?.unloadModule("captions");
         } else {
@@ -520,7 +535,11 @@ class VimeoVideoController extends VideoController {
     async setState(v: ActionableVideoState) {
         if (v.video.src != this.prevSrc) {
             this.prevSrc = v.video.src;
-            this.vimeoPlayer.loadVideo(Number(v.video.src));
+            this.vimeoPlayer.loadVideo(Number(v.video.src)).then(() => {
+                this.vimeoPlayer.getTextTracks().then((tt) => {
+                    setCaptionsAvailable(tt.length > 0);
+                });
+            });
         }
         const isPaused = await this.vimeoPlayer.getPaused();
         const isEnded = await this.vimeoPlayer.getEnded();
@@ -539,10 +558,13 @@ class VimeoVideoController extends VideoController {
 
     toggleCaptions() {
         if (!this._captions) {
+            setCaptionsOn(true);
             this.vimeoPlayer.enableTextTrack("en", "subtitles").catch(() => {
                 console.log("english captions unavailable");
+                setCaptionsOn(false);
             });
         } else {
+            setCaptionsOn(false);
             this.vimeoPlayer.disableTextTrack().catch((e) => {
                 console.log("error turning off Vimeo captions");
                 console.log(e);
@@ -606,7 +628,6 @@ class DailymotionVideoController extends VideoController {
                 "dailymotion-embed-location",
                 { video: initialState.video.src, autostart: "off" }
             );
-            (window as any).dmcheat = this.dailymotionPlayer;
             this.dailymotionPlayer.on(dailymotion.events.VIDEO_PLAYING, () => {
                 playButtonIcon("pause");
                 hideSmallSpinner();
@@ -635,6 +656,9 @@ class DailymotionVideoController extends VideoController {
                     this.cachedCurrentTimeMs = state.videoTime * 1000;
                 }
             );
+            this.dailymotionPlayer.getState().then((state) => {
+                setCaptionsAvailable(state.videoSubtitlesList.length > 0);
+            });
             resolve();
         });
         this.setState(initialState);
@@ -707,8 +731,10 @@ class DailymotionVideoController extends VideoController {
         if (this.dailymotionPlayer) {
             this.dailymotionPlayer.getState().then((state) => {
                 if (state.videoSubtitles) {
+                    setCaptionsOn(false);
                     this.dailymotionPlayer?.setSubtitles("");
                 } else {
+                    setCaptionsOn(true);
                     this.dailymotionPlayer?.setSubtitles("en");
                 }
             });
