@@ -193,7 +193,7 @@ export default defineComponent({
                     event.loaded / event.total;
             });
             xhr.upload.addEventListener("load", () => {
-                // TODO: something?
+                getDiskSpace();
             });
             xhr.open("POST", "/api/upload");
             xhr.send(fd);
@@ -203,16 +203,21 @@ export default defineComponent({
             if (subtitleInput.value) {
                 subtitleInput.value.value = "";
             }
+            onFileChange();
             videoTitle.value = "";
             folder.value = "";
             clearThumbnail();
         };
 
         const diskSpace = ref("");
-        fetch(APIPath.getFreeSpace).then(async (resp) => {
-            const stats = await resp.json();
-            diskSpace.value = (stats.free / 1_073_741_824).toFixed(2) + " GB";
-        });
+        function getDiskSpace() {
+            fetch(APIPath.getFreeSpace).then(async (resp) => {
+                const stats = await resp.json();
+                diskSpace.value =
+                    (stats.free / 1_073_741_824).toFixed(2) + " GB";
+            });
+        }
+        getDiskSpace();
 
         return {
             upload,
