@@ -7,8 +7,13 @@ import type { RequestHandler } from "express";
 import logger from "./logger";
 import { playlist } from "./queries";
 import { password } from "./secrets";
-import { UserSubmittedFolderName } from "../constants/types";
+import { Subtitles, UserSubmittedFolderName } from "../constants/types";
 import { nanoid } from "nanoid";
+
+function getUniqueFilename(nameOrPath: string) {
+    const fileext = path.extname(nameOrPath);
+    return path.basename(nameOrPath, fileext) + "." + nanoid() + fileext;
+}
 
 export default function (options: { maxSizeBytes?: number } = {}) {
     const handler: RequestHandler = (req, res, next) => {
@@ -41,8 +46,11 @@ export default function (options: { maxSizeBytes?: number } = {}) {
             if (err) {
                 res.status(400);
             } else {
+                logger.debug("received files:");
+                logger.debug(JSON.stringify(files, null, 4));
                 const videoFile = files.video as formidable.File;
                 const thumbnailFile = files.thumbnail as formidable.File;
+                let captionFiles = files.captions;
                 let thumbnail;
                 if (thumbnailFile) {
                     thumbnail = await asyncFS.readFile(thumbnailFile.filepath);
@@ -54,7 +62,7 @@ export default function (options: { maxSizeBytes?: number } = {}) {
                         videoFile.originalFilename + ".meta.json"
                     ),
                     JSON.stringify(
-                        { videoFile, fields, thumbnailFile },
+                        { videoFile, fields, thumbnailFile, captionFiles },
                         null,
                         4
                     )
@@ -64,27 +72,40 @@ export default function (options: { maxSizeBytes?: number } = {}) {
                     !Array.isArray(fields.folder) &&
                     !Array.isArray(fields.title)
                 ) {
-                    const fileext = path.extname(videoFile.filepath);
-                    const filename =
-                        path.basename(videoFile.filepath, fileext) +
-                        "." +
-                        nanoid() +
-                        fileext;
-
+                    const videoFilename = getUniqueFilename(videoFile.filepath);
                     await asyncFS.rename(
                         videoFile.filepath,
-                        path.resolve("./assets/videos/", filename)
+                        path.resolve("./assets/videos/", videoFilename)
                     );
+                    let subtitles: Subtitles[] = [];
+                    if (captionFiles && !Array.isArray(captionFiles)) {
+                        captionFiles = [captionFiles];
+                    }
+                    if (captionFiles && Array.isArray(captionFiles)) {
+                        for (const caption of captionFiles) {
+                            const newName = getUniqueFilename(caption.filepath);
+                            await asyncFS.rename(
+                                caption.filepath,
+                                path.resolve("./assets/captions/", newName)
+                            );
+                            subtitles.push({
+                                file: newName,
+                                format: "vtt",
+                                language: "en",
+                            });
+                        }
+                    }
                     await playlist.addFromFile(
                         {
-                            src: "/videos/" + filename,
+                            src: "/videos/" + videoFilename,
                             title:
                                 fields.title ||
                                 videoFile.originalFilename ||
                                 "mystery video",
                             folder: fields.folder || UserSubmittedFolderName,
                         },
-                        thumbnail
+                        thumbnail,
+                        subtitles
                     );
                     if (thumbnailFile && thumbnail) {
                         await asyncFS.unlink(thumbnailFile.filepath);

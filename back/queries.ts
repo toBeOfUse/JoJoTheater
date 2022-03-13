@@ -130,18 +130,21 @@ class Playlist extends EventEmitter {
             duration,
             title: title || url,
             thumbnail,
+            captions: [],
         });
     }
 
     async addFromFile(
         video: Pick<Video, "src" | "title" | "folder">,
-        thumbnail: Buffer | undefined = undefined
+        thumbnail: Buffer | undefined = undefined,
+        captions: Subtitles[] = []
     ) {
         const metadata = await Playlist.getVideoMetadata({
             src: video.src,
             provider: undefined,
         });
         await this.addRawVideo({
+            captions,
             ...video,
             duration: metadata.durationSeconds,
             thumbnail: thumbnail || metadata.thumbnail,
@@ -149,7 +152,10 @@ class Playlist extends EventEmitter {
     }
 
     async addRawVideo(
-        v: Omit<VideoRecord, "id"> & { thumbnail: Buffer | undefined }
+        v: Omit<VideoRecord, "id"> & {
+            thumbnail: Buffer | undefined;
+            captions: Subtitles[];
+        }
     ) {
         const existingCount = Number(
             (await this.connection.table("playlist").count({ count: "*" }))[0]
@@ -173,15 +179,26 @@ class Playlist extends EventEmitter {
                     "playlist has " + existingCount + " videos; adding one more"
                 );
             }
-            const { thumbnail, ...videoRecord } = v;
+            const { thumbnail, captions, ...videoRecord } = v;
             const ids = await this.connection
                 .table<Video>("playlist")
                 .insert(videoRecord);
             if (thumbnail) {
                 Playlist.saveThumbnail(ids[0], thumbnail);
             }
+            if (captions.length) {
+                for (const caption of captions) {
+                    await this.saveCaptions(ids[0], caption);
+                }
+            }
             this.emit("video_added");
         }
+    }
+
+    saveCaptions(videoID: number, caption: Subtitles) {
+        return this.connection
+            .table<Subtitles & { video: number }>("subtitles")
+            .insert({ ...caption, video: videoID });
     }
 
     static saveThumbnail(videoID: number, thumbnail: Buffer): Promise<void> {

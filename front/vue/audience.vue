@@ -25,7 +25,6 @@
                 <Inhabitant
                     v-for="user in users"
                     :key="user.connectionID"
-                    :title="user.name"
                     :avatar="user.avatar"
                     :typing="user.typing"
                     :propsMarkup="user.svgMarkup"
@@ -34,6 +33,7 @@
                     :ref="(e) => e && inhabitants.push(e)"
                     :morePosesAvailable="multipleProps"
                     :idle="user.idle"
+                    :username="user.name"
                     :socket="socket"
                 />
             </transition-group>
