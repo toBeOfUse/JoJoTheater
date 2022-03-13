@@ -2,13 +2,14 @@
     <div
         class="inhabitant-container"
         ref="inhabitantContainer"
+        :alt="username"
         @click="isSelf && socket.emit('jump')"
         @mouseleave="menuOpen = false"
         :style="{
             backgroundImage: menuOpen ? backgroundGlow : '',
-            opacity: idle ? 0.6 : 1,
         }"
     >
+        <p id="username">{{ username }}</p>
         <div v-if="isSelf" id="menu-container">
             <img
                 id="menu-button"
@@ -79,6 +80,10 @@ export default defineComponent({
             type: Boolean,
             required: true,
         },
+        username: {
+            type: String,
+            required: true,
+        },
         socket: {
             type: Object as PropType<StreamsSocket>,
             required: true,
@@ -142,14 +147,16 @@ export default defineComponent({
                 inhabitantContainer.value
             ) {
                 jumping = true;
-                console.log("jumping");
-                const svg = inhabitantContainer.value.querySelector("svg");
+                const svg = inhabitantContainer.value.querySelector(
+                    "svg#svg-inhabitant"
+                ) as SVGElement;
                 if (svg) {
-                    console.log("playing");
                     svg.style.animationName = "jump";
                 }
             }
         });
+        const avatarTop = ref(0);
+        const avatarLeftCenter = ref(0);
         const initializeSVG = async () => {
             const markup = props.propsMarkup;
             const parentSpace = findParentSpace();
@@ -185,11 +192,17 @@ export default defineComponent({
             const avatarImage = svgElement.querySelector(
                 ".seated-avatar"
             ) as SVGImageElement;
+            const avatarImageRect = avatarImage.getBoundingClientRect();
+            const inhabitantContainerRect =
+                inhabitantContainer.value.getBoundingClientRect();
+            avatarTop.value = avatarImageRect.top - inhabitantContainerRect.top;
+            avatarLeftCenter.value =
+                avatarImageRect.left +
+                avatarImageRect.width / 2 -
+                inhabitantContainerRect.left;
             const avatarURL = getOptimizedImageURL({
                 path: getAvatarImageURL(props.avatar.file),
-                width:
-                    avatarImage.getBoundingClientRect().width *
-                    window.devicePixelRatio,
+                width: avatarImageRect.width * window.devicePixelRatio,
                 flip: props.avatar && props.avatar.facing == "left",
             });
             avatarImage.setAttribute("href", avatarURL);
@@ -297,6 +310,8 @@ export default defineComponent({
             requestNewPose,
             isSelf: props.socket.id == props.connectionID,
             toggleIdle,
+            avatarTop,
+            avatarLeftCenter,
         };
     },
 });
@@ -334,11 +349,20 @@ export default defineComponent({
     }
 }
 .inhabitant-container {
+    box-sizing: border-box;
     position: relative;
     margin: 0 -15px;
     height: 100%;
     background-size: contain;
     padding: 0 20px;
+    & #username {
+        opacity: 0;
+    }
+    &:hover {
+        & #username {
+            opacity: 0.8;
+        }
+    }
 }
 .svg-inhabitant {
     overflow: visible;
@@ -356,6 +380,21 @@ export default defineComponent({
     }
     animation-duration: 0.3s;
     animation-iteration-count: 1;
+    opacity: v-bind("idle ? '0.6':'1'");
+}
+#username {
+    position: absolute;
+    margin: 0;
+    top: v-bind("Math.max(5,avatarTop-25)+'px'");
+    left: v-bind("avatarLeftCenter ? (avatarLeftCenter+'px') : '50%'");
+    transform: translateX(-50%);
+    cursor: default;
+    background-color: #888;
+    color: white;
+    font-family: vars.$pilot-font;
+    padding: 1px;
+    border-radius: 3px;
+    transition: opacity 0.2s linear;
 }
 #menu-container {
     position: absolute;
