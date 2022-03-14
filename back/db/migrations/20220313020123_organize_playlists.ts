@@ -29,7 +29,7 @@ export async function up(knex: Knex): Promise<void> {
             .table<PlaylistRecord>("playlists")
             .insert({
                 name: folder,
-                description: "Old as dust.",
+                description: "",
                 createdAt: new Date().getTime(),
             })
             .returning(["id"]);

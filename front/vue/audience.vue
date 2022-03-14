@@ -226,7 +226,6 @@ export default defineComponent({
                     })
                 );
             }
-            // TODO: also await avatarURL fetching?
             Promise.all([bgImageLoaded, fgImageLoaded]).then(() => {
                 Promise.all(inhabitantsLoaded).then(
                     async (loadedInhabitants) => {
