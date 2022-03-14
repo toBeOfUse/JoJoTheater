@@ -4,33 +4,33 @@
         <OpenCloseIcon class="folder-open-close" :class="{ open: shown }" />
     </h2>
     <template v-if="shown">
-        <div class="folder" v-for="folder in playlist" :key="folder.name">
-            <h3 class="folder-header" @click="toggleOpen(folder.name)">
+        <div class="folder" v-for="list in lists" :key="list.id">
+            <h3 class="folder-header" @click="toggleOpen(list.id)">
                 <input
                     type="text"
                     v-model="search"
                     placeholder="Search these videos..."
                     id="search"
-                    v-if="folder.name == searchResultsFolderName"
+                    v-if="false"
                     @click.stop
-                />{{ getFolderLabel(folder.name)
+                />{{ list.name
                 }}<img
-                    v-if="folder.name == activeFolder"
+                    v-if="list.id == currentPlaylistID"
                     src="/images/active-folder-indicator.svg"
                     class="folder-active-icon"
                 />
                 <OpenCloseIcon
                     class="folder-open-close"
-                    :class="{ open: openFolders.has(folder.name) }"
+                    :class="{ open: openLists.has(list.id) }"
                 />
             </h3>
-            <template v-if="openFolders.has(folder.name)">
+            <template v-if="openLists.has(list.id)">
                 <div
                     class="playlist-item"
-                    v-for="video in folder.videos"
+                    v-for="video in list.videos"
                     :key="video.src"
                     :class="{ active: currentVideoID == video.id }"
-                    @click="changeVideo(video.id)"
+                    @click="changeVideo(video.id, list.id)"
                     :title="video.title"
                 >
                     <opt-image
@@ -61,7 +61,7 @@
                 </div>
                 <div
                     class="playlist-item playlist-input"
-                    v-if="folder.name == UserSubmittedFolderName"
+                    v-if="list.publicallyEditable"
                 >
                     <input
                         type="text"
@@ -99,14 +99,13 @@
 <script lang="ts">
 import {
     Video,
-    VideoState,
     StateChangeRequest,
     ChangeTypes,
-    UserSubmittedFolderName,
     Subscription,
     StreamsSocket,
+    PlaylistSnapshot,
 } from "../../constants/types";
-import { defineComponent, PropType, ref, computed, watch } from "vue";
+import { defineComponent, PropType, ref, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 import OptImage from "./image.vue";
 import { APIPath } from "../../constants/endpoints";
@@ -116,10 +115,6 @@ export default defineComponent({
         socket: {
             type: Object as PropType<StreamsSocket>,
             required: true,
-        },
-        initialActiveVideo: {
-            type: Object as PropType<Video>,
-            required: false,
         },
     },
     components: { OpenCloseIcon, OptImage },
@@ -137,120 +132,82 @@ export default defineComponent({
 
         const videoURL = ref("");
 
-        interface Folder {
-            name: string;
-            videos: Video[];
-        }
-
-        const videos = ref<Video[]>([]);
-        const currentVideoID = ref<number>(props.initialActiveVideo?.id || -1);
-        const openFolders = ref(
-            new Set<string>(
-                props.initialActiveVideo
-                    ? [props.initialActiveVideo.folder]
-                    : []
-            )
+        const lists = ref<PlaylistSnapshot[]>([]);
+        const initialVideo = props.socket.getGlobal("currentVideo") as
+            | Video
+            | undefined;
+        const currentVideoID = ref<number>(initialVideo?.id || -1);
+        const currentPlaylistID = ref<number>(initialVideo?.playlistID || -1);
+        const openLists = ref(
+            new Set<number>(initialVideo ? [initialVideo.playlistID] : [])
         );
-        const activeFolder = ref("");
+
         const search = ref("");
-        const searchResultsFolderName = "~~~~~SEARCH";
+        // note to self: don't use -1024 as a playlist ID anywhere else 🥺
+        const searchResultsListID = -1024;
         watch(search, (newValue, oldValue) => {
             if (newValue.trim()) {
                 if (
                     oldValue.toLowerCase().trim() !=
                     newValue.toLowerCase().trim()
                 )
-                    openFolders.value.add(searchResultsFolderName);
+                    openLists.value.add(searchResultsListID);
             } else {
-                openFolders.value.delete(searchResultsFolderName);
+                openLists.value.delete(searchResultsListID);
             }
         });
 
-        const toggleOpen = (folderName: string) => {
-            if (!openFolders.value.has(folderName)) {
-                openFolders.value.add(folderName);
+        const toggleOpen = (playlistID: number) => {
+            if (!openLists.value.has(playlistID)) {
+                openLists.value.add(playlistID);
             } else {
-                openFolders.value.delete(folderName);
+                openLists.value.delete(playlistID);
             }
         };
 
-        props.socket.on("playlist_set", (newVideos: Video[]) => {
-            videos.value = newVideos;
-            if (openFolders.value.size == 0 && activeFolder.value) {
-                openFolders.value.add(activeFolder.value);
-            }
-        });
-
-        const playlist = computed<Folder[]>(() => {
-            if (!videos.value.length) {
-                return [];
-            }
-            const foldersObj: Record<string, Video[]> = {};
-            const submissionsFolder: Video[] = [];
-            const searchResults: Video[] = [];
-            for (const video of videos.value) {
-                const searchString = search.value.trim().toLowerCase();
-                if (
-                    searchString &&
-                    (video.title.toLowerCase().includes(searchString) ||
-                        video.folder.toLowerCase().includes(searchString))
-                ) {
-                    searchResults.push(video);
-                }
-                if (video.folder == UserSubmittedFolderName) {
-                    submissionsFolder.push(video);
-                } else if (video.folder in foldersObj) {
-                    foldersObj[video.folder].push(video);
+        props.socket.on("playlist_set", (newVideos: PlaylistSnapshot[]) => {
+            lists.value = newVideos.sort((a, b) => {
+                if (a.name < b.name) {
+                    return -1;
+                } else if (a.name > b.name) {
+                    return 1;
                 } else {
-                    foldersObj[video.folder] = [video];
+                    return 0;
                 }
-            }
-            const folders = Object.keys(foldersObj).map((folderName) => ({
-                name: folderName,
-                videos: foldersObj[folderName],
-            }));
-            return folders.concat([
-                { name: UserSubmittedFolderName, videos: submissionsFolder },
-                { name: searchResultsFolderName, videos: searchResults },
-            ]);
-        });
-
-        props.socket.on("state_set", (newState: VideoState) => {
-            const oldID = currentVideoID.value;
-            currentVideoID.value = newState.video?.id || -1;
-            if (oldID != currentVideoID.value && newState.video) {
-                activeFolder.value = newState.video.folder;
-                openFolders.value.add(newState.video.folder);
+            });
+            if (openLists.value.size == 0 && currentPlaylistID.value != -1) {
+                openLists.value.add(currentPlaylistID.value);
             }
         });
 
-        const changeVideo = (newID: number) => {
+        props.socket.watchGlobal("currentVideo", (v: Video | undefined) => {
+            console.log("global currentVideo listener running in playlist.vue");
+            currentVideoID.value = v?.id || -1;
+            currentPlaylistID.value = v?.playlistID || -1;
+            if (v) {
+                openLists.value.add(v.playlistID);
+            }
+        });
+
+        const changeVideo = (videoID: number, playlistID: number) => {
             const req: StateChangeRequest = {
-                changeType: ChangeTypes.videoID,
-                newValue: newID,
+                changeType: ChangeTypes.video,
+                newValue: { id: videoID, playlistID },
             };
             props.socket.emit("state_change_request", req);
-        };
-
-        const getFolderLabel = (folderName: string) => {
-            if (folderName == searchResultsFolderName) {
-                return "";
-            } else if (folderName == UserSubmittedFolderName) {
-                return folderName + " (add videos here)";
-            } else {
-                return folderName;
-            }
         };
 
         const defaultPlaceholder =
             "Type a Youtube, Vimeo, or Dailymotion URL...";
         const placeholder = ref(defaultPlaceholder);
 
-        const addVideo = (url: string) => {
+        const addVideo = (url: string, playlistID: number) => {
             if (url.trim()) {
-                props.socket.http(APIPath.addVideo, { url }).catch(() => {
-                    placeholder.value = "I couldn't use that URL :(";
-                });
+                props.socket
+                    .http(APIPath.addVideo, { url, playlistID })
+                    .catch(() => {
+                        placeholder.value = "I couldn't use that URL :(";
+                    });
                 videoURL.value = "";
                 placeholder.value = defaultPlaceholder;
             }
@@ -272,17 +229,14 @@ export default defineComponent({
             videoURL,
             addVideo,
             changeVideo,
-            playlist,
             currentVideoID,
-            openFolders,
-            UserSubmittedFolderName,
             toggleOpen,
             placeholder,
             search,
-            activeFolder,
-            searchResultsFolderName,
-            getFolderLabel,
             durationToString,
+            lists,
+            openLists,
+            currentPlaylistID,
         };
     },
 });

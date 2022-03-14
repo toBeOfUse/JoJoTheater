@@ -9,7 +9,6 @@ import checkDiskSpace from "check-disk-space";
 
 import {
     Playlist,
-    playlist,
     getRecentMessages,
     addMessage,
     saveToken,
@@ -30,6 +29,7 @@ import {
     User,
     Token,
     Avatar,
+    PlaylistSnapshot,
 } from "../constants/types";
 import logger from "./logger";
 import { password } from "./secrets";
@@ -237,7 +237,8 @@ type APIHandler =
 
 class Theater {
     audience: AudienceMember[] = [];
-    playlist: Playlist;
+    _playlistsByID: Record<number, Playlist>;
+    _currentPlaylistID: number;
     graphics: SceneController;
     apiHandlers: Partial<Record<APIPath, APIHandler>>;
 
@@ -277,27 +278,40 @@ class Theater {
         };
     }
 
-    constructor(playlist: Playlist, graphics: SceneController) {
+    constructor(playlists: Playlist[], graphics: SceneController) {
         this.graphics = graphics;
         // this will propogate all changes in our SceneController object to the
         // front-end:
         this.graphics.on("change", () => {
             this.emitAll("audience_info_set", this.graphics.outputGraphics);
         });
-        this.playlist = playlist;
-        this.playlist.getVideos().then((videos) => {
-            this.baseState = { ...this.currentState, video: videos[0] };
-            this.audience.forEach((a) =>
-                a.emit("state_set", this.currentState)
-            );
-        });
-        this.playlist.on("video_added", async () => {
-            const receivers = this.audience.filter((a) =>
-                a.subscriptions.has(Subscription.playlist)
-            );
-            receivers.forEach(async (r) =>
-                r.emit("playlist_set", await this.playlist.getVideos())
-            );
+        this._playlistsByID = {};
+        for (const playlist of playlists) {
+            this._playlistsByID[playlist.id] = playlist;
+        }
+        this._currentPlaylistID = playlists[0].id;
+        this._playlistsByID[this._currentPlaylistID]
+            .getVideos()
+            .then((videos) => {
+                this.baseState = { ...this.currentState, video: videos[0] };
+                this.audience.forEach((a) =>
+                    a.emit("state_set", this.currentState)
+                );
+            });
+
+        Playlist.bus.on("video_added", async (playlistID: number) => {
+            // TODO: optimizations: Record<> lookup instead of .find; caching
+            // the result of this.queryPlaylists and only updating the changed
+            // snapshot
+            const playlist = this._playlistsByID[playlistID];
+            if (playlist) {
+                const receivers = this.audience.filter((a) =>
+                    a.subscriptions.has(Subscription.playlist)
+                );
+                receivers.forEach(async (r) =>
+                    r.emit("playlist_set", await this.queryPlaylists())
+                );
+            }
         });
         this.apiHandlers = {
             [APIPath.logIn]: this.logIn,
@@ -317,6 +331,18 @@ class Theater {
 
     emitAll(event: ServerSentEvent, ...args: any[]) {
         this.audience.forEach((a) => a.emit(event, ...args));
+    }
+
+    get playlists(): Playlist[] {
+        return Object.values(this._playlistsByID);
+    }
+
+    get currentPlaylist(): Playlist {
+        return this._playlistsByID[this._currentPlaylistID];
+    }
+
+    async queryPlaylists(): Promise<PlaylistSnapshot[]> {
+        return await Promise.all(this.playlists.map((p) => p.getSnapshot()));
     }
 
     async sendToChat(messageIn: Omit<ChatMessage, "createdAt">) {
@@ -451,12 +477,17 @@ class Theater {
 
     addVideo(req: Request, res: Response) {
         if (is<AddVideoBody>(req.body)) {
-            const url = req.body.url;
+            // TODO: playlist ownership permissions check
+            const { url, playlistID } = req.body;
             logger.debug(
-                "attempting to add video with url " + url + " to playlist"
+                "attempting to add video with url " +
+                    url +
+                    " to playlist " +
+                    playlistID
             );
-            this.playlist
-                .addFromURL(url)
+            const playlist = this._playlistsByID[playlistID];
+            playlist
+                ?.addFromURL(url)
                 .then(() => {
                     res.status(200);
                     res.end();
@@ -470,7 +501,7 @@ class Theater {
         }
     }
 
-    typingStart(req: Request, res: Response, member: AudienceMember) {
+    typingStart(_req: Request, res: Response, member: AudienceMember) {
         this.graphics.startTyping(member.user.id);
         res.status(200);
         res.end();
@@ -621,9 +652,9 @@ class Theater {
             } else if (sub == Subscription.audience) {
                 member.emit("audience_info_set", this.graphics.outputGraphics);
             } else if (sub == Subscription.playlist) {
-                this.playlist.getVideos().then((videos) => {
-                    member.emit("playlist_set", videos);
-                });
+                this.queryPlaylists().then((ps) =>
+                    member.emit("playlist_set", ps)
+                );
             }
         });
 
@@ -678,22 +709,32 @@ class Theater {
                                 newState.currentTimeMs / 1000 / currentDuration,
                         });
                     }
-                } else if (change.changeType == ChangeTypes.videoID) {
-                    const newVideoID = change.newValue as number;
-                    const newVideo = await this.playlist.getVideoByID(
-                        newVideoID
-                    );
-                    if (newVideo) {
-                        this.startNewVideo(newVideo);
+                } else if (change.changeType == ChangeTypes.video) {
+                    if (is<Pick<Video, "id" | "playlistID">>(change.newValue)) {
+                        const newVideoID = change.newValue.id as number;
+                        this._currentPlaylistID = change.newValue.playlistID;
+                        const newVideo = await Playlist.getVideoByID(
+                            newVideoID
+                        );
+                        if (newVideo) {
+                            this.startNewVideo(newVideo);
+                        } else {
+                            logger.warn(
+                                "client requested video with unknown id" +
+                                    newVideoID
+                            );
+                        }
                     } else {
                         logger.warn(
-                            "client requested video with unknown id" +
-                                newVideoID
+                            "client requested video with mangled newValue in change request:"
                         );
+                        logger.warn(JSON.stringify(change).substring(0, 1000));
                     }
                 } else if (change.changeType == ChangeTypes.nextVideo) {
                     this.startNewVideo(
-                        await this.playlist.getNextVideo(this.baseState.video)
+                        await this.currentPlaylist.getNextVideo(
+                            this.baseState.video
+                        )
                     );
                     this.emitAll("set_controls_flag", {
                         target: "next_video",
@@ -701,7 +742,9 @@ class Theater {
                     });
                 } else if (change.changeType == ChangeTypes.prevVideo) {
                     this.startNewVideo(
-                        await this.playlist.getPrevVideo(this.baseState.video)
+                        await this.currentPlaylist.getPrevVideo(
+                            this.baseState.video
+                        )
                     );
                     this.emitAll("set_controls_flag", {
                         target: "prev_video",
@@ -743,7 +786,7 @@ class Theater {
                 "setting timer to switch to next video in " + timeUntil + "ms"
             );
             this.nextVideoTimer = setTimeout(async () => {
-                const nextVideo = await this.playlist.getNextVideo(
+                const nextVideo = await this.currentPlaylist.getNextVideo(
                     this.baseState.video
                 );
                 if (nextVideo) {
@@ -826,7 +869,7 @@ class Theater {
     }
 }
 
-export default function init(server: Server, app: Express) {
+export default async function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const graphics = new SceneController(scenes.lilypads);
 
@@ -845,7 +888,8 @@ export default function init(server: Server, app: Express) {
     //     }
     // })();
 
-    const theater = new Theater(playlist, graphics);
+    const playlists = await Playlist.getAll();
+    const theater = new Theater(playlists, graphics);
     io.on("connection", (socket: Socket) => {
         // In the multi-room future a room id will also be sent
         socket.on("log_in", async (token: string) => {

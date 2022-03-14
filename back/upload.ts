@@ -5,10 +5,10 @@ import path from "path";
 import type { RequestHandler } from "express";
 
 import logger from "./logger";
-import { playlist } from "./queries";
 import { password } from "./secrets";
-import { Subtitles, UserSubmittedFolderName } from "../constants/types";
+import { Subtitles } from "../constants/types";
 import { nanoid } from "nanoid";
+import { Playlist } from "./queries";
 
 function getUniqueFilename(nameOrPath: string) {
     const fileext = path.extname(nameOrPath);
@@ -67,10 +67,12 @@ export default function (options: { maxSizeBytes?: number } = {}) {
                         4
                     )
                 );
+                const playlistID = Number(fields.playlistID);
                 if (
                     fields.password == password &&
                     !Array.isArray(fields.folder) &&
-                    !Array.isArray(fields.title)
+                    !Array.isArray(fields.title) &&
+                    !isNaN(playlistID)
                 ) {
                     const videoFilename = getUniqueFilename(videoFile.filepath);
                     await asyncFS.rename(
@@ -95,18 +97,20 @@ export default function (options: { maxSizeBytes?: number } = {}) {
                             });
                         }
                     }
-                    await playlist.addFromFile(
-                        {
-                            src: "/videos/" + videoFilename,
-                            title:
-                                fields.title ||
-                                videoFile.originalFilename ||
-                                "mystery video",
-                            folder: fields.folder || UserSubmittedFolderName,
-                        },
-                        thumbnail,
-                        subtitles
-                    );
+                    const playlist = await Playlist.getByID(playlistID);
+                    if (playlist) {
+                        await playlist.addFromFile(
+                            {
+                                src: "/videos/" + videoFilename,
+                                title:
+                                    fields.title ||
+                                    videoFile.originalFilename ||
+                                    "mystery video",
+                            },
+                            thumbnail,
+                            subtitles
+                        );
+                    }
                     if (thumbnailFile && thumbnail) {
                         await asyncFS.unlink(thumbnailFile.filepath);
                     }

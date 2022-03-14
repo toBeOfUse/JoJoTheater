@@ -115,6 +115,7 @@ interface SendMessageBody extends PostBody {
     messageText: string;
 }
 interface AddVideoBody extends PostBody {
+    playlistID: number;
     url: string;
 }
 interface ChangeSceneBody extends PostBody {

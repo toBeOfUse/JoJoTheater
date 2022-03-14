@@ -18,8 +18,9 @@ socket._globals = {
     loggedIn: false,
     inChat: false,
     token: oldToken ?? "",
+    currentVideo: undefined,
 };
-socket._listeners = { loggedIn: [], inChat: [], token: [] };
+socket._listeners = { loggedIn: [], inChat: [], token: [], currentVideo: [] };
 socket.setGlobal = function (name, newValue) {
     const newGlobals = { ...this._globals, [name]: newValue };
     if (is<GlobalValues>(newGlobals)) {
@@ -33,18 +34,8 @@ socket.getGlobal = function (name) {
 socket.watchGlobal = function (name, callback) {
     this._listeners[name].push(callback);
 };
-socket.ifAndWhenGlobalAvailable = function (name, callback) {
-    if (this._globals[name]) {
-        callback(this._globals[name]);
-    } else {
-        const whenListener = (newValue: any) => {
-            callback(newValue);
-            this._listeners[name] = this._listeners[name].filter(
-                (l) => l != whenListener
-            );
-        };
-        this.watchGlobal(name, whenListener);
-    }
+socket.stopWatchingGlobal = function (name, callback) {
+    this._listeners[name] = this._listeners[name].filter((l) => l != callback);
 };
 socket.http = function (path, body = {}, headers = {}) {
     return endpoints[path].dispatch(this._globals.token, body, headers);
@@ -66,20 +57,18 @@ window.onerror = (event) => {
 
 initVideo(socket);
 
-let currentVideo: Video | undefined = undefined;
 socket.on("state_set", (v: VideoState) => {
-    currentVideo = v.video || undefined;
-    if (currentVideo) {
-        renderTitle();
-    }
+    socket.setGlobal("currentVideo", v.video || undefined);
 });
 
-function renderTitle() {
+function renderTitle(v: Video) {
     let title;
-    if (currentVideo && (title = document.querySelector("#video-title"))) {
-        title.innerHTML = currentVideo.title;
+    if (v && (title = document.querySelector("#video-title"))) {
+        title.innerHTML = v.title;
     }
 }
+
+socket.watchGlobal("currentVideo", renderTitle);
 
 const resizeVideoContainer = () => {
     const cont = document.querySelector("#video-container") as HTMLDivElement;
@@ -109,7 +98,7 @@ async function loadUIComponents() {
     // load all the dynamic vue components
     (
         await import(/*webpackChunkName: "vue-comps"*/ "./vue/vue-index")
-    ).loadIndexComps(socket, currentVideo);
+    ).loadIndexComps(socket);
 }
 
 window.addEventListener("load", loadUIComponents);

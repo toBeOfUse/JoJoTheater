@@ -1,9 +1,6 @@
-import type { StreamsSocket, Video } from "../../constants/types";
+import type { StreamsSocket } from "../../constants/types";
 
-async function loadIndexComps(
-    socket: StreamsSocket,
-    initialActiveVideo: Video | undefined
-) {
+async function loadIndexComps(socket: StreamsSocket) {
     import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
         // Create a Promise for each Vue component and then await them with
         // Promise.all so they can load in parallel
@@ -37,7 +34,7 @@ async function loadIndexComps(
             }
         });
         Vue.createApp(Chat.default, { socket }).mount("#chat-container");
-        Vue.createApp(Playlist.default, { socket, initialActiveVideo }).mount(
+        Vue.createApp(Playlist.default, { socket }).mount(
             "#playlist-container"
         );
         Vue.createApp(Audience.default, { socket }).mount(

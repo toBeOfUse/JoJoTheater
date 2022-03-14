@@ -11,11 +11,12 @@ import logger from "./logger";
 import {
     ChatMessage,
     Video,
-    UserSubmittedFolderName,
     User,
     Token,
     Avatar,
     Subtitles,
+    PlaylistRecord,
+    PlaylistSnapshot,
 } from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
 import { is } from "typescript-is";
@@ -27,22 +28,58 @@ const streamsDB = knex({
     },
 });
 
+type VideoRecord = Omit<Video, "captions"> & { position: number };
+
 /**
- * Database table wrapper that automatically fills in the metadata for any urls or
- * files that you wish to add and also emits a "video_added" event when a new video
- * is successfully added.
+ * Database wrapper with static methods for querying for playlists and videos
+ * and non-static methods for adding and retrieving videos from a specific
+ * playlist. TODO: video removal, video re-ordering, metadata changes, and the
+ * associated events
  */
-type VideoRecord = Omit<Video, "captions">;
-class Playlist extends EventEmitter {
+class Playlist {
     connection: Knex<any, unknown[]>;
     static thumbnailPath = path.join(__dirname, "../assets/images/thumbnails/");
+    record: PlaylistRecord;
+    static bus = new EventEmitter();
 
-    constructor(dbConnection: Knex<any, unknown[]>) {
-        super();
-        this.connection = dbConnection;
+    get id() {
+        return this.record.id;
     }
 
-    async hydrate(query: Promise<VideoRecord[]>): Promise<Video[]> {
+    constructor(dbConnection: Knex<any, unknown[]>, record: PlaylistRecord) {
+        this.connection = dbConnection;
+        this.record = record;
+    }
+
+    static async getByID(
+        id: number,
+        dbConnection: Knex<any, unknown[]> = streamsDB
+    ): Promise<Playlist | undefined> {
+        const record = await dbConnection
+            .table<PlaylistRecord>("playlists")
+            .select("*")
+            .where({ id })
+            .first();
+        if (!record) {
+            return undefined;
+        } else {
+            return new Playlist(dbConnection, record);
+        }
+    }
+
+    static async getAll(
+        dbConnection: Knex<any, unknown[]> = streamsDB
+    ): Promise<Playlist[]> {
+        const records = await dbConnection
+            .table<PlaylistRecord>("playlists")
+            .select("*");
+        return records.map((r) => new Playlist(dbConnection, r));
+    }
+
+    static async hydrateVideos(
+        query: Promise<VideoRecord[]>,
+        connection = streamsDB
+    ): Promise<Video[]> {
         const videos = await query;
         return await Promise.all(
             videos.map(
@@ -50,60 +87,85 @@ class Playlist extends EventEmitter {
                     new Promise<Video>(async (resolve) => {
                         resolve({
                             ...v,
-                            captions: await this.connection
-                                .select(["file", "format"])
+                            captions: await connection
+                                .select(["file", "format", "language"])
                                 .from<Subtitles & { video: number }>(
                                     "subtitles"
                                 )
                                 .where({ video: v.id }),
+                            provider: v.provider || undefined,
                         });
                     })
             )
         );
     }
 
-    async getVideoByID(id: number): Promise<Video | undefined> {
-        const query = this.connection
+    async getSnapshot(): Promise<PlaylistSnapshot> {
+        return { ...this.record, videos: await this.getVideos() };
+    }
+
+    static async getVideoByID(
+        id: number,
+        connection = streamsDB
+    ): Promise<Video | undefined> {
+        const query = connection
             .select("*")
-            .from<VideoRecord>("playlist")
+            .from<VideoRecord>("videos")
             .where({ id });
-        return (await this.hydrate(query))[0];
+        return (await Playlist.hydrateVideos(query))[0];
     }
 
     async getVideos(): Promise<Video[]> {
         const query = this.connection
             .select("*")
-            .from<VideoRecord>("playlist")
-            .orderBy("folder", "id");
-        return await this.hydrate(query);
+            .from<VideoRecord>("videos")
+            .where({ playlistID: this.id })
+            .orderBy("position", "id");
+        return await Playlist.hydrateVideos(query);
     }
 
     async getNextVideo(v: Video | null): Promise<Video | undefined> {
         if (!v) {
             return undefined;
         }
+        const thisPos = await this.connection
+            .select("position")
+            .from<VideoRecord>("videos")
+            .where({ id: v.id })
+            .first();
+        if (!thisPos) {
+            return undefined;
+        }
         const query = this.connection
             .select("*")
-            .from<VideoRecord>("playlist")
-            .where({ folder: v.folder })
-            .andWhere("id", ">", v.id)
-            .orderBy("id")
+            .from<VideoRecord>("videos")
+            .where({ playlistID: this.id })
+            .andWhere("position", ">", thisPos.position)
+            .orderBy("position", "id")
             .limit(1);
-        return (await this.hydrate(query))[0];
+        return (await Playlist.hydrateVideos(query))[0];
     }
 
     async getPrevVideo(v: Video | null): Promise<Video | undefined> {
         if (!v) {
             return undefined;
         }
+        const thisPos = await this.connection
+            .select("position")
+            .from<VideoRecord>("videos")
+            .where({ id: v.id })
+            .first();
+        if (!thisPos) {
+            return undefined;
+        }
         const query = this.connection
             .select("*")
-            .from<VideoRecord>("playlist")
-            .where({ folder: v.folder })
-            .andWhere("id", "<", v.id)
-            .orderBy("id", "desc")
+            .from<VideoRecord>("videos")
+            .where({ playlistID: this.id })
+            .andWhere("position", "<", thisPos.position)
+            .orderBy("position", "desc")
             .limit(1);
-        return (await this.hydrate(query))[0];
+        return (await Playlist.hydrateVideos(query))[0];
     }
 
     async addFromURL(url: string) {
@@ -114,11 +176,15 @@ class Playlist extends EventEmitter {
 
         const rawVideo: Omit<
             VideoRecord,
-            "id" | "duration" | "title" | "thumbnail"
+            | "id"
+            | "duration"
+            | "title"
+            | "thumbnail"
+            | "position"
+            | "playlistID"
         > = {
             provider: providerInfo.service,
             src: providerInfo.id,
-            folder: UserSubmittedFolderName,
         };
         const {
             durationSeconds: duration,
@@ -131,11 +197,12 @@ class Playlist extends EventEmitter {
             title: title || url,
             thumbnail,
             captions: [],
+            playlistID: this.id,
         });
     }
 
     async addFromFile(
-        video: Pick<Video, "src" | "title" | "folder">,
+        video: Pick<Video, "src" | "title">,
         thumbnail: Buffer | undefined = undefined,
         captions: Subtitles[] = []
     ) {
@@ -148,32 +215,34 @@ class Playlist extends EventEmitter {
             ...video,
             duration: metadata.durationSeconds,
             thumbnail: thumbnail || metadata.thumbnail,
+            playlistID: this.id,
         });
     }
 
     async addRawVideo(
-        v: Omit<VideoRecord, "id"> & {
+        v: Omit<VideoRecord, "id" | "position"> & {
             thumbnail: Buffer | undefined;
             captions: Subtitles[];
         }
     ) {
         const existingCount = Number(
-            (await this.connection.table("playlist").count({ count: "*" }))[0]
-                .count
+            (
+                await this.connection
+                    .table<VideoRecord>("videos")
+                    .count({ count: "*" })
+                    .where({ playlistID: this.id })
+            )[0].count
         );
         const alreadyHaveVideo = (
             await this.connection
-                .table("playlist")
+                .table("videos")
                 .count({ count: "*" })
                 .where("src", v.src)
         )[0].count;
         if (existingCount < 100 || alreadyHaveVideo) {
             if (alreadyHaveVideo) {
                 logger.debug("deleting and replacing video with src " + v.src);
-                await this.connection
-                    .table("playlist")
-                    .where("src", v.src)
-                    .del();
+                await this.connection.table("videos").where("src", v.src).del();
             } else {
                 logger.debug(
                     "playlist has " + existingCount + " videos; adding one more"
@@ -181,7 +250,7 @@ class Playlist extends EventEmitter {
             }
             const { thumbnail, captions, ...videoRecord } = v;
             const ids = await this.connection
-                .table<Video>("playlist")
+                .table<Video>("videos")
                 .insert(videoRecord);
             if (thumbnail) {
                 Playlist.saveThumbnail(ids[0], thumbnail);
@@ -191,7 +260,9 @@ class Playlist extends EventEmitter {
                     await this.saveCaptions(ids[0], caption);
                 }
             }
-            this.emit("video_added");
+            Playlist.bus.emit("video_added", this.id);
+            // TODO: increment version number in .record by 0.1 and update db
+            // correspondingly
         }
     }
 
@@ -334,6 +405,8 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
     ).reverse();
 }
 
+// TODO: "User" model instead of these atomized functions
+
 async function saveUser(user: Omit<User, "id" | "createdAt">) {
     return (
         await streamsDB
@@ -423,15 +496,8 @@ async function saveUserSceneProp(
         .merge();
 }
 
-/**
- * Serves as the global singleton playlist object at the moment. Could be divided up
- * into multiple instances of the playlist class later.
- */
-const playlist = new Playlist(streamsDB);
-
 export {
     Playlist,
-    playlist,
     getRecentMessages,
     addMessage,
     saveUser,
@@ -442,4 +508,5 @@ export {
     getUserSceneProp,
     saveUserSceneProp,
     ensureUserIDs,
+    streamsDB,
 };

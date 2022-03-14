@@ -1,4 +1,5 @@
-import { Playlist, playlist } from "../queries";
+import { Video } from "../../constants/types";
+import { Playlist, streamsDB } from "../queries";
 
 /**
  * Not strictly a database migration but close enough. Goes through each video in
@@ -8,14 +9,17 @@ import { Playlist, playlist } from "../queries";
  * and makes a copy with the correct name, leaving the originals in place.
  */
 async function ensureMetadata() {
-    const videos = await playlist.getVideos();
+    const videos = await streamsDB.table<Video>("videos").select("*");
     for (const video of videos) {
         console.log("updating thumbnail and duration for " + video.title);
-        const { thumbnail, durationSeconds: duration } = await Playlist.getVideoMetadata(video);
+        const { thumbnail, durationSeconds: duration } =
+            await Playlist.getVideoMetadata(video);
         if (thumbnail) {
             await Playlist.saveThumbnail(video.id, thumbnail);
         }
-        await playlist.connection("playlist").where({ id: video.id })
+        await streamsDB
+            .table<Video>("videos")
+            .where({ id: video.id })
             .update({ duration });
     }
 }

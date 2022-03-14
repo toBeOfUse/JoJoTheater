@@ -25,12 +25,28 @@ interface Video {
      * only for youtube/vimeo/dailymotion
      */
     provider?: string;
-    folder: string;
+    playlistID: number;
     /**
      * in seconds
      */
     duration: number;
     captions: Subtitles[];
+}
+
+interface PlaylistRecord {
+    id: number;
+    name: string;
+    description?: string;
+    filePhoto?: string;
+    creatorID: number;
+    createdAt: number;
+    version: number;
+    publicallyEditable: boolean;
+}
+
+interface PlaylistSnapshot extends PlaylistRecord {
+    videos: Video[];
+    // TODO: data about the creator?
 }
 
 interface VideoState {
@@ -41,7 +57,7 @@ interface VideoState {
 
 enum ChangeTypes {
     playing,
-    videoID,
+    video,
     time,
     nextVideo,
     prevVideo,
@@ -52,10 +68,8 @@ enum ChangeTypes {
  */
 interface StateChangeRequest {
     changeType: ChangeTypes;
-    newValue?: boolean | number;
+    newValue?: boolean | number | Pick<Video, "id" | "playlistID">;
 }
-
-const UserSubmittedFolderName = "The Unrestrained Id of the Audience";
 
 enum Subscription {
     audience,
@@ -126,6 +140,7 @@ interface ClientGlobalValues {
     loggedIn: boolean;
     inChat: boolean;
     token: string;
+    currentVideo: Video | undefined;
 }
 type GlobalType = any;
 type GlobalCallback = (newValue: any) => void;
@@ -156,7 +171,6 @@ export {
     ChangeTypes,
     StateChangeRequest,
     ChatUserInfo,
-    UserSubmittedFolderName,
     Subscription,
     ConnectionStatus,
     ControlsFlag,
@@ -166,4 +180,6 @@ export {
     ClientStreamsSocket as StreamsSocket,
     ClientGlobalValues,
     Subtitles,
+    PlaylistRecord,
+    PlaylistSnapshot,
 };
