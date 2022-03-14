@@ -1,6 +1,6 @@
 <template>
     <h2 @click="shown = !shown" id="playlist-header">
-        Playlist
+        Playlists
         <OpenCloseIcon class="folder-open-close" :class="{ open: shown }" />
     </h2>
     <template v-if="shown">
@@ -25,6 +25,9 @@
                 />
             </h3>
             <template v-if="openLists.has(list.id)">
+                <p class="folder-description" v-if="list.description">
+                    <span>“{{ list.description }}”</span>
+                </p>
                 <div
                     class="playlist-item"
                     v-for="video in list.videos"
@@ -356,6 +359,18 @@ $playlist-item-margin: 3px;
         margin: 0 5px;
         height: 10px;
         width: 10px;
+    }
+}
+
+.folder-description {
+    width: 100%;
+    color: black;
+    margin: 20px 0 12px 0;
+    & span {
+        background-color: white;
+        border: 1px solid black;
+        border-radius: 5px;
+        padding: 5px;
     }
 }
 
