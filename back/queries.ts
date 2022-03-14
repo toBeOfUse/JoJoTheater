@@ -174,15 +174,7 @@ class Playlist {
             throw "url was not parseable by npm package get-video-id";
         }
 
-        const rawVideo: Omit<
-            VideoRecord,
-            | "id"
-            | "duration"
-            | "title"
-            | "thumbnail"
-            | "position"
-            | "playlistID"
-        > = {
+        const rawVideo: Pick<VideoRecord, "provider" | "src"> = {
             provider: providerInfo.service,
             src: providerInfo.id,
         };
@@ -330,12 +322,19 @@ class Playlist {
                 `part=contentDetails&part=snippet&id=${video.src}&key=${youtubeAPIKey}`;
             const data = (await (await fetch(apiCall)).json()).items[0];
             const durationString = data.contentDetails.duration as string;
-            const comps = Array.from(durationString.matchAll(/\d+/g)).reverse();
+            const comps = Array.from(durationString.matchAll(/\d+[HMS]/g));
             let duration = 0;
-            let acc = 1;
             for (const comp of comps) {
-                duration += Number(comp) * acc;
-                acc *= 60;
+                const number = comp[0].slice(0, -1);
+                const unit = comp[0].slice(-1);
+                duration +=
+                    Number(number) *
+                    ({ S: 1, M: 60, H: 60 ** 2 }[unit] as number);
+            }
+            if (isNaN(duration)) {
+                throw (
+                    "unable to parse youtube duration string: " + durationString
+                );
             }
             let thumbnail = injectedThumbnail;
             if (!thumbnail) {
