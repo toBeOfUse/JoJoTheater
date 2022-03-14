@@ -57,7 +57,8 @@ declare global {
 type ServerSentEvent =
     | "ping"
     | "grant_token"
-    | "playlist_set"
+    | "list_playlists"
+    | "update_playlist"
     | "chat_message"
     | "state_set"
     | "set_controls_flag"
@@ -299,19 +300,20 @@ class Theater {
                 );
             });
 
-        Playlist.bus.on("video_added", async (playlistID: number) => {
-            // TODO: optimization: caching the result of this.queryPlaylists and
-            // only updating the changed snapshot
-            const playlist = this._playlistsByID[playlistID];
-            if (playlist) {
-                const receivers = this.audience.filter((a) =>
-                    a.subscriptions.has(Subscription.playlist)
-                );
-                receivers.forEach(async (r) =>
-                    r.emit("playlist_set", await this.queryPlaylists())
-                );
+        Playlist.bus.on(
+            "playlist_changed",
+            async (newSnapshot: PlaylistSnapshot) => {
+                const playlist = this._playlistsByID[newSnapshot.id];
+                if (playlist) {
+                    const receivers = this.audience.filter((a) =>
+                        a.subscriptions.has(Subscription.playlist)
+                    );
+                    receivers.forEach(async (r) =>
+                        r.emit("update_playlist", newSnapshot)
+                    );
+                }
             }
-        });
+        );
         this.apiHandlers = {
             [APIPath.logIn]: this.logIn,
             [APIPath.sendMessage]: this.sendMessage,
@@ -474,7 +476,7 @@ class Theater {
         }
     }
 
-    addVideo(req: Request, res: Response) {
+    async addVideo(req: Request, res: Response) {
         if (is<AddVideoBody>(req.body)) {
             const { url, playlistID } = req.body;
             logger.debug(
@@ -485,7 +487,7 @@ class Theater {
             );
             const playlist = this._playlistsByID[playlistID];
             // TODO: playlist ownership permissions check
-            if (!playlist.record.publicallyEditable) {
+            if (!(await playlist.getMetadata()).publicallyEditable) {
                 console.warn(
                     "request to add video to playlist " +
                         "without requisite permissions"
@@ -664,7 +666,7 @@ class Theater {
                 member.emit("audience_info_set", this.graphics.outputGraphics);
             } else if (sub == Subscription.playlist) {
                 this.queryPlaylists().then((ps) =>
-                    member.emit("playlist_set", ps)
+                    member.emit("list_playlists", ps)
                 );
             }
         });

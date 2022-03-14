@@ -165,7 +165,7 @@ export default defineComponent({
             }
         };
 
-        props.socket.on("playlist_set", (newVideos: PlaylistSnapshot[]) => {
+        props.socket.on("list_playlists", (newVideos: PlaylistSnapshot[]) => {
             lists.value = newVideos.sort((a, b) => {
                 if (a.name < b.name) {
                     return -1;
@@ -177,6 +177,13 @@ export default defineComponent({
             });
             if (openLists.value.size == 0 && currentPlaylistID.value != -1) {
                 openLists.value.add(currentPlaylistID.value);
+            }
+        });
+
+        props.socket.on("update_playlist", (newSnapshot: PlaylistSnapshot) => {
+            const index = lists.value.findIndex((l) => l.id == newSnapshot.id);
+            if (index != -1) {
+                lists.value[index] = newSnapshot;
             }
         });
 

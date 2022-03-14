@@ -33,37 +33,42 @@ type VideoRecord = Omit<Video, "captions"> & { position: number };
 /**
  * Database wrapper with static methods for querying for playlists and videos
  * and non-static methods for adding and retrieving videos from a specific
- * playlist. TODO: video removal, video re-ordering, metadata changes, and the
- * associated events
+ * playlist. TODO: video removal, video re-ordering, metadata edting, entire
+ * playlist deletion...
  */
 class Playlist {
+    id: number;
     connection: Knex<any, unknown[]>;
     static thumbnailPath = path.join(__dirname, "../assets/images/thumbnails/");
-    record: PlaylistRecord;
+
+    /**
+     * When a playlist changes (i. e. its videos or its metadata are altered),
+     * this bus must emit the event "playlist_changed", with the new
+     * PlaylistSnapshot for the changed playlist as the event data. This is so
+     * that owners of Playlist objects (currently, instances of the Theater
+     * class) can update interested parties (WebSocket clients) of the new state
+     * of the playlist without all having to fetch said new state individually or
+     * coordinate in any way.
+     */
     static bus = new EventEmitter();
 
-    get id() {
-        return this.record.id;
-    }
-
-    constructor(dbConnection: Knex<any, unknown[]>, record: PlaylistRecord) {
+    private constructor(
+        id: number,
+        dbConnection: Knex<any, unknown[]> = streamsDB
+    ) {
         this.connection = dbConnection;
-        this.record = record;
+        this.id = id;
     }
 
     static async getByID(
         id: number,
-        dbConnection: Knex<any, unknown[]> = streamsDB
+        connection: Knex<any, unknown[]> = streamsDB
     ): Promise<Playlist | undefined> {
-        const record = await dbConnection
-            .table<PlaylistRecord>("playlists")
-            .select("*")
-            .where({ id })
-            .first();
-        if (!record) {
-            return undefined;
+        const result = new Playlist(id, connection);
+        if (await result.exists()) {
+            return result;
         } else {
-            return new Playlist(dbConnection, record);
+            return undefined;
         }
     }
 
@@ -72,8 +77,8 @@ class Playlist {
     ): Promise<Playlist[]> {
         const records = await dbConnection
             .table<PlaylistRecord>("playlists")
-            .select("*");
-        return records.map((r) => new Playlist(dbConnection, r));
+            .select("id");
+        return records.map((r) => new Playlist(r.id, dbConnection));
     }
 
     static async hydrateVideos(
@@ -100,8 +105,31 @@ class Playlist {
         );
     }
 
+    async exists(): Promise<boolean> {
+        return (
+            (
+                await this.connection
+                    .table<PlaylistRecord>("playlists")
+                    .select("1")
+                    .where({ id: this.id })
+                    .limit(1)
+            ).length > 0
+        );
+    }
+
+    async getMetadata(): Promise<PlaylistRecord> {
+        return (await this.connection
+            .table<PlaylistRecord>("playlists")
+            .select("*")
+            .where({ id: this.id })
+            .first()) as PlaylistRecord;
+    }
+
     async getSnapshot(): Promise<PlaylistSnapshot> {
-        return { ...this.record, videos: await this.getVideos() };
+        return {
+            ...(await this.getMetadata()),
+            videos: await this.getVideos(),
+        };
     }
 
     static async getVideoByID(
@@ -255,10 +283,20 @@ class Playlist {
                     await this.saveCaptions(ids[0], caption);
                 }
             }
-            Playlist.bus.emit("video_added", this.id);
-            // TODO: increment version number in .record by 0.1 and update db
-            // correspondingly
+            this.broadcastChange();
+            const metadata = await this.getMetadata();
+            this.connection
+                .table<PlaylistRecord>("playlists")
+                .update({ version: metadata.version + 0.1 })
+                .where({ id: this.id })
+                .then(() => {
+                    this.broadcastChange();
+                });
         }
+    }
+
+    async broadcastChange() {
+        Playlist.bus.emit("playlist_changed", await this.getSnapshot());
     }
 
     saveCaptions(videoID: number, caption: Subtitles) {
