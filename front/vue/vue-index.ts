@@ -25,9 +25,17 @@ async function loadIndexComps(
         ]);
         // ensure socket is connected and authenticated before Vue components
         // are created so they can all use it without fear
-        await new Promise<void>((resolve) =>
-            socket.ifAndWhenGlobalAvailable("token", resolve)
-        );
+        await new Promise<void>((resolve) => {
+            if (socket.getGlobal("token")) {
+                resolve();
+            } else {
+                const tokenWatcher = () => {
+                    resolve();
+                    socket.stopWatchingGlobal("token", tokenWatcher);
+                };
+                socket.watchGlobal("token", tokenWatcher);
+            }
+        });
         Vue.createApp(Chat.default, { socket }).mount("#chat-container");
         Vue.createApp(Playlist.default, { socket, initialActiveVideo }).mount(
             "#playlist-container"

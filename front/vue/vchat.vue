@@ -499,9 +499,7 @@ export default defineComponent({
                         if (found) selectedAvatar.value = found;
                     }
                     if (lastLogin.name && lastLogin.avatarID) {
-                        socket.ifAndWhenGlobalAvailable("token", () =>
-                            attemptLogin(true)
-                        );
+                        attemptLogin(true);
                     }
                 } catch {
                     console.log("could not parse previous login info");

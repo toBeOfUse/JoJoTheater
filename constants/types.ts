@@ -138,7 +138,7 @@ interface ClientStreamsSocket extends Socket {
         name: keyof ClientGlobalValues,
         callback: GlobalCallback
     ) => void;
-    ifAndWhenGlobalAvailable: (
+    stopWatchingGlobal: (
         name: keyof ClientGlobalValues,
         callback: GlobalCallback
     ) => void;
