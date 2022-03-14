@@ -300,9 +300,8 @@ class Theater {
             });
 
         Playlist.bus.on("video_added", async (playlistID: number) => {
-            // TODO: optimizations: Record<> lookup instead of .find; caching
-            // the result of this.queryPlaylists and only updating the changed
-            // snapshot
+            // TODO: optimization: caching the result of this.queryPlaylists and
+            // only updating the changed snapshot
             const playlist = this._playlistsByID[playlistID];
             if (playlist) {
                 const receivers = this.audience.filter((a) =>
@@ -477,7 +476,6 @@ class Theater {
 
     addVideo(req: Request, res: Response) {
         if (is<AddVideoBody>(req.body)) {
-            // TODO: playlist ownership permissions check
             const { url, playlistID } = req.body;
             logger.debug(
                 "attempting to add video with url " +
@@ -486,6 +484,16 @@ class Theater {
                     playlistID
             );
             const playlist = this._playlistsByID[playlistID];
+            // TODO: playlist ownership permissions check
+            if (!playlist.record.publicallyEditable) {
+                console.warn(
+                    "request to add video to playlist " +
+                        "without requisite permissions"
+                );
+                res.status(403);
+                res.end();
+                return;
+            }
             playlist
                 ?.addFromURL(url)
                 .then(() => {
