@@ -67,10 +67,10 @@
                         type="text"
                         :placeholder="placeholder"
                         v-model="videoURL"
-                        @keydown.enter="addVideo(videoURL)"
+                        @keydown.enter="addVideo(videoURL, list.id)"
                     />
                     <button
-                        @click="addVideo(videoURL)"
+                        @click="addVideo(videoURL, list.id)"
                         class="add-video-button"
                     >
                         <svg width="100%" height="100%" viewBox="0 0 16 16">

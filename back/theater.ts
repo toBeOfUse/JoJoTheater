@@ -498,6 +498,9 @@ class Theater {
                     res.status(400);
                     res.end();
                 });
+        } else {
+            console.warn("malformed request to addVideo endpoint:");
+            console.warn(JSON.stringify(req.body).substring(0, 1000));
         }
     }
 
