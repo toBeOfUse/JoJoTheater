@@ -250,8 +250,11 @@ class Playlist {
             }
             const { thumbnail, captions, ...videoRecord } = v;
             const ids = await this.connection
-                .table<Video>("videos")
-                .insert(videoRecord);
+                .table<VideoRecord>("videos")
+                .insert({
+                    ...videoRecord,
+                    position: existingCount - (alreadyHaveVideo ? 1 : 0),
+                });
             if (thumbnail) {
                 Playlist.saveThumbnail(ids[0], thumbnail);
             }
