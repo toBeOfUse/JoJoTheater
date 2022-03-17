@@ -24,19 +24,19 @@
         </h2>
         <ul style="text-align: left">
             <li>Create or join a room</li>
-            <li>Watch Videos!</li>
+            <li>Watch videos!</li>
             <li>Everyone is synced :D</li>
             <li>Sign in through the chat program on the bottom left</li>
             <li>
-                Once you sign in, the chat program window is resizeable (grab
-                the top and bottom)
+                Once you sign in, the chat is resizeable (grab the top and
+                bottom)
             </li>
             <li>
-                The window is still visible when the video is fullscreen unless
-                it is minimized
+                The chat is still visible when the video is fullscreen unless it
+                is minimized
             </li>
-            <li>Add videos to the last playlist folder</li>
-            <li>Search videos with the box below that</li>
+            <li>Add videos to editable playlists</li>
+            <!-- <li>Search videos with the box below that</li> -->
             <li>Click the little star to edit your character!</li>
             <li>Hold alt and press "J" to jump! Or tap your character</li>
             <li>Hold alt and press keys to type the emojis shown below!</li>

@@ -1,45 +1,12 @@
 import "normalize.css";
-
-import { io } from "socket.io-client";
-import { is } from "typescript-is";
-import { endpoints } from "../constants/endpoints";
-
-import {
-    Video,
-    VideoState,
-    StreamsSocket,
-    ClientGlobalValues as GlobalValues,
-} from "../constants/types";
+import { makeInteractor } from "./serverinteractor";
+import { Video, VideoState } from "../constants/types";
 import initVideo from "./video";
 
+const socket = makeInteractor();
+
 const oldToken = localStorage.getItem("token");
-const socket = io() as StreamsSocket;
-socket._globals = {
-    loggedIn: false,
-    inChat: false,
-    token: oldToken ?? "",
-    currentVideo: undefined,
-};
-socket._listeners = { loggedIn: [], inChat: [], token: [], currentVideo: [] };
-socket.setGlobal = function (name, newValue) {
-    const newGlobals = { ...this._globals, [name]: newValue };
-    if (is<GlobalValues>(newGlobals)) {
-        this._globals = newGlobals;
-        this._listeners[name as keyof GlobalValues].forEach((l) => l(newValue));
-    }
-};
-socket.getGlobal = function (name) {
-    return this._globals[name];
-};
-socket.watchGlobal = function (name, callback) {
-    this._listeners[name].push(callback);
-};
-socket.stopWatchingGlobal = function (name, callback) {
-    this._listeners[name] = this._listeners[name].filter((l) => l != callback);
-};
-socket.http = function (path, body = {}, headers = {}) {
-    return endpoints[path].dispatch(this._globals.token, body, headers);
-};
+if (oldToken) socket.setGlobal("token", oldToken);
 
 socket.emit("log_in", socket.getGlobal("token"));
 

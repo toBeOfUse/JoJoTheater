@@ -136,34 +136,6 @@ interface ChatUserInfo {
     resumed: boolean;
 }
 
-interface ClientGlobalValues {
-    loggedIn: boolean;
-    inChat: boolean;
-    token: string;
-    currentVideo: Video | undefined;
-}
-type GlobalType = any;
-type GlobalCallback = (newValue: any) => void;
-interface ClientStreamsSocket extends Socket {
-    _globals: ClientGlobalValues;
-    _listeners: Record<keyof ClientGlobalValues, GlobalCallback[]>;
-    setGlobal: (name: string, newValue: GlobalType) => void;
-    getGlobal: (name: keyof ClientGlobalValues) => GlobalType;
-    watchGlobal: (
-        name: keyof ClientGlobalValues,
-        callback: GlobalCallback
-    ) => void;
-    stopWatchingGlobal: (
-        name: keyof ClientGlobalValues,
-        callback: GlobalCallback
-    ) => void;
-    http: (
-        path: APIPath,
-        body?: any,
-        headers?: Record<string, string>
-    ) => Promise<Record<string, any>>;
-}
-
 export {
     ChatMessage,
     Video,
@@ -177,8 +149,6 @@ export {
     User,
     Token,
     Avatar,
-    ClientStreamsSocket as StreamsSocket,
-    ClientGlobalValues,
     Subtitles,
     PlaylistRecord,
     PlaylistSnapshot,

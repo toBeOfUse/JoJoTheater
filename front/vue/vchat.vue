@@ -177,12 +177,7 @@
 </template>
 
 <script lang="ts">
-import {
-    ChatMessage,
-    Subscription,
-    StreamsSocket,
-    Avatar,
-} from "../../constants/types";
+import { ChatMessage, Subscription, Avatar } from "../../constants/types";
 import OptImage from "./image.vue";
 import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
 import {
@@ -190,10 +185,11 @@ import {
     getAvatarImageURL,
     LogInBody,
 } from "../../constants/endpoints";
+import { ServerInteractor } from "../serverinteractor";
 export default defineComponent({
     props: {
         socket: {
-            type: Object as PropType<StreamsSocket>,
+            type: Object as PropType<ServerInteractor>,
             required: true,
         },
     },

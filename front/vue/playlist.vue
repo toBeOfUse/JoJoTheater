@@ -105,18 +105,18 @@ import {
     StateChangeRequest,
     ChangeTypes,
     Subscription,
-    StreamsSocket,
     PlaylistSnapshot,
 } from "../../constants/types";
 import { defineComponent, PropType, ref, watch } from "vue";
 import OpenCloseIcon from "!vue-loader!vue-svg-loader!../../assets/images/folder-open.svg";
 import OptImage from "./image.vue";
 import { APIPath } from "../../constants/endpoints";
+import { ServerInteractor } from "../serverinteractor";
 
 export default defineComponent({
     props: {
         socket: {
-            type: Object as PropType<StreamsSocket>,
+            type: Object as PropType<ServerInteractor>,
             required: true,
         },
     },
@@ -365,12 +365,13 @@ $playlist-item-margin: 3px;
 .folder-description {
     width: 100%;
     color: black;
-    margin: 20px 0 12px 0;
+    font-size: 0.9em;
+    margin: 8px 0 12px 10px;
     & span {
         background-color: white;
         border: 1px solid black;
-        border-radius: 5px;
-        padding: 5px;
+        border-radius: 3px;
+        padding: 3px 6px;
     }
 }
 

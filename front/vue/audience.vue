@@ -97,7 +97,8 @@ import {
     nextTick,
     watch,
 } from "vue";
-import { StreamsSocket, Subscription } from "../../constants/types";
+import { Subscription } from "../../constants/types";
+import { ServerInteractor } from "../serverinteractor";
 import Inhabitant from "./inhabitant.vue";
 import type { SceneInhabitant, OutputScene } from "../../back/scenes";
 import { APIPath, getOptimizedImageURL } from "../../constants/endpoints";
@@ -107,7 +108,7 @@ export default defineComponent({
     props: {
         socket: {
             required: true,
-            type: Object as PropType<StreamsSocket>,
+            type: Object as PropType<ServerInteractor>,
         },
     },
     components: { Inhabitant, Curtains },
