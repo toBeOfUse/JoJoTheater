@@ -1,6 +1,3 @@
-import type { Socket } from "socket.io-client";
-import { APIPath } from "./endpoints";
-
 interface ChatMessage {
     isAnnouncement: boolean;
     messageHTML: string;
@@ -136,6 +133,19 @@ interface ChatUserInfo {
     resumed: boolean;
 }
 
+function deNull(obj: any) {
+    if (typeof obj == "object" && obj !== null) {
+        for (const prop in obj) {
+            if (obj[prop] === null) {
+                obj[prop] = undefined;
+            } else if (typeof obj[prop] == "object") {
+                deNull(obj[prop]);
+            }
+        }
+    }
+    return obj;
+}
+
 export {
     ChatMessage,
     Video,
@@ -152,4 +162,5 @@ export {
     Subtitles,
     PlaylistRecord,
     PlaylistSnapshot,
+    deNull,
 };

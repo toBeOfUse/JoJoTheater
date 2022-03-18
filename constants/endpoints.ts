@@ -1,3 +1,5 @@
+import { deNull } from "./types";
+
 enum APIPath {
     logIn = "/api/logIn",
     logOut = "/api/logOut",
@@ -99,7 +101,8 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
         });
         const text = await response.text();
         try {
-            return JSON.parse(text);
+            const obj = JSON.parse(text);
+            return deNull(obj);
         } catch {
             return text;
         }
