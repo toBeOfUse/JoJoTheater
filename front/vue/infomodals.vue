@@ -5,19 +5,18 @@
         -
         <span class="link" @click="showing = 'credits'">Credits</span>
     </div>
-    <div id="modal-bg" v-if="showing != ''" @click="showing = ''"></div>
-    <div class="modal" v-if="showing == 'about'">
+    <modal v-if="showing == 'about'" @bgClick="showing = ''">
         <h2>About <span class="close" @click="showing = ''">(close)</span></h2>
         <p>
             MitchBot Streams was created by me, Mitch. It aims to be the most
-            interesting platform for watching synchronized videos with other
-            people over the Internet. It was originally created to watch JoJo
-            with Sarah. You can view its source code
+            interesting platform for watching videos with other people over the
+            Internet. It was originally created to watch JoJo with Sarah. You
+            can view its source code
             <a-nt href="https://github.com/toBeOfUse/MitchBotStreams">here</a-nt
             >.
         </p>
-    </div>
-    <div class="modal" v-if="showing == 'instructions'">
+    </modal>
+    <modal @bgClick="showing = ''" v-if="showing == 'instructions'">
         <h2>
             Instructions
             <span class="close" @click="showing = ''">(close)</span>
@@ -45,8 +44,8 @@
             src="/images/emojikeyboardsmaller.svg"
             style="width: 100%; height: auto"
         />
-    </div>
-    <div class="modal" v-if="showing == 'credits'">
+    </modal>
+    <modal @bgClick="showing = ''" v-if="showing == 'credits'">
         <h2>
             Credits <span class="close" @click="showing = ''">(close)</span>
         </h2>
@@ -86,17 +85,19 @@
                 }}</a-nt>
             </div>
         </div>
-    </div>
+    </modal>
 </template>
 <script lang="ts">
 import { defineComponent, ref, watch } from "vue";
 import newtablink from "./newtablink.vue";
 import optImage from "./image.vue";
+import modal from "./modal.vue";
 
 export default defineComponent({
     components: {
         "a-nt": newtablink,
         optImage,
+        modal,
     },
     setup() {
         const showing = ref("");
@@ -374,31 +375,6 @@ export default defineComponent({
 .link {
     text-decoration: underline;
     cursor: pointer;
-}
-#modal-bg {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #fff8;
-}
-.modal {
-    position: fixed;
-    width: 50%;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: white;
-    border-radius: 5px;
-    border: 1px solid black;
-    padding: 10px;
-    overflow-y: auto;
-    max-height: calc(100% - 100px);
-    @media (max-width: 500px) {
-        width: 95%;
-    }
-    z-index: 10;
 }
 .close {
     font-size: 0.7em;
