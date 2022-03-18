@@ -4,7 +4,6 @@ import { APIPath, endpoints } from "../constants/endpoints";
 import { User, Video } from "../constants/types";
 
 interface SIStatus {
-    loggedIn: boolean;
     inChat: boolean;
     token: string;
     currentVideo: Video | undefined;
@@ -38,14 +37,12 @@ interface ServerInteractor extends Socket {
 function makeInteractor() {
     const socket = io() as ServerInteractor;
     socket._globals = {
-        loggedIn: false,
         inChat: false,
         token: "",
         currentVideo: undefined,
         identity: undefined,
     };
     socket._listeners = {
-        loggedIn: [],
         inChat: [],
         token: [],
         currentVideo: [],

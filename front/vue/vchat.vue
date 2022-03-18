@@ -503,20 +503,19 @@ export default defineComponent({
                 // if we don't have a previous session saved in the browser to
                 // reference, pull from the server's identity information
             } else {
-                socket.http(APIPath.getIdentity).then((response) => {
-                    if (!nameInput.value && response.lastUsername) {
-                        nameInput.value = response.lastUsername;
+                const identity = props.socket.getGlobal("identity");
+                if (!nameInput.value && identity.lastUsername) {
+                    nameInput.value = identity.lastUsername;
+                }
+                if (!selectedAvatar.value && identity.lastAvatarID) {
+                    const avatarIndex = avatars.value.findIndex(
+                        (a) => a.id == identity.lastAvatarID
+                    );
+                    if (avatarIndex != -1) {
+                        selectedAvatar.value = avatars.value[avatarIndex];
+                        avatarPage.value = Math.floor(avatarIndex / 12);
                     }
-                    if (!selectedAvatar.value && response.lastAvatarID) {
-                        const avatarIndex = avatars.value.findIndex(
-                            (a) => a.id == response.lastAvatarID
-                        );
-                        if (avatarIndex) {
-                            selectedAvatar.value = avatars.value[avatarIndex];
-                            avatarPage.value = Math.floor(avatarIndex / 12);
-                        }
-                    }
-                });
+                }
             }
         });
 

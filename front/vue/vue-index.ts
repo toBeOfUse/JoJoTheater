@@ -1,6 +1,6 @@
-import type { StreamsSocket } from "../../constants/types";
+import { ServerInteractor } from "../serverinteractor";
 
-async function loadIndexComps(socket: StreamsSocket) {
+async function loadIndexComps(socket: ServerInteractor) {
     import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
         // Create a Promise for each Vue component and then await them with
         // Promise.all so they can load in parallel
@@ -23,14 +23,14 @@ async function loadIndexComps(socket: StreamsSocket) {
         // ensure socket is connected and authenticated before Vue components
         // are created so they can all use it without fear
         await new Promise<void>((resolve) => {
-            if (socket.getGlobal("token")) {
+            if (socket.getGlobal("identity")) {
                 resolve();
             } else {
                 const tokenWatcher = () => {
                     resolve();
-                    socket.stopWatchingGlobal("token", tokenWatcher);
+                    socket.stopWatchingGlobal("identity", tokenWatcher);
                 };
-                socket.watchGlobal("token", tokenWatcher);
+                socket.watchGlobal("identity", tokenWatcher);
             }
         });
         Vue.createApp(Chat.default, { socket }).mount("#chat-container");

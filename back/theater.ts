@@ -56,7 +56,7 @@ declare global {
 
 type ServerSentEvent =
     | "ping"
-    | "grant_token"
+    | "set_token"
     | "list_playlists"
     | "update_playlist"
     | "chat_message"
@@ -89,7 +89,7 @@ class AudienceMember {
     lastClientState: (PlayerState & { receivedTimeISO: string }) | undefined =
         undefined;
 
-    get loggedIn(): boolean {
+    get inChat(): boolean {
         return !!this.chatInfo;
     }
 
@@ -619,7 +619,7 @@ class Theater {
                 member = null;
             }
             if (
-                member?.loggedIn ||
+                member?.inChat ||
                 !endpoints[req.path as APIPath]?.chatDependent
             ) {
                 try {
@@ -682,7 +682,7 @@ class Theater {
         member.on(
             "state_change_request",
             async (change: StateChangeRequest) => {
-                if (!member.loggedIn) {
+                if (!member.inChat) {
                     member.emit(
                         "alert",
                         "Log in to the chat to  be allowed to control the video 👀"
@@ -905,7 +905,7 @@ export default async function init(server: Server, app: Express) {
     const theater = new Theater(playlists, graphics);
     io.on("connection", (socket: Socket) => {
         // In the multi-room future a room id will also be sent
-        socket.on("log_in", async (token: string) => {
+        socket.on("handshake", async (token: string) => {
             let user: User | undefined;
             if (token) {
                 user = await getUser(token);
@@ -921,8 +921,9 @@ export default async function init(server: Server, app: Express) {
                     userID: user.id,
                 };
                 await saveToken(newToken);
-                socket.emit("grant_token", newToken.token);
+                token = newToken.token;
             }
+            socket.emit("set_token", token);
             const newMember = new AudienceMember(socket, user);
             theater.initializeMember(newMember);
             logger.info(
@@ -952,13 +953,31 @@ export default async function init(server: Server, app: Express) {
                     res.json(req.user);
                     res.end();
                 } else {
-                    res.status(400);
+                    res.status(404);
                     res.end();
                 }
             });
         } else if (endpoint.path == APIPath.getFreeSpace) {
             app.get(endpoint.path, async (_req, res) => {
                 res.json(await checkDiskSpace(__dirname));
+            });
+        } else if (endpoint.path == APIPath.getScenes) {
+            app.get(endpoint.path, (req, res) => {
+                const member =
+                    (req.user &&
+                        theater.audience.find(
+                            (m) => m.user.id == req.user?.id
+                        )) ||
+                    null;
+                if (member) {
+                    theater.handleAPICall(req, res);
+                } else {
+                    res.status(200);
+                    res.json({
+                        scenes: SceneController.scenes,
+                        currentScene: null,
+                    });
+                }
             });
         }
     }

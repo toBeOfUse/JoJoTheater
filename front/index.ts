@@ -2,18 +2,27 @@ import "normalize.css";
 import { makeInteractor } from "./serverinteractor";
 import { Video, VideoState } from "../constants/types";
 import initVideo from "./video";
+import { APIPath } from "../constants/endpoints";
 
 const socket = makeInteractor();
 
 const oldToken = localStorage.getItem("token");
-if (oldToken) socket.setGlobal("token", oldToken);
 
-socket.emit("log_in", socket.getGlobal("token"));
+// making ourselves known to the server flow:
+// establish a secure token so that http requests can be identified as coming
+// from the same source as this web-socket
+socket.emit("handshake", oldToken ?? ""); // server will respond with set_token
 
-socket.on("grant_token", (token: string) => {
+// receive a confirmed/acknowledged/validated token and store it in the
+// interactor status so it can use it for HTTP requests later. Also, store it in
+// the browser for later handshakes. Then, obtain the User object with the data
+// the server has on us so we can show things like "Welcome, [whoever]"
+socket.on("set_token", async (token: string) => {
     socket.setGlobal("token", token);
     localStorage.setItem("token", token);
+    socket.setGlobal("identity", await socket.http(APIPath.getIdentity));
 });
+
 socket.on("ping", () => {
     socket.emit("pong");
 });
@@ -21,8 +30,6 @@ socket.on("ping", () => {
 window.onerror = (event) => {
     socket.emit("error_report", event.toString() + " - " + new Error().stack);
 };
-
-initVideo(socket);
 
 socket.on("state_set", (v: VideoState) => {
     socket.setGlobal("currentVideo", v.video || undefined);
@@ -36,6 +43,8 @@ function renderTitle(v: Video) {
 }
 
 socket.watchGlobal("currentVideo", renderTitle);
+
+initVideo(socket);
 
 const resizeVideoContainer = () => {
     const cont = document.querySelector("#video-container") as HTMLDivElement;
