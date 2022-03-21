@@ -99,7 +99,7 @@ interface ControlsFlag {
     endPos?: number;
 }
 
-interface User {
+interface UserSnapshot {
     id: number;
     createdAt: Date;
     lastUsername?: string;
@@ -108,7 +108,10 @@ interface User {
     email?: string;
     passwordHash?: string;
     passwordSalt?: string;
+    alsoKnownAs: Record<string, string>;
 }
+
+type PublicUser = Omit<UserSnapshot, "email" | "passwordHash" | "passwordSalt">;
 
 interface Token {
     token: string;
@@ -156,7 +159,8 @@ export {
     Subscription,
     ConnectionStatus,
     ControlsFlag,
-    User,
+    UserSnapshot,
+    PublicUser,
     Token,
     Avatar,
     Subtitles,

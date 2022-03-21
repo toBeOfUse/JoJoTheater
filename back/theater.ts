@@ -11,9 +11,7 @@ import {
     Playlist,
     getRecentMessages,
     addMessage,
-    saveToken,
-    saveUser,
-    getUser,
+    User,
     getAvatar,
     getAllAvatars,
 } from "./queries";
@@ -26,8 +24,6 @@ import {
     Subscription,
     Video,
     ConnectionStatus,
-    User,
-    Token,
     Avatar,
     PlaylistSnapshot,
 } from "../constants/types";
@@ -346,7 +342,7 @@ class Theater {
         return await Promise.all(this.playlists.map((p) => p.getSnapshot()));
     }
 
-    async sendToChat(messageIn: Omit<ChatMessage, "createdAt">) {
+    async publishMessage(messageIn: Omit<ChatMessage, "createdAt">) {
         const message = { ...messageIn, createdAt: new Date().getTime() };
         await addMessage(message);
         const receivers = this.audience.filter((a) =>
@@ -410,17 +406,15 @@ class Theater {
                         `<strong>${member.chatInfo.name}</strong>` +
                         " joined the Chat.",
                 };
-                this.sendToChat(announcement);
+                this.publishMessage(announcement);
             }
             this.graphics.addInhabitant(member.chatInfo, member.user);
             // just in case
             member.subscriptions.add(Subscription.chat);
-            member.user = {
-                ...member.user,
-                lastUsername: info.name,
-                lastAvatarID: info.avatarID,
-            };
-            saveUser(member.user);
+            member.user.updateChatInfo({
+                avatarID: member.chatInfo.avatar.id,
+                name: member.chatInfo.name,
+            });
             res.status(200);
             res.end();
         } else {
@@ -448,7 +442,7 @@ class Theater {
                     senderName: member.chatInfo.name,
                     senderAvatarURL: member.avatarURL,
                 };
-                this.sendToChat(message).then(() => {
+                this.publishMessage(message).then(() => {
                     res.status(200);
                     res.end();
                 });
@@ -458,7 +452,7 @@ class Theater {
                         const response = responder(message.messageHTML);
                         if (response) {
                             await new Promise((r) => setTimeout(r, 750));
-                            this.sendToChat({
+                            this.publishMessage({
                                 isAnnouncement: false,
                                 ...npcInfo,
                                 messageHTML: response,
@@ -533,7 +527,7 @@ class Theater {
                 this.emitAll("audience_info_set", this.graphics.outputGraphics);
             });
             this.graphics.emit("change");
-            this.sendToChat({
+            this.publishMessage({
                 isAnnouncement: true,
                 messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
             });
@@ -908,20 +902,16 @@ export default async function init(server: Server, app: Express) {
         socket.on("handshake", async (token: string) => {
             let user: User | undefined;
             if (token) {
-                user = await getUser(token);
+                user = await User.getUserByToken(token);
             }
             if (!user) {
-                const userInit = {
-                    watchTime: 0,
-                };
-                user = { ...userInit, ...(await saveUser(userInit)) };
-                const newToken: Token = {
-                    createdAt: new Date(),
-                    token: nanoid(),
-                    userID: user.id,
-                };
-                await saveToken(newToken);
-                token = newToken.token;
+                user = await User.createUser({ watchTime: 0, alsoKnownAs: {} });
+                if (!user) {
+                    logger.error("handshake failure at User.createUser");
+                    return;
+                }
+                token = nanoid();
+                await user.addToken(token);
             }
             socket.emit("set_token", token);
             const newMember = new AudienceMember(socket, user);
@@ -935,7 +925,7 @@ export default async function init(server: Server, app: Express) {
     });
 
     const getUserMiddleware: RequestHandler = async (req, _res, next) => {
-        req.user = await getUser(req.header("Auth") as string);
+        req.user = await User.getUserByToken(req.header("Auth") as string);
         next();
     };
 
@@ -950,7 +940,7 @@ export default async function init(server: Server, app: Express) {
             app.get(endpoint.path, getUserMiddleware, async (req, res) => {
                 if (req.user) {
                     res.status(200);
-                    res.json(req.user);
+                    res.json(await req.user.getPublicSnapshot());
                     res.end();
                 } else {
                     res.status(404);

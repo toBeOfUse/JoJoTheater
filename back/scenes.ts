@@ -1,10 +1,10 @@
 import EventEmitter from "events";
 import path from "path";
 import fs from "fs";
-import { ChatUserInfo, User } from "../constants/types";
+import { ChatUserInfo } from "../constants/types";
 import logger from "./logger";
 import { scenes, Scene } from "../constants/scenes";
-import { getUserSceneProp, saveUserSceneProp } from "./queries";
+import { User } from "./queries";
 
 interface SceneInhabitant extends ChatUserInfo {
     typing: boolean;
@@ -35,6 +35,7 @@ class SceneController extends EventEmitter {
     private propsSequence: string[];
     private usedProps: number = 0;
     private _inhabitants: SceneInhabitant[] = [];
+    private _users: Record<number, User> = {};
     get inhabitants() {
         return this._inhabitants;
     }
@@ -129,12 +130,15 @@ class SceneController extends EventEmitter {
         }
         const newScene = new SceneController(scenes[to]);
         for (const inhabitant of oldScene._inhabitants) {
-            await newScene.addInhabitant(inhabitant, { id: inhabitant.userID });
+            await newScene.addInhabitant(
+                inhabitant,
+                oldScene._users[inhabitant.userID]
+            );
         }
         return newScene;
     }
-    async addInhabitant(inhabitant: ChatUserInfo, user: Pick<User, "id">) {
-        let prop = await getUserSceneProp(user, this.scene.name);
+    async addInhabitant(inhabitant: ChatUserInfo, user: User) {
+        let prop = await user.getSceneProp(this.scene.name);
         let newProp = false;
         if (!prop) {
             newProp = true;
@@ -148,28 +152,29 @@ class SceneController extends EventEmitter {
             propsURL: this.getPropsURL(prop),
             userID: user.id,
         };
+        this._users[user.id] = user;
         this._inhabitants = [newInhabitant].concat(this._inhabitants);
         if (newProp) {
-            saveUserSceneProp(user, this.scene.name, prop);
+            user.saveSceneProp(this.scene.name, prop);
         }
         this.emit("change");
     }
     async changeInhabitantProps(userID: number) {
-        const user = this._inhabitants.find((i) => i.userID == userID);
-        if (user) {
+        const inhabitant = this._inhabitants.find((i) => i.userID == userID);
+        if (inhabitant) {
             let newProp = this.getNewProp();
-            while (user.propsURL == this.getPropsURL(newProp)) {
+            while (inhabitant.propsURL == this.getPropsURL(newProp)) {
                 newProp = this.getNewProp();
             }
-            saveUserSceneProp({ id: userID }, this.scene.name, newProp);
-            user.propsURL = this.getPropsURL(newProp);
+            this._users[userID].saveSceneProp(this.scene.name, newProp);
+            inhabitant.propsURL = this.getPropsURL(newProp);
             this.emit("change");
         }
     }
     removeInhabitant(connectionID: string) {
-        // for this to operate most securely, all currently pending member
-        // additions should probably be awaited here, so we don't try (and fail)
-        // to remove someone before we've finished adding them
+        // TODO: for this to be safer, all currently pending member additions
+        // should probably be awaited here, so we don't try (and fail) to remove
+        // someone before we've finished adding them
         this._inhabitants = this._inhabitants.filter(
             (i) => i.connectionID != connectionID
         );

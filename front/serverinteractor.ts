@@ -1,13 +1,13 @@
 import { io, Socket } from "socket.io-client";
 import { is } from "typescript-is";
 import { APIPath, endpoints } from "../constants/endpoints";
-import { User, Video } from "../constants/types";
+import { PublicUser, Video } from "../constants/types";
 
 interface SIStatus {
     inChat: boolean;
     token: string;
     currentVideo: Video | undefined;
-    identity: User | undefined;
+    identity: PublicUser | undefined;
 }
 
 type GlobalCallback = (newValue: any) => void;

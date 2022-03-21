@@ -1,5 +1,5 @@
 import { Knex } from "knex";
-import { User } from "../../../constants/types";
+import { UserSnapshot } from "../../../constants/types";
 
 export async function up(knex: Knex): Promise<void> {
     await knex.schema.alterTable("messages", (table) => {
@@ -9,10 +9,9 @@ export async function up(knex: Knex): Promise<void> {
         ["senderID"]
     );
     for (const connectionID of connectionIDs) {
-        const user = await knex<User>("users").insert(
-            { createdAt: new Date(), watchTime: 0 },
-            ["id"]
-        );
+        const user = await knex<Omit<UserSnapshot, "alsoKnownAs">>(
+            "users"
+        ).insert({ createdAt: new Date(), watchTime: 0 }, ["id"]);
         await knex("messages")
             .where({ senderID: connectionID.senderID })
             .update({ userID: user[0].id });

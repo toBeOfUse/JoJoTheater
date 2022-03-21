@@ -11,12 +11,13 @@ import logger from "./logger";
 import {
     ChatMessage,
     Video,
-    User,
     Token,
     Avatar,
     Subtitles,
     PlaylistRecord,
     PlaylistSnapshot,
+    UserSnapshot,
+    PublicUser,
 } from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
 import { is } from "typescript-is";
@@ -445,55 +446,152 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
     ).reverse();
 }
 
-// TODO: "User" model instead of these atomized functions
+type UserRecord = Omit<UserSnapshot, "alsoKnownAs">;
+class User {
+    id: number;
 
-async function saveUser(user: Omit<User, "id" | "createdAt">) {
-    return (
+    private constructor(id: number) {
+        this.id = id;
+    }
+
+    static async createUser(
+        user: Omit<UserSnapshot, "id" | "createdAt">
+    ): Promise<undefined | User> {
+        const { alsoKnownAs, ...userRecord } = user;
+        const newUser = await streamsDB.table<UserRecord>("users").insert(
+            {
+                ...userRecord,
+                createdAt: new Date(),
+            },
+            ["id"]
+        );
+        if (!newUser.length) {
+            logger.error(
+                "Could not create new user from " +
+                    JSON.stringify(user).substring(0, 1000)
+            );
+            return undefined;
+        } else {
+            return new User(newUser[0].id);
+        }
+    }
+
+    async exists(): Promise<boolean> {
+        return (
+            (
+                await streamsDB
+                    .table<UserRecord>("users")
+                    .select("1")
+                    .where({ id: this.id })
+                    .limit(1)
+            ).length > 0
+        );
+    }
+
+    static async getUserByID(id: number): Promise<User | undefined> {
+        const user = new User(id);
+        if (await user.exists()) {
+            return user;
+        } else {
+            return undefined;
+        }
+    }
+
+    static async getUserByToken(token: string): Promise<User | undefined> {
+        if (!is<string>(token)) {
+            return undefined;
+        }
+        const userID = await streamsDB
+            .table<Token>("tokens")
+            .where("token", token)
+            .select(["userID"]);
+        if (!userID.length) {
+            return undefined;
+        } else {
+            return new User(userID[0].userID);
+        }
+    }
+
+    /**
+     * basically for npcs. to avoid conflict with real ids, their ids should be negative
+     */
+    static async ensureUserIDs(ids: number[]) {
+        if (ids.some((i) => i >= 0)) {
+            logger.warn(
+                "ensureUserIDs being called with potentially real IDs:"
+            );
+            logger.warn(ids.toString());
+        }
         await streamsDB
-            .table<User>("users")
+            .table<UserRecord>("users")
             .insert(
-                {
-                    ...user,
-                    createdAt: new Date(),
-                },
+                ids.map((id) => ({ createdAt: new Date(), watchTime: 0, id })),
                 ["id", "createdAt"]
             )
             .onConflict(["id"])
-            .merge()
-    )[0];
-}
-
-/**
- * basically for npcs
- */
-async function ensureUserIDs(ids: number[]) {
-    await streamsDB
-        .table<User>("users")
-        .insert(
-            ids.map((id) => ({ createdAt: new Date(), watchTime: 0, id })),
-            ["id", "createdAt"]
-        )
-        .onConflict(["id"])
-        .ignore();
-}
-
-async function getUser(token: string): Promise<User | undefined> {
-    if (!is<string>(token)) {
-        return undefined;
+            .ignore();
     }
-    const userID = await streamsDB
-        .table<Token>("tokens")
-        .where("token", token)
-        .select(["userID"]);
-    if (!userID.length) {
-        return undefined;
-    } else {
-        return (
-            await streamsDB
-                .table<User>("users")
-                .where("id", userID[0].userID)
-                .select("*")
-        )[0];
+
+    async addToken(token: string) {
+        await streamsDB
+            .table<Token>("tokens")
+            .insert({ token, userID: this.id, createdAt: new Date() });
+    }
+
+    async getSceneProp(scene: string) {
+        const result = await streamsDB
+            .table<{ prop: string; userID: number; scene: string }>(
+                "usersToProps"
+            )
+            .where({ userID: this.id, scene: scene })
+            .select(["prop"]);
+        return result[0]?.prop;
+    }
+
+    async saveSceneProp(scene: string, prop: string) {
+        await streamsDB
+            .table<{ prop: string; userID: number; scene: string }>(
+                "usersToProps"
+            )
+            .insert({ prop, scene, userID: this.id })
+            .onConflict(["userID", "scene"])
+            .merge();
+    }
+
+    async updateChatInfo(signin: { name: string; avatarID: number }) {
+        await streamsDB
+            .table<UserRecord>("users")
+            .update({
+                lastAvatarID: signin.avatarID,
+                lastUsername: signin.name,
+            })
+            .where({ id: this.id });
+    }
+
+    async getSnapshot(): Promise<UserSnapshot> {
+        const user = await streamsDB
+            .table<UserRecord>("users")
+            .select("*")
+            .where({ id: this.id });
+        const names = await streamsDB
+            .table<{ name: string; nameType: string; userID: number }>("names")
+            .select("nameType", "name")
+            .where({ userID: this.id });
+        const alsoKnownAs: Record<string, string> = {};
+        for (const name of names) {
+            alsoKnownAs[name.nameType] = name.name;
+        }
+        return { ...user[0], alsoKnownAs };
+    }
+
+    async getPublicSnapshot(): Promise<PublicUser> {
+        const user = await this.getSnapshot();
+        for (const privateAttr of ["email", "passwordHash", "passwordSalt"]) {
+            if (privateAttr in user) {
+                delete user[privateAttr as keyof UserSnapshot];
+            }
+        }
+        return user;
     }
 }
 
@@ -509,44 +607,12 @@ async function getAllAvatars(): Promise<Avatar[]> {
     return await streamsDB.table<Avatar>("avatars").select("*");
 }
 
-async function saveToken(token: Token) {
-    await streamsDB.table<Token>("tokens").insert(token);
-}
-
-async function getUserSceneProp(
-    user: Pick<User, "id">,
-    scene: string
-): Promise<string | undefined> {
-    const result = await streamsDB
-        .table<{ prop: string; userID: number; scene: string }>("usersToProps")
-        .where({ userID: user.id, scene: scene })
-        .select(["prop"]);
-    return result[0]?.prop;
-}
-
-async function saveUserSceneProp(
-    user: Pick<User, "id">,
-    scene: string,
-    prop: string
-) {
-    await streamsDB
-        .table<{ prop: string; userID: number; scene: string }>("usersToProps")
-        .insert({ prop, scene, userID: user.id })
-        .onConflict(["userID", "scene"])
-        .merge();
-}
-
 export {
     Playlist,
     getRecentMessages,
     addMessage,
-    saveUser,
-    getUser,
-    saveToken,
+    User,
     getAvatar,
     getAllAvatars,
-    getUserSceneProp,
-    saveUserSceneProp,
-    ensureUserIDs,
     streamsDB,
 };
