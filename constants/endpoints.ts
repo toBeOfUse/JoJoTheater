@@ -49,7 +49,7 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
         body: BodyType,
         headers: Record<string, string> = {}
     ) {
-        if (this.roomDependent && !token) {
+        if ((this.roomDependent || this.chatDependent) && !token) {
             throw (
                 "Missing identification token for room-dependent endpoint " +
                 this.path
@@ -91,9 +91,10 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
         body: BodyType,
         headers: Record<string, string> = {}
     ) {
-        if (this.roomDependent && !token) {
+        if ((this.roomDependent || this.chatDependent) && !token) {
             throw (
-                "Missing authentication token for secure endpoint " + this.path
+                "Missing authentication token for room-dependent endpoint " +
+                this.path
             );
         }
         const response = await fetch(this.fullPath(body), {
@@ -164,7 +165,7 @@ new GetEndpoint<{}>(APIPath.getMessages, {
     chatDependent: false,
 });
 new GetEndpoint<{}>(APIPath.getScenes, {
-    roomDependent: true,
+    roomDependent: false,
     chatDependent: false,
 });
 new GetEndpoint<OptimizedImageBody>(APIPath.optimizedImage, {
