@@ -149,7 +149,7 @@ export default defineComponent({
             ) {
                 jumping = true;
                 const svg = inhabitantContainer.value.querySelector(
-                    "svg#svg-inhabitant"
+                    "svg.svg-inhabitant"
                 ) as SVGElement;
                 if (svg) {
                     svg.style.animationName = "jump";
