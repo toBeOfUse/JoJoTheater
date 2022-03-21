@@ -343,7 +343,7 @@ class Theater {
     }
 
     async publishMessage(messageIn: Omit<ChatMessage, "createdAt">) {
-        const message = { ...messageIn, createdAt: new Date().getTime() };
+        const message = { ...messageIn, createdAt: Date.now() };
         await addMessage(message);
         const receivers = this.audience.filter((a) =>
             a.subscriptions.has(Subscription.chat)

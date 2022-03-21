@@ -30,7 +30,7 @@ export async function up(knex: Knex): Promise<void> {
             .insert({
                 name: folder,
                 description: "",
-                createdAt: new Date().getTime(),
+                createdAt: Date.now(),
             })
             .returning(["id"]);
         newFolders[folder] = newID[0].id;

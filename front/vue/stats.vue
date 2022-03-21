@@ -154,8 +154,7 @@ export default defineComponent({
             if (state.playing) {
                 return msToHMS(
                     state.currentTimeMs +
-                        (new Date().getTime() -
-                            new Date(state.receivedTimeISO).getTime())
+                        (Date.now() - new Date(state.receivedTimeISO).getTime())
                 );
             } else {
                 return msToHMS(state.currentTimeMs);

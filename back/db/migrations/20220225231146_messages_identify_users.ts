@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
     for (const connectionID of connectionIDs) {
         const user = await knex<Omit<UserSnapshot, "alsoKnownAs">>(
             "users"
-        ).insert({ createdAt: new Date(), watchTime: 0 }, ["id"]);
+        ).insert({ createdAt: Date.now(), watchTime: 0 }, ["id"]);
         await knex("messages")
             .where({ senderID: connectionID.senderID })
             .update({ userID: user[0].id });

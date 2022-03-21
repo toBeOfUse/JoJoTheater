@@ -101,7 +101,7 @@ interface ControlsFlag {
 
 interface UserSnapshot {
     id: number;
-    createdAt: Date;
+    createdAt: number;
     lastUsername?: string;
     lastAvatarID?: number;
     watchTime: number;

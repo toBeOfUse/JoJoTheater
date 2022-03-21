@@ -461,7 +461,7 @@ class User {
         const newUser = await streamsDB.table<UserRecord>("users").insert(
             {
                 ...userRecord,
-                createdAt: new Date(),
+                createdAt: Date.now(),
             },
             ["id"]
         );
@@ -525,7 +525,7 @@ class User {
         await streamsDB
             .table<UserRecord>("users")
             .insert(
-                ids.map((id) => ({ createdAt: new Date(), watchTime: 0, id })),
+                ids.map((id) => ({ createdAt: Date.now(), watchTime: 0, id })),
                 ["id", "createdAt"]
             )
             .onConflict(["id"])

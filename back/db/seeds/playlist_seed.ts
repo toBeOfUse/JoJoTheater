@@ -4,19 +4,19 @@ export async function seed(knex: Knex): Promise<void> {
     await knex<PlaylistRecord>("playlists").insert([
         {
             name: "Couple of Mirrors",
-            createdAt: new Date().getTime(),
+            createdAt: Date.now(),
             publicallyEditable: false,
             id: 0,
         },
         {
             name: "MitchBot Recommends",
-            createdAt: new Date().getTime(),
+            createdAt: Date.now(),
             publicallyEditable: false,
             id: 1,
         },
         {
             name: "The Unrestrained Id of the Audience",
-            createdAt: new Date().getTime(),
+            createdAt: Date.now(),
             publicallyEditable: false,
             id: 2,
         },

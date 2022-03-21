@@ -31,8 +31,7 @@ export default function (options: { maxSizeBytes?: number } = {}) {
             const filePath = path.resolve(
                 "./uploads/",
                 file.originalFilename ||
-                    String(new Date().getTime()) +
-                        (file.mimetype?.split("/")[1] || "")
+                    String(Date.now()) + (file.mimetype?.split("/")[1] || "")
             );
             file.filepath = filePath;
         });
