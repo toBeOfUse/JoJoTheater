@@ -33,29 +33,59 @@
             <span v-if="identity.lastUsername">
                 Welcome, <em>{{ identity.lastUsername }}</em>
             </span>
+            <button>Edit profile</button>
             <button>Log Out</button>
         </template>
         <modal
-            style="width: fit-content"
+            style="
+                width: 70%;
+                max-width: 600px;
+                overflow-x: hidden;
+                overflow-y: auto;
+            "
+            id="signup-modal"
             v-if="signupModal"
             @bgClick="signupModal = false"
         >
-            <div style="text-align: left; display: inline">
-                <label>Email (can be fake):</label>
-                <input type="text" />
+            <img src="/images/ibm_pc.svg" />
+            <div id="signup-basics">
+                <label for="make-account-email">Email (can be fake):</label>
+                <input type="text" id="make-account-email" />
                 <br />
-                <label>Password (important):</label>
-                <input type="password" />
+                <label for="make-account-password">Password (important):</label>
+                <input type="password" id="make-account-password" />
             </div>
+            <div id="name-column-container">
+                <div class="name-column" v-for="col in names" :key="col[0]">
+                    <div v-for="name in col" :key="name">
+                        <label
+                            :for="name + '-input'"
+                            :style="{
+                                color: String(nameInputs[name]).trim()
+                                    ? 'black'
+                                    : 'gray',
+                            }"
+                            >{{ name }}:</label
+                        >
+                        <input
+                            :type="name.endsWith('#') ? 'number' : 'text'"
+                            :id="name + '-input'"
+                            :maxLength="maxNameLength"
+                            v-model="nameInputs[name]"
+                        />
+                    </div>
+                </div>
+            </div>
+            <button id="make-account">Make Account</button>
         </modal>
     </div>
 </template>
 
 <script lang="ts">
 import { is } from "typescript-is";
-import { defineComponent, PropType, ref } from "vue";
+import { defineComponent, PropType, reactive, ref } from "vue";
 import { APIPath, endpoints } from "../../constants/endpoints";
-import { User } from "../../constants/types";
+import { PublicUser } from "../../constants/types";
 import { ServerInteractor } from "../serverinteractor";
 import modal from "./modal.vue";
 
@@ -68,7 +98,7 @@ export default defineComponent({
         },
     },
     setup(props) {
-        const identity = ref<User | undefined>(undefined);
+        const identity = ref<PublicUser | undefined>(undefined);
         if (props.socket) {
             // if we are on a page with a live server connection it should have
             // the relevant User loaded for us
@@ -79,7 +109,7 @@ export default defineComponent({
             endpoints[APIPath.getIdentity]
                 .dispatch(oldToken ?? "", {})
                 .then((response) => {
-                    if (is<User>(response)) {
+                    if (is<PublicUser>(response)) {
                         identity.value = response;
                     }
                 });
@@ -97,6 +127,36 @@ export default defineComponent({
                 // send the things in the form to the server
             }
         };
+        const names: string[][] = [
+            [
+                "Nom de plume",
+                "Nom de guerre",
+                "Alias",
+                "Legal name",
+                "Illegal name",
+                "Pronouns",
+                "Antinouns",
+                "Byname",
+                "Nickname",
+            ],
+            [
+                "Pseudonym",
+                "Antonym",
+                "Cryptonym",
+                "Cognomen",
+                "Social Insecurity #",
+                "Sobriquet",
+                "Epithet",
+                "Moniker",
+                "Also known as",
+            ],
+        ];
+        const nameObj: Record<string, string> = {};
+        for (const name of names.flat()) {
+            nameObj[name] = "";
+        }
+        const nameInputs = reactive(nameObj);
+        const maxNameLength = 200;
         return {
             signupModal,
             identity,
@@ -105,6 +165,9 @@ export default defineComponent({
             loginWindow,
             loginProcess,
             loginEmailInput,
+            names,
+            nameInputs,
+            maxNameLength,
         };
     },
 });
@@ -153,5 +216,54 @@ button {
 }
 #login-button {
     transition: top 0.25s linear;
+}
+#signup-modal {
+    & label {
+        margin-bottom: 5px;
+        display: inline-block;
+        text-align: left;
+    }
+    & p {
+        margin: 5px 0;
+    }
+    & img {
+        width: 60%;
+        height: auto;
+        margin: 0 auto;
+    }
+}
+#signup-basics {
+    width: fit-content;
+    margin: 10px auto;
+    & label {
+        width: 175px;
+    }
+    & input {
+        width: 150px;
+    }
+}
+#name-column-container {
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+}
+.name-column {
+    display: inline-flex;
+    flex-direction: column;
+    & label {
+        width: 140px;
+    }
+    & input {
+        width: 130px;
+    }
+    &:not(:last-of-type) {
+        margin-right: 10px;
+    }
+}
+#make-account {
+    height: auto;
+    margin: 20px 0;
+    font-size: 4em;
+    font-weight: bold;
 }
 </style>
