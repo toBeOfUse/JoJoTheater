@@ -1,4 +1,4 @@
-import { ensureUserIDs } from "./queries";
+import { User } from "./queries";
 
 type Responder = (messageHTML: string) => string | undefined;
 interface NPC {
@@ -51,6 +51,6 @@ const NPCs: NPC[] = [
     },
 ];
 
-ensureUserIDs(NPCs.map((n) => n.userID));
+User.ensureUserIDs(NPCs.map((n) => n.userID));
 
 export default NPCs;
