@@ -14,13 +14,14 @@ async function ensureMetadata() {
         console.log("updating thumbnail and duration for " + video.title);
         const { thumbnail, durationSeconds: duration } =
             await Playlist.getVideoMetadata(video);
+        let thumbnailFilename;
         if (thumbnail) {
-            await Playlist.saveThumbnail(video.id, thumbnail);
+            thumbnailFilename = await Playlist.saveThumbnail(thumbnail);
         }
         await streamsDB
             .table<Video>("videos")
             .where({ id: video.id })
-            .update({ duration });
+            .update({ duration, thumbnailFilename });
     }
 }
 

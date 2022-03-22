@@ -37,7 +37,7 @@
                     :title="video.title"
                 >
                     <opt-image
-                        :path="`/images/thumbnails/${video.id}.jpg`"
+                        :path="`/images/thumbnails/${video.thumbnailFilename}`"
                         aspectRatio="16:9"
                         class="video-thumbnail"
                     />

@@ -28,6 +28,7 @@ interface Video {
      */
     duration: number;
     captions: Subtitles[];
+    thumbnailFilename: string;
 }
 
 interface PlaylistRecord {
