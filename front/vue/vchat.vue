@@ -562,7 +562,7 @@ export default defineComponent({
                     console.log("could not use session storage");
                 }
                 try {
-                    await props.socket.http(APIPath.logIn, info);
+                    await props.socket.http(APIPath.startChatting, info);
                 } catch (e) {
                     console.error("Log in failed :(");
                     console.error(e);
@@ -587,7 +587,7 @@ export default defineComponent({
             socket.setGlobal("inChat", false);
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
-            props.socket.http(APIPath.logOut);
+            props.socket.http(APIPath.stopChatting);
         };
 
         // message display logic:

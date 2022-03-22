@@ -107,12 +107,24 @@ interface UserSnapshot {
     lastAvatarID?: number;
     watchTime: number;
     email?: string;
-    passwordHash?: string;
-    passwordSalt?: string;
     alsoKnownAs: Record<string, string>;
+    official: boolean;
 }
 
-type PublicUser = Omit<UserSnapshot, "email" | "passwordHash" | "passwordSalt">;
+interface UserName {
+    id: number;
+    name: string;
+    nameType: string;
+    createdAt: number;
+    latest: boolean;
+    userID: number;
+}
+
+type PublicUser = Omit<UserSnapshot, "email" | "passwordHash">;
+
+interface AuthenticationResult extends UserSnapshot {
+    token: string;
+}
 
 interface Token {
     token: string;
@@ -141,7 +153,7 @@ function deNull(obj: any) {
     if (typeof obj == "object" && obj !== null) {
         for (const prop in obj) {
             if (obj[prop] === null) {
-                obj[prop] = undefined;
+                delete obj[prop];
             } else if (typeof obj[prop] == "object") {
                 deNull(obj[prop]);
             }
@@ -167,5 +179,7 @@ export {
     Subtitles,
     PlaylistRecord,
     PlaylistSnapshot,
+    UserName,
+    AuthenticationResult,
     deNull,
 };

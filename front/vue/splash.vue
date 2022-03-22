@@ -70,7 +70,7 @@ export default defineComponent({
     setup() {
         const availableScenes = ref([]);
         const currentScene = ref("");
-        endpoints[APIPath.getScenes].dispatch("", {}).then((e) => {
+        endpoints[APIPath.getAllScenes].dispatch("", {}).then((e) => {
             currentScene.value = e.scenes[0];
             availableScenes.value = e.scenes;
         });

@@ -1,11 +1,9 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import type { Express, Request, RequestHandler, Response } from "express";
+import type { Express, Request, Response } from "express";
 import escapeHTML from "escape-html";
-import { nanoid } from "nanoid";
 import { assertType, is } from "typescript-is";
-import checkDiskSpace from "check-disk-space";
 
 import {
     Playlist,
@@ -14,6 +12,7 @@ import {
     User,
     getAvatar,
     getAllAvatars,
+    getUserMiddleware,
 } from "./queries";
 import {
     ChatMessage,
@@ -42,17 +41,9 @@ import {
 } from "../constants/endpoints";
 import NPCs from "./npcs";
 
-declare global {
-    namespace Express {
-        interface Request {
-            user?: User;
-        }
-    }
-}
-
 type ServerSentEvent =
     | "ping"
-    | "set_token"
+    | "authenticated"
     | "list_playlists"
     | "update_playlist"
     | "chat_message"
@@ -311,15 +302,15 @@ class Theater {
             }
         );
         this.apiHandlers = {
-            [APIPath.logIn]: this.logIn,
+            [APIPath.startChatting]: this.logIn,
             [APIPath.sendMessage]: this.sendMessage,
-            [APIPath.logOut]: this.logOut,
+            [APIPath.stopChatting]: this.logOut,
             [APIPath.addVideo]: this.addVideo,
             [APIPath.typingStart]: this.typingStart,
             [APIPath.changeScene]: this.changeScene,
             [APIPath.getMessages]: this.getMessages,
             [APIPath.getStats]: this.getStats,
-            [APIPath.getScenes]: this.getScenes,
+            [APIPath.getRoomScenes]: this.getScenes,
             [APIPath.switchProps]: this.newProps,
             [APIPath.getAvatars]: this.getAvatars,
             [APIPath.setIdle]: this.setIdle,
@@ -415,7 +406,6 @@ class Theater {
                 avatarID: member.chatInfo.avatar.id,
                 name: member.chatInfo.name,
             });
-            res.status(200);
             res.end();
         } else {
             logger.warn("chat info rejected:");
@@ -443,7 +433,6 @@ class Theater {
                     senderAvatarURL: member.avatarURL,
                 };
                 this.publishMessage(message).then(() => {
-                    res.status(200);
                     res.end();
                 });
                 (async () => {
@@ -493,7 +482,6 @@ class Theater {
             playlist
                 ?.addFromURL(url)
                 .then(() => {
-                    res.status(200);
                     res.end();
                 })
                 .catch((e) => {
@@ -510,7 +498,6 @@ class Theater {
 
     typingStart(_req: Request, res: Response, member: AudienceMember) {
         this.graphics.startTyping(member.user.id);
-        res.status(200);
         res.end();
     }
 
@@ -531,7 +518,6 @@ class Theater {
                 isAnnouncement: true,
                 messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
             });
-            res.status(200);
             res.end();
         } else {
             res.status(400);
@@ -541,7 +527,6 @@ class Theater {
 
     newProps(_req: Request, res: Response, member: AudienceMember) {
         this.graphics.changeInhabitantProps(member.user.id);
-        res.status(200);
         res.end();
     }
 
@@ -549,7 +534,6 @@ class Theater {
         logger.debug(`member ${member.chatInfo?.name} logged out`);
         this.graphics.removeInhabitant(member.connectionID);
         member.chatInfo = undefined;
-        res.status(200);
         res.end();
     }
 
@@ -560,7 +544,6 @@ class Theater {
             res.end();
             return;
         }
-        res.status(200);
         res.json({
             players: this.audience.map((a) => a.getConnectionInfo()),
             server: this.currentState,
@@ -568,12 +551,10 @@ class Theater {
     }
 
     async getMessages(_req: Request, res: Response) {
-        res.status(200);
         res.json({ messages: await getRecentMessages(50) });
     }
 
     getScenes(_req: Request, res: Response) {
-        res.status(200);
         res.json({
             scenes: SceneController.scenes,
             currentScene: this.graphics.currentScene,
@@ -590,7 +571,6 @@ class Theater {
         if (member && member.user) {
             if (is<{ idle: boolean }>(req.body)) {
                 this.graphics.setIdle(member.user.id, req.body.idle);
-                res.status(200);
                 res.end();
                 return;
             }
@@ -905,15 +885,13 @@ export default async function init(server: Server, app: Express) {
                 user = await User.getUserByToken(token);
             }
             if (!user) {
-                user = await User.createUser({ watchTime: 0, alsoKnownAs: {} });
-                if (!user) {
-                    logger.error("handshake failure at User.createUser");
-                    return;
-                }
-                token = nanoid();
-                await user.addToken(token);
+                user = await User.createAnon();
+                token = await user.addToken();
             }
-            socket.emit("set_token", token);
+            socket.emit("authenticated", {
+                ...(await user.getPublicSnapshot()),
+                token,
+            });
             const newMember = new AudienceMember(socket, user);
             theater.initializeMember(newMember);
             logger.info(
@@ -924,11 +902,6 @@ export default async function init(server: Server, app: Express) {
         });
     });
 
-    const getUserMiddleware: RequestHandler = async (req, _res, next) => {
-        req.user = await User.getUserByToken(req.header("Auth") as string);
-        next();
-    };
-
     for (const endpoint of Object.values(endpoints)) {
         if (endpoint.roomDependent) {
             app[endpoint instanceof GetEndpoint ? "get" : "post"](
@@ -936,39 +909,6 @@ export default async function init(server: Server, app: Express) {
                 getUserMiddleware,
                 (req: Request, res: Response) => theater.handleAPICall(req, res)
             );
-        } else if (endpoint.path == APIPath.getIdentity) {
-            app.get(endpoint.path, getUserMiddleware, async (req, res) => {
-                if (req.user) {
-                    res.status(200);
-                    res.json(await req.user.getPublicSnapshot());
-                    res.end();
-                } else {
-                    res.status(404);
-                    res.end();
-                }
-            });
-        } else if (endpoint.path == APIPath.getFreeSpace) {
-            app.get(endpoint.path, async (_req, res) => {
-                res.json(await checkDiskSpace(__dirname));
-            });
-        } else if (endpoint.path == APIPath.getScenes) {
-            app.get(endpoint.path, (req, res) => {
-                const member =
-                    (req.user &&
-                        theater.audience.find(
-                            (m) => m.user.id == req.user?.id
-                        )) ||
-                    null;
-                if (member) {
-                    theater.handleAPICall(req, res);
-                } else {
-                    res.status(200);
-                    res.json({
-                        scenes: SceneController.scenes,
-                        currentScene: null,
-                    });
-                }
-            });
         }
     }
 }

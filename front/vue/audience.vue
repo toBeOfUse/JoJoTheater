@@ -289,9 +289,11 @@ export default defineComponent({
         };
 
         const availableScenes = ref<string[]>([]);
-        props.socket.http(APIPath.getScenes).then((response) => {
-            availableScenes.value = response.scenes;
-        });
+        props.socket
+            .http(APIPath.getRoomScenes, { roomID: 0 })
+            .then((response) => {
+                availableScenes.value = response.scenes;
+            });
 
         const switchCoolingDown = ref(false);
         const requestSceneChange = (event: InputEvent) => {

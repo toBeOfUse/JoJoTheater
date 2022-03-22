@@ -1,8 +1,7 @@
 import "normalize.css";
-import { makeInteractor } from "./serverinteractor";
-import { Video, VideoState } from "../constants/types";
+import { makeInteractor, processAuthentication } from "./serverinteractor";
+import { AuthenticationResult, Video, VideoState } from "../constants/types";
 import initVideo from "./video";
-import { APIPath } from "../constants/endpoints";
 
 const socket = makeInteractor();
 
@@ -11,17 +10,15 @@ const oldToken = localStorage.getItem("token");
 // making ourselves known to the server flow:
 // establish a secure token so that http requests can be identified as coming
 // from the same source as this web-socket
-socket.emit("handshake", oldToken ?? ""); // server will respond with set_token
+socket.emit("handshake", oldToken ?? ""); // server will respond with `authenticated`
 
 // receive a confirmed/acknowledged/validated token and store it in the
 // interactor status so it can use it for HTTP requests later. Also, store it in
-// the browser for later handshakes. Then, obtain the User object with the data
+// the browser for later handshakes. Also, store the User object with the data
 // the server has on us so we can show things like "Welcome, [whoever]"
-socket.on("set_token", async (token: string) => {
-    socket.setGlobal("token", token);
-    localStorage.setItem("token", token);
-    socket.setGlobal("identity", await socket.http(APIPath.getIdentity));
-});
+socket.on("authenticated", async (result: AuthenticationResult) =>
+    processAuthentication(result, socket)
+);
 
 socket.on("ping", () => {
     socket.emit("pong");
