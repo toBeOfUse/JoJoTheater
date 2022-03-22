@@ -9,64 +9,56 @@
                 @change="onFileChange"
                 style="width: 100%; max-width: 70vw"
             />
-            <button
-                style="display: block"
-                @click="fullFormShown = !fullFormShown"
-            >
-                View Optional Data Form
-            </button>
-            <template v-if="fullFormShown">
-                <input
-                    type="text"
-                    v-model="videoTitle"
-                    placeholder="Video name..."
+            <input
+                type="text"
+                v-model="videoTitle"
+                placeholder="Video name..."
+            />
+            <br />
+            <input
+                type="text"
+                v-model="folder"
+                placeholder="Video folder name..."
+            />
+            <br />
+            <div id="thumbnail-container">
+                <div
+                    class="thumbnail"
+                    :style="{ backgroundImage: `url(${thumbnail})` }"
+                    @click="thumbnailInput && thumbnailInput.click()"
                 />
-                <br />
-                <input
-                    type="text"
-                    v-model="folder"
-                    placeholder="Video folder name..."
-                />
-                <br />
-                <div id="thumbnail-container">
-                    <div
-                        class="thumbnail"
-                        :style="{ backgroundImage: `url(${thumbnail})` }"
-                        @click="thumbnailInput && thumbnailInput.click()"
-                    />
-                    <div
-                        id="thumbnail-clear"
-                        v-if="thumbnail != thumbnailPlaceholderImage"
-                        @click="clearThumbnail"
-                    >
-                        x
-                    </div>
+                <div
+                    id="thumbnail-clear"
+                    v-if="thumbnail != thumbnailPlaceholderImage"
+                    @click="clearThumbnail"
+                >
+                    x
                 </div>
-                <input
-                    type="file"
-                    style="display: none"
-                    id="thumbnailFile"
-                    @change="showThumbnail"
-                    ref="thumbnailInput"
-                    accept="image/jpeg,image/png"
-                    name="thumbnail"
-                />
-                <p>Subtitle files:</p>
-                <input
-                    type="file"
-                    id="subtitleInput"
-                    ref="subtitleInput"
-                    accept="text/vtt"
-                    name="subtitles"
-                    multiple
-                />
-                <p>Password for immediate video availability:</p>
-                <input
-                    type="password"
-                    v-model="password"
-                    placeholder="Password..."
-                />
-            </template>
+            </div>
+            <input
+                type="file"
+                style="display: none"
+                id="thumbnailFile"
+                @change="showThumbnail"
+                ref="thumbnailInput"
+                accept="image/jpeg,image/png"
+                name="thumbnail"
+            />
+            <p>Subtitle files:</p>
+            <input
+                type="file"
+                id="subtitleInput"
+                ref="subtitleInput"
+                accept="text/vtt"
+                name="subtitles"
+                multiple
+            />
+            <p>Password for immediate video availability:</p>
+            <input
+                type="password"
+                v-model="password"
+                placeholder="Password..."
+            />
             <button
                 @click="upload"
                 :disabled="!fileSelected"
@@ -125,7 +117,6 @@ export default defineComponent({
             fileSelected.value = !!videoFile.value?.files?.length;
         };
 
-        const fullFormShown = ref(false);
         const videoTitle = ref("");
         const folder = ref("");
         const subtitleInput = ref<HTMLInputElement | null>(null);
@@ -222,7 +213,6 @@ export default defineComponent({
         return {
             upload,
             videoFile,
-            fullFormShown,
             videoTitle,
             folder,
             onFileChange,
