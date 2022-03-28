@@ -43,6 +43,7 @@ abstract class Endpoint<BodyType> {
     abstract dispatch(
         token: string,
         body: BodyType,
+        connectionID?: string,
         headers?: Record<string, string>
     ): Promise<Record<string, any>>;
 }
@@ -51,6 +52,7 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
     async dispatch(
         token: string,
         body: BodyType,
+        connectionID?: string,
         headers: Record<string, string> = {}
     ) {
         if ((this.roomDependent || this.chatDependent) && !token) {
@@ -62,7 +64,8 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
         const response = await fetch(this.path, {
             method: "POST",
             headers: {
-                Auth: token,
+                "MB-Token": token,
+                "MB-Connection": connectionID || "none",
                 "Content-Type": "application/json",
                 ...headers,
             },
@@ -93,6 +96,7 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
     async dispatch(
         token: string,
         body: BodyType,
+        connectionID?: string,
         headers: Record<string, string> = {}
     ) {
         if ((this.roomDependent || this.chatDependent) && !token) {
@@ -102,7 +106,11 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
             );
         }
         const response = await fetch(this.fullPath(body), {
-            headers: { Auth: token, ...headers },
+            headers: {
+                "MB-Token": token,
+                "MB-Connection": connectionID || "none",
+                ...headers,
+            },
         });
         const text = await response.text();
         try {

@@ -68,13 +68,13 @@ class AudienceMember {
     private socket: Socket;
     location: string = "";
     user: User;
-    connectionID: string;
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
     subscriptions: Set<Subscription> = new Set();
     lastClientState: (PlayerState & { receivedTimeISO: string }) | undefined =
         undefined;
+    httpToken: string;
 
     get inChat(): boolean {
         return !!this.chatInfo;
@@ -89,6 +89,10 @@ class AudienceMember {
             this.lastLatencies.reduce((acc, v) => acc + v, 0) /
             this.lastLatencies.length
         );
+    }
+
+    get connectionID(): string {
+        return this.socket.id;
     }
 
     /**
@@ -135,13 +139,13 @@ class AudienceMember {
         };
     }
 
-    constructor(socket: Socket, user: User) {
+    constructor(socket: Socket, user: User, httpToken: string) {
         this.socket = socket;
-        this.connectionID = socket.id;
         this.user = user;
+        this.httpToken = httpToken;
         this.socket.onAny((eventName: string) => {
             if (
-                eventName !== "pong" &&
+                eventName != "pong" &&
                 eventName != "state_report" &&
                 eventName != "typing_start" &&
                 eventName != "jump"
@@ -587,8 +591,19 @@ class Theater {
             let member;
             if (req.user) {
                 member =
-                    this.audience.find((m) => m.user.id == req.user?.id) ||
-                    null;
+                    this.audience.find(
+                        (m) => m.connectionID == req.connectionID
+                    ) || null;
+                if (member && member.httpToken != req.token) {
+                    logger.warn(
+                        "attempt to act on behalf of an AudienceMember" +
+                            " without being able to provide the token they" +
+                            " were sent"
+                    );
+                    res.status(403);
+                    res.end();
+                    return;
+                }
             } else if (req.user !== undefined) {
                 member = null;
             }
@@ -892,7 +907,7 @@ export default async function init(server: Server, app: Express) {
                 ...(await user.getPublicSnapshot()),
                 token,
             });
-            const newMember = new AudienceMember(socket, user);
+            const newMember = new AudienceMember(socket, user, token);
             theater.initializeMember(newMember);
             logger.info(
                 "new client added: " +

@@ -492,6 +492,14 @@ class User {
         }
     }
 
+    static async createAnon(): Promise<User> {
+        return await User.createUser({
+            watchTime: 0,
+            alsoKnownAs: {},
+            official: false,
+        });
+    }
+
     async exists(): Promise<boolean> {
         return (
             (
@@ -685,12 +693,19 @@ class User {
         return user;
     }
 
-    static async createAnon(): Promise<User> {
-        return await User.createUser({
-            watchTime: 0,
-            alsoKnownAs: {},
-            official: false,
+    async overwriteSession(token: string) {
+        await this.invalidateToken(token);
+        const newUser = await User.createAnon();
+        const newToken = await newUser.addToken();
+        User.bus.emit("invalidate_token", {
+            old: { token, user: this },
+            new: { token: newToken, user: newUser },
         });
+        const newAuth: AuthenticationResult = {
+            ...(await newUser.getSnapshot()),
+            token: newToken,
+        };
+        return newAuth;
     }
 }
 
@@ -710,12 +725,20 @@ declare global {
     namespace Express {
         interface Request {
             user?: User;
+            token?: string;
+            connectionID?: string;
         }
     }
 }
 
 const getUserMiddleware: RequestHandler = async (req, _res, next) => {
-    req.user = await User.getUserByToken(req.header("Auth") as string);
+    const token = req.header("MB-Token");
+    const connectionID = req.header("MB-Connection");
+    req.token = is<string>(token) ? token : "";
+    req.connectionID = is<string>(connectionID) ? connectionID : "";
+    if (req.token) {
+        req.user = await User.getUserByToken(req.token);
+    }
     next();
 };
 

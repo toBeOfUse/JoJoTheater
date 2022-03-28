@@ -66,7 +66,8 @@ function initBasicAPI(app: Express) {
     });
     app.post(APIPath.signin, getUserMiddleware, async (req, res) => {
         // TODO: if there are existing records associated with req.user,
-        // optionally reassign them to the newly signed-into user
+        // optionally reassign them to the newly signed-into user (this will
+        // require a new property on the SigninBody interface)
         if (!is<SigninBody>(req.body)) {
             logger.warn(APIPath.signin + " request with malformed body:");
             logger.warn(JSON.stringify(req.body).substring(0, 1000));
@@ -78,18 +79,15 @@ function initBasicAPI(app: Express) {
         if (is<{ error: string }>(user)) {
             res.json(user);
         } else {
-            const token = nanoid();
-            await user.addToken(token);
+            const token = await user.addToken();
             res.json({ ...(await user.getSnapshot()), token });
         }
     });
     app.post(APIPath.signout, getUserMiddleware, async (req, res) => {
-        if (req.user) {
-            const oldToken = req.header("Auth") as string;
-            await req.user.invalidateToken(oldToken);
-            const newUser = await User.createAnon();
-            const token = await newUser.addToken();
-            res.json({ ...(await newUser.getSnapshot()), token });
+        if (req.user && req.token) {
+            const oldToken = req.token;
+            const newAuth = await req.user.overwriteSession(oldToken);
+            res.json(newAuth);
         } else {
             logger.warn("someone trying to sign out without being signed in?");
         }

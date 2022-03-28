@@ -1,7 +1,12 @@
 import { io, Socket } from "socket.io-client";
 import { is } from "typescript-is";
 import { APIPath, endpoints } from "../constants/endpoints";
-import { AuthenticationResult, UserSnapshot, Video } from "../constants/types";
+import {
+    AuthenticationResult,
+    deNull,
+    UserSnapshot,
+    Video,
+} from "../constants/types";
 
 interface SIStatus {
     inChat: boolean;
@@ -67,7 +72,12 @@ function makeInteractor() {
         );
     };
     socket.http = function (path, body = {}, headers = {}) {
-        return endpoints[path].dispatch(this._globals.token, body, headers);
+        return endpoints[path].dispatch(
+            this._globals.token,
+            body,
+            socket.id,
+            headers
+        );
     };
     return socket;
 }
@@ -76,9 +86,11 @@ function processAuthentication(
     result: AuthenticationResult,
     socket?: ServerInteractor
 ) {
+    console.log("processing authentication result:");
+    console.log(result);
     const { token, ...user } = result;
     socket?.setGlobal("token", token);
-    socket?.setGlobal("identity", user);
+    socket?.setGlobal("identity", deNull(user));
     localStorage.setItem("token", token);
 }
 
