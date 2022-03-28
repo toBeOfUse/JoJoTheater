@@ -590,7 +590,11 @@ class User {
         await streamsDB.table<Token>("tokens").where({ token }).delete();
     }
 
-    async getSceneProp(scene: string) {
+    async getSceneProp(scene: string): Promise<string | undefined> {
+        if (this.id < 0) {
+            // this is a fake user used for graphical tests
+            return undefined;
+        }
         const result = await streamsDB
             .table<{ prop: string; userID: number; scene: string }>(
                 "usersToProps"
