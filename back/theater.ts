@@ -305,6 +305,24 @@ class Theater {
                 }
             }
         );
+        User.bus.on(
+            "invalidate_token",
+            (patch: {
+                old: { token: string; user: User };
+                new: { token: string; user: User };
+            }) => {
+                for (const member of this.audience) {
+                    if (
+                        patch.old.token == member.httpToken &&
+                        member.user.id == patch.old.user.id
+                    ) {
+                        member.user = patch.new.user;
+                        member.httpToken = patch.new.token;
+                    }
+                }
+            }
+        );
+        // TODO: User.bus.on("user_changed")
         this.apiHandlers = {
             [APIPath.startChatting]: this.logIn,
             [APIPath.sendMessage]: this.sendMessage,
@@ -453,7 +471,7 @@ class Theater {
                         }
                     }
                 })();
-                this.graphics.stopTyping(member.user.id);
+                this.graphics.stopTyping(member.connectionID);
             }
         } else {
             logger.warn(
@@ -501,7 +519,7 @@ class Theater {
     }
 
     typingStart(_req: Request, res: Response, member: AudienceMember) {
-        this.graphics.startTyping(member.user.id);
+        this.graphics.startTyping(member.connectionID);
         res.end();
     }
 
@@ -530,7 +548,7 @@ class Theater {
     }
 
     newProps(_req: Request, res: Response, member: AudienceMember) {
-        this.graphics.changeInhabitantProps(member.user.id);
+        this.graphics.changeInhabitantProps(member.connectionID);
         res.end();
     }
 
@@ -574,7 +592,7 @@ class Theater {
     setIdle(req: Request, res: Response, member: AudienceMember) {
         if (member && member.user) {
             if (is<{ idle: boolean }>(req.body)) {
-                this.graphics.setIdle(member.user.id, req.body.idle);
+                this.graphics.setIdle(member.connectionID, req.body.idle);
                 res.end();
                 return;
             }
@@ -877,7 +895,7 @@ export default async function init(server: Server, app: Express) {
 
     // (async () => {
     //     const avatars = await getAllAvatars();
-    //     for (let i = 0; i < 10; i++) {
+    //     for (let i = 1; i <= 10; i++) {
     //         graphics.addInhabitant(
     //             {
     //                 connectionID: "connectionID" + i,
@@ -885,7 +903,7 @@ export default async function init(server: Server, app: Express) {
     //                 resumed: false,
     //                 avatar: avatars[Math.floor(Math.random() * avatars.length)],
     //             },
-    //             { id: -1 }
+    //             (await User.getUserByID(-1)) as User
     //         );
     //     }
     // })();
@@ -914,6 +932,12 @@ export default async function init(server: Server, app: Express) {
                     theater.audience.length +
                     " total connected"
             );
+            for (const member of theater.audience) {
+                const { connected, user, httpToken, connectionID } = member;
+                logger.info(
+                    JSON.stringify({ connected, user, httpToken, connectionID })
+                );
+            }
         });
     });
 

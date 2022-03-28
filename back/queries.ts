@@ -463,6 +463,7 @@ async function getRecentMessages(howMany: number = 20): Promise<ChatMessage[]> {
 type UserRecord = Omit<UserSnapshot, "alsoKnownAs"> & { passwordHash: string };
 class User {
     id: number;
+    static bus: EventEmitter = new EventEmitter();
     // TODO: event bus that advertizes record changes and also, log outs and the
     // new temporary user that any connections that refer to the original user
     // should now refer to
@@ -635,6 +636,7 @@ class User {
                 });
             })
         );
+        User.bus.emit("user_changed", await this.getPublicSnapshot());
     }
 
     async updateLoginCredentials(login: { email: string; password: string }) {
