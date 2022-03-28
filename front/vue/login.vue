@@ -1,5 +1,5 @@
 <template>
-    <div id="login-root">
+    <div id="login-root" v-if="identitySought">
         <template v-if="!identity?.official">
             <div id="login-window">
                 <button
@@ -125,7 +125,7 @@
 </template>
 
 <script lang="ts">
-import { assertType, is } from "typescript-is";
+import { is } from "typescript-is";
 import { defineComponent, PropType, reactive, ref } from "vue";
 import { APIPath, endpoints, SigninBody } from "../../constants/endpoints";
 import {
@@ -152,11 +152,13 @@ export default defineComponent({
                 return localStorage.getItem("token");
             }
         };
+        const identitySought = ref(false);
         const identity = ref<UserSnapshot | undefined>(undefined);
         if (props.socket) {
             // if we are on a page with a live server connection it should have
             // the relevant User loaded for us
             identity.value = props.socket.getGlobal("identity");
+            identitySought.value = true;
         } else {
             // otherwise we have to request it ourselves
             const oldToken = getToken();
@@ -169,6 +171,7 @@ export default defineComponent({
                         if (is<PublicUser>(response)) {
                             identity.value = response;
                         }
+                        identitySought.value = true;
                     });
             }
         }
@@ -308,6 +311,7 @@ export default defineComponent({
             makeAccount,
             signOut,
             loginStatus,
+            identitySought,
         };
     },
 });
