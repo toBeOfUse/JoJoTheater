@@ -87,6 +87,7 @@ class SceneController extends EventEmitter {
             }
         }
         const sortedInhabitants = radixInhabitants.flat();
+        this._inhabitants = sortedInhabitants;
         return {
             sceneName: this.currentScene,
             background: this.background,
