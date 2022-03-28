@@ -66,7 +66,11 @@
                         title="Previous Page"
                     />
                     <div>
-                        <div class="avatar-row" v-for="row in 2" :key="row">
+                        <div
+                            class="avatar-row"
+                            v-for="row in rowsPerPage"
+                            :key="row"
+                        >
                             <opt-image
                                 v-for="avatar in avatarRow(row)"
                                 :key="avatar.id"
@@ -503,6 +507,7 @@ export default defineComponent({
                 // if we don't have a previous session saved in the browser to
                 // reference, pull from the server's identity information
             } else {
+                // TODO: watch for identity changes
                 const identity = props.socket.getGlobal("identity");
                 if (!nameInput.value && identity.lastUsername) {
                     nameInput.value = identity.lastUsername;
@@ -535,7 +540,7 @@ export default defineComponent({
         };
         const avatarRow = (which: number) => {
             let offset = avatarsPerRow * rowsPerPage * avatarPage.value;
-            if (which == 2) offset += avatarsPerRow;
+            offset += avatarsPerRow * (which - 1);
             return avatars.value
                 .slice(offset, offset + avatarsPerRow)
                 .map((a) => ({ path: getAvatarImageURL(a.file), ...a }));
@@ -684,6 +689,7 @@ export default defineComponent({
             outgoing,
             handleEmoji,
             handleEmojiNameInput,
+            rowsPerPage,
         };
     },
 });
