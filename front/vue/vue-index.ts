@@ -14,11 +14,13 @@ async function loadIndexComps(socket: ServerInteractor) {
         const InfoPromise = import(
             /* webpackMode: "eager" */ "./infomodals.vue"
         );
-        const [Chat, Playlist, Audience, Info] = await Promise.all([
+        const LoginPromise = import(/* webpackMode: "eager" */ "./login.vue");
+        const [Chat, Playlist, Audience, Info, Login] = await Promise.all([
             ChatPromise,
             PlaylistPromise,
             AudiencePromise,
             InfoPromise,
+            LoginPromise,
         ]);
         // ensure socket is connected and authenticated before Vue components
         // are created so they can all use it without fear
@@ -41,6 +43,7 @@ async function loadIndexComps(socket: ServerInteractor) {
             "#audience-container"
         );
         Vue.createApp(Info.default).mount("#info-container");
+        Vue.createApp(Login.default).mount("#login-container");
     });
 }
 
