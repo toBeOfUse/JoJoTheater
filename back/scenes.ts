@@ -160,14 +160,19 @@ class SceneController extends EventEmitter {
         }
         this.emit("change");
     }
-    async changeInhabitantProps(userID: number) {
-        const inhabitant = this._inhabitants.find((i) => i.userID == userID);
+    async changeInhabitantProps(connectionID: string) {
+        const inhabitant = this._inhabitants.find(
+            (i) => i.connectionID == connectionID
+        );
         if (inhabitant) {
             let newProp = this.getNewProp();
             while (inhabitant.propsURL == this.getPropsURL(newProp)) {
                 newProp = this.getNewProp();
             }
-            this._users[userID].saveSceneProp(this.scene.name, newProp);
+            this._users[inhabitant.userID].saveSceneProp(
+                this.scene.name,
+                newProp
+            );
             inhabitant.propsURL = this.getPropsURL(newProp);
             this.emit("change");
         }
@@ -185,8 +190,10 @@ class SceneController extends EventEmitter {
      * This method will automatically call `stopTyping` if it is not called
      * for two seconds.
      */
-    startTyping(userID: number) {
-        const typer = this._inhabitants.find((i) => i.userID == userID);
+    startTyping(connectionID: string) {
+        const typer = this._inhabitants.find(
+            (i) => i.connectionID == connectionID
+        );
         if (typer && Date.now() - typer.lastTypingTimestamp > 500) {
             if (!typer.typing || typer.idle) {
                 typer.typing = true;
@@ -197,13 +204,15 @@ class SceneController extends EventEmitter {
             typer.lastTypingTimestamp = Date.now();
             setTimeout(() => {
                 if (Date.now() - typer.lastTypingTimestamp >= 1900) {
-                    this.stopTyping(userID);
+                    this.stopTyping(connectionID);
                 }
             }, 2000);
         }
     }
-    setIdle(userID: number, idle: boolean) {
-        const idler = this._inhabitants.find((i) => i.userID == userID);
+    setIdle(connectionID: string, idle: boolean) {
+        const idler = this._inhabitants.find(
+            (i) => i.connectionID == connectionID
+        );
         if (idler && idler.idle != idle) {
             idler.idle = idle;
             this.emit("change");
@@ -213,8 +222,10 @@ class SceneController extends EventEmitter {
      * This only needs to be called externally when an inhabitant sends a
      * message (which naturally should dismiss the typing indicator)
      */
-    stopTyping(userID: number) {
-        const typer = this._inhabitants.find((i) => i.userID == userID);
+    stopTyping(connectionID: string) {
+        const typer = this._inhabitants.find(
+            (i) => i.connectionID == connectionID
+        );
         if (typer && typer.typing) {
             typer.typing = false;
             this.emit("change");
