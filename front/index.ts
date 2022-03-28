@@ -30,6 +30,7 @@ window.onerror = (event) => {
 
 socket.on("state_set", (v: VideoState) => {
     socket.setGlobal("currentVideo", v.video || undefined);
+    if (v.video) renderTitle(v.video);
 });
 
 function renderTitle(v: Video) {
@@ -38,8 +39,6 @@ function renderTitle(v: Video) {
         title.innerHTML = v.title;
     }
 }
-
-socket.watchGlobal("currentVideo", renderTitle);
 
 initVideo(socket);
 
