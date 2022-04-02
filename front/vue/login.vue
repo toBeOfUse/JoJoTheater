@@ -47,12 +47,6 @@
             </div>
         </template>
         <modal
-            style="
-                width: 70%;
-                max-width: 600px;
-                overflow-x: hidden;
-                overflow-y: auto;
-            "
             id="signup-modal"
             v-if="signupModal"
             @bgClick="signupModal = false"
@@ -104,7 +98,11 @@
             </div>
             <div id="name-column-container">
                 <div class="name-column" v-for="col in names" :key="col[0]">
-                    <div v-for="name in col" :key="name.key">
+                    <div
+                        v-for="name in col"
+                        :key="name.key"
+                        class="name-container"
+                    >
                         <label
                             :for="name.key + '-input'"
                             :style="{
@@ -113,15 +111,13 @@
                                     : 'gray',
                             }"
                             >{{ name.key }}:</label
-                        >
-                        <input
+                        ><input
                             v-if="name.type != 'option'"
                             :type="name.type"
                             :id="name.key + '-input'"
                             :maxLength="maxNameLength"
                             v-model="nameInputs[name.key]"
-                        />
-                        <select
+                        /><select
                             v-else
                             :id="name.key + '-input'"
                             v-model="nameInputs[name.key]"
@@ -179,6 +175,7 @@ export default defineComponent({
             // if we are on a page with a live server connection it should have
             // the relevant User loaded for us
             identity.value = props.socket.getGlobal("identity");
+            console.log("got identity from server interactor object");
             identitySought.value = true;
         } else {
             // otherwise we have to request it ourselves
@@ -193,7 +190,14 @@ export default defineComponent({
                             identity.value = response;
                         }
                         identitySought.value = true;
+                    })
+                    .catch(() => {
+                        console.log("failed to retrieve identity manually");
+                        identitySought.value = true;
                     });
+            } else {
+                console.log("no basis for obtaining identity present");
+                identitySought.value = true;
             }
         }
         // TODO: sort and spread out
@@ -459,13 +463,25 @@ button {
 }
 #signup-modal {
     & label {
-        margin-bottom: 5px;
+        // margin-bottom: 5px;
         display: inline-block;
         text-align: left;
+    }
+    & input,
+    & select {
+        margin-bottom: 5px;
     }
     & p {
         margin: 5px 0;
     }
+    width: 70%;
+    max-width: 600px;
+    @media (max-width: 500px) {
+        width: 95%;
+        max-width: unset;
+    }
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 #signup-status-container {
     position: relative;
@@ -500,6 +516,11 @@ button {
         width: 150px;
     }
 }
+.name-container {
+    display: flex;
+    width: 100%;
+    justify-content: space-evenly;
+}
 #name-column-container {
     display: flex;
     width: 100%;
@@ -508,12 +529,16 @@ button {
 .name-column {
     display: inline-flex;
     flex-direction: column;
+    width: 100%;
     & label {
         width: 140px;
     }
     & input,
     & select {
         width: 130px;
+        @media (max-width: 500px) {
+            width: 140px;
+        }
     }
     &:not(:last-of-type) {
         margin-right: 10px;
