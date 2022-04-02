@@ -13,8 +13,7 @@ function initBasicAPI(app: Express) {
         if (req.user) {
             res.json(await req.user.getSnapshot());
         } else {
-            res.status(404);
-            res.end();
+            res.status(404).end();
         }
     });
     app.get(APIPath.getFreeSpace, async (_req, res) => {
@@ -31,8 +30,7 @@ function initBasicAPI(app: Express) {
         if (!is<SignupBody>(req.body)) {
             console.warn(APIPath.signup + " request with malformed body:");
             console.warn(JSON.stringify(req.body).substring(0, 1000));
-            res.status(400);
-            res.end();
+            res.status(400).end();
             return;
         }
         if (await User.emailTaken(req.body.email)) {

@@ -67,8 +67,7 @@ export default function (
                 let error = `/imgopt error: invalid parameter for ${paramName}: ${req.query[paramName]}. `;
                 error += `full request url was ${req.url}`;
                 logger.error(error);
-                res.status(400);
-                res.end();
+                res.status(400).end();
             }
             return !check;
         }
@@ -152,8 +151,7 @@ export default function (
                     " . full request url was " +
                     req.url
             );
-            res.status(500);
-            res.end();
+            res.status(500).end();
             return;
         }
         width = Math.min(imageMeta.width as number, width);
@@ -187,8 +185,7 @@ export default function (
                     "in response to the following: " +
                     req.url
             );
-            res.status(500);
-            res.end();
+            res.status(500).end();
             return;
         }
         const origKB = imageStats.size / 1024;
@@ -199,8 +196,7 @@ export default function (
             `/imgopt shrunk ${origKB.toFixed(2)}kb image ` +
                 `by ${difference}kb (${percentDifference}%)`
         );
-        res.status(200);
-        res.end(result);
+        res.status(200).end(result);
         fs.promises.writeFile(cachePath, result).catch((e) => {
             logger.error(e);
             logger.error("unable to write file to " + cachePath);

@@ -369,8 +369,7 @@ class Theater {
     async logIn(req: Request, res: Response, member: AudienceMember) {
         if (!member) {
             console.error("logIn called without AudienceMember argument");
-            res.status(400);
-            res.end();
+            res.status(400).end();
             return;
         }
         let info, loadedAvatar;
@@ -382,8 +381,7 @@ class Theater {
                 "invalid LogInBody in logIn: " +
                     JSON.stringify(req.body).slice(0, 1000)
             );
-            res.status(400);
-            res.end();
+            res.status(400).end();
             return;
         }
         if (
@@ -432,8 +430,7 @@ class Theater {
         } else {
             logger.warn("chat info rejected:");
             logger.warn(JSON.stringify(info).substring(0, 1000));
-            res.status(400);
-            res.end();
+            res.status(400).end();
         }
     }
 
@@ -497,8 +494,7 @@ class Theater {
                     "request to add video to playlist " +
                         "without requisite permissions"
                 );
-                res.status(403);
-                res.end();
+                res.status(403).end();
                 return;
             }
             playlist
@@ -509,8 +505,7 @@ class Theater {
                 .catch((e) => {
                     logger.warn("could not get video from url " + url);
                     logger.warn(e);
-                    res.status(400);
-                    res.end();
+                    res.status(400).end();
                 });
         } else {
             console.warn("malformed request to addVideo endpoint:");
@@ -542,8 +537,7 @@ class Theater {
             });
             res.end();
         } else {
-            res.status(400);
-            res.end();
+            res.status(400).end();
         }
     }
 
@@ -562,8 +556,7 @@ class Theater {
     getStats(req: Request, res: Response) {
         if (req.header("Admin") != password) {
             console.warn("Incorrectly passworded request for stats");
-            res.status(403);
-            res.end();
+            res.status(403).end();
             return;
         }
         res.json({
@@ -597,8 +590,7 @@ class Theater {
                 return;
             }
         }
-        res.status(400);
-        res.end();
+        res.status(400).end();
     }
 
     async handleAPICall(req: Request, res: Response) {
@@ -618,8 +610,7 @@ class Theater {
                             " without being able to provide the token they" +
                             " were sent"
                     );
-                    res.status(403);
-                    res.end();
+                    res.status(403).end();
                     return;
                 }
             } else if (req.user !== undefined) {
@@ -637,21 +628,18 @@ class Theater {
                     );
                     logger.warn(e.message && e.message());
                     logger.warn(e.stack);
-                    res.status(400);
-                    res.end();
+                    res.status(400).end();
                 }
             } else {
                 logger.warn(
                     "received unauthenticated request for secure path " +
                         req.path
                 );
-                res.status(403);
-                res.end();
+                res.status(403).end();
             }
         } else {
             logger.warn("received request for unknown path " + req.path);
-            res.status(404);
-            res.end();
+            res.status(404).end();
         }
     }
 
