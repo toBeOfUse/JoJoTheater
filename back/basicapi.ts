@@ -1,9 +1,13 @@
 import checkDiskSpace from "check-disk-space";
 import type { Express } from "express";
-import { nanoid } from "nanoid";
 import { is } from "typescript-is";
 
-import { APIPath, SigninBody, SignupBody } from "../constants/endpoints";
+import {
+    APIPath,
+    EditProfileBody,
+    SigninBody,
+    SignupBody,
+} from "../constants/endpoints";
 import logger from "./logger";
 import { getUserMiddleware, User } from "./queries";
 import { SceneController } from "./scenes";
@@ -37,18 +41,8 @@ function initBasicAPI(app: Express) {
             res.json({ error: "that EMAIL is taken" });
             return;
         }
-        if (
-            req.body.email.length > 254 ||
-            req.body.password.length > 300 ||
-            Object.values(req.body.alsoKnownAs).some((n) => n.length > 200) ||
-            Object.keys(req.body.alsoKnownAs).some((n) => n.length > 50)
-        ) {
-            res.status(403);
-            res.end();
-            return;
-        }
         // now that we've ascertained that the request is usable:
-        let token = req.header("Auth") as string;
+        let token = req.token;
         if (!req.user) {
             req.user = await User.createUser({
                 ...req.body,
@@ -57,10 +51,55 @@ function initBasicAPI(app: Express) {
             });
             token = await req.user.addToken();
         }
-        await req.user.updateLoginCredentials(req.body);
+        try {
+            await req.user.updateLoginCredentials(req.body);
+            await req.user.addNames(req.body.alsoKnownAs);
+        } catch (e) {
+            logger.warn(
+                "invalid SignupBody submitted: " +
+                    JSON.stringify(req.body).substring(0, 1000)
+            );
+            logger.warn((e as Error).message || String(e));
+            res.status(400).end();
+            return;
+        }
         await req.user.markOfficial();
-        await req.user.addNames(req.body.alsoKnownAs);
         res.json({ token, ...(await req.user.getSnapshot()) });
+    });
+    app.post(APIPath.editProfile, getUserMiddleware, async (req, res) => {
+        if (!is<EditProfileBody>(req.body)) {
+            logger.warn(APIPath.editProfile + " request with malformed body:");
+            logger.warn(JSON.stringify(req.body).substring(0, 1000));
+            res.status(400).end();
+            return;
+        }
+        if (!req.user) {
+            logger.warn("Attempt to edit profile without being signed in");
+            res.status(403).end();
+            return;
+        }
+        try {
+            if (req.body.email) {
+                const existing = await User.getUserByEmail(req.body.email);
+                if (existing && existing.id != req.user.id) {
+                    res.json({ error: "that EMAIL is taken" });
+                    return;
+                }
+            }
+            await req.user.updateLoginCredentials(req.body);
+            if (req.body.alsoKnownAs) {
+                await req.user.addNames(req.body.alsoKnownAs);
+            }
+        } catch (e) {
+            logger.warn(
+                "invalid EditProfileBody submitted: " +
+                    JSON.stringify(req.body).substring(0, 1000)
+            );
+            logger.warn((e as Error).message || String(e));
+            res.status(400).end();
+            return;
+        }
+        res.json({ token: req.token, ...(await req.user.getSnapshot()) });
     });
     app.post(APIPath.signin, getUserMiddleware, async (req, res) => {
         // TODO: if there are existing records associated with req.user,
@@ -69,13 +108,18 @@ function initBasicAPI(app: Express) {
         if (!is<SigninBody>(req.body)) {
             logger.warn(APIPath.signin + " request with malformed body:");
             logger.warn(JSON.stringify(req.body).substring(0, 1000));
-            res.status(400);
-            res.end();
+            res.status(400).end();
             return;
         }
-        const user = await User.getUserByLogin(req.body);
-        if (is<{ error: string }>(user)) {
-            res.json(user);
+        const user = await User.getUserByEmail(req.body.email);
+        if (!user) {
+            res.json({ error: "that EMAIL was not found" });
+            return;
+        }
+        const authentic = await user.checkPassword(req.body.password);
+        if (!authentic) {
+            res.json({ error: "that PASSWORD is incorrect" });
+            return;
         } else {
             const token = await user.addToken();
             res.json({ ...(await user.getSnapshot()), token });
@@ -88,6 +132,7 @@ function initBasicAPI(app: Express) {
             res.json(newAuth);
         } else {
             logger.warn("someone trying to sign out without being signed in?");
+            res.status(403);
         }
         res.end();
     });

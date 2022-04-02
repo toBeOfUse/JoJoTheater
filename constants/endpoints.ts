@@ -19,6 +19,7 @@ enum APIPath {
     getFreeSpace = "/api/gb",
     signup = "/api/signup",
     signin = "/api/signin",
+    editProfile = "/api/editProfile",
     signout = "/api/signout",
 }
 
@@ -148,6 +149,7 @@ interface SignupBody extends PostBody {
     password: string;
     alsoKnownAs: Record<string, string>;
 }
+type EditProfileBody = Partial<SignupBody>;
 interface SigninBody extends PostBody {
     email: string;
     password: string;
@@ -177,6 +179,7 @@ new GetEndpoint<{}>(APIPath.getFreeSpace, anywhere);
 new PostEndpoint<SignupBody>(APIPath.signup, anywhere);
 new PostEndpoint<SigninBody>(APIPath.signin, anywhere);
 new PostEndpoint<{}>(APIPath.signout, anywhere);
+new PostEndpoint<EditProfileBody>(APIPath.editProfile, anywhere);
 
 const endpoints = Endpoint.dir as Record<APIPath, Endpoint<PostBody | GetBody>>;
 
@@ -214,4 +217,5 @@ export {
     getAvatarImageURL,
     SignupBody,
     SigninBody,
+    EditProfileBody,
 };

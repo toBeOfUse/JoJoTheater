@@ -42,7 +42,7 @@
                 <span id="welcome-text" v-if="identity?.lastUsername">
                     Welcome, <em>{{ identity?.lastUsername }}</em>
                 </span>
-                <!-- <button @click="signupModal = true">Edit profile</button> -->
+                <button @click="signupModal = true">Edit profile</button>
                 <button @click="signOut">Log Out</button>
             </div>
         </template>
@@ -78,7 +78,13 @@
                     maxLength="254"
                 />
                 <br />
-                <label for="make-account-password">Password (important):</label>
+                <label for="make-account-password"
+                    >Password ({{
+                        identity?.official
+                            ? "if you want to change it"
+                            : "important"
+                    }}):</label
+                >
                 <input
                     type="password"
                     id="make-account-password"
@@ -98,26 +104,41 @@
             </div>
             <div id="name-column-container">
                 <div class="name-column" v-for="col in names" :key="col[0]">
-                    <div v-for="name in col" :key="name">
+                    <div v-for="name in col" :key="name.key">
                         <label
-                            :for="name + '-input'"
+                            :for="name.key + '-input'"
                             :style="{
-                                color: String(nameInputs[name]).trim()
+                                color: String(nameInputs[name.key]).trim()
                                     ? 'black'
                                     : 'gray',
                             }"
-                            >{{ name }}:</label
+                            >{{ name.key }}:</label
                         >
                         <input
-                            :type="name.endsWith('#') ? 'number' : 'text'"
-                            :id="name + '-input'"
+                            v-if="name.type != 'option'"
+                            :type="name.type"
+                            :id="name.key + '-input'"
                             :maxLength="maxNameLength"
-                            v-model="nameInputs[name]"
+                            v-model="nameInputs[name.key]"
                         />
+                        <select
+                            v-else
+                            :id="name.key + '-input'"
+                            v-model="nameInputs[name.key]"
+                        >
+                            <option value="" default />
+                            <option
+                                v-for="option in name.options"
+                                :value="option"
+                                :key="option"
+                            >
+                                {{ option }}
+                            </option>
+                        </select>
                     </div>
                 </div>
             </div>
-            <button id="make-account" @click="makeAccount">
+            <button id="make-account" @click="saveProfile">
                 {{ identity?.official ? "Save Changes" : "Make Account" }}
             </button>
         </modal>
@@ -126,7 +147,7 @@
 
 <script lang="ts">
 import { is } from "typescript-is";
-import { defineComponent, PropType, reactive, ref } from "vue";
+import { defineComponent, PropType, reactive, ref, watch } from "vue";
 import { APIPath, endpoints, SigninBody } from "../../constants/endpoints";
 import {
     AuthenticationResult,
@@ -207,43 +228,83 @@ export default defineComponent({
             }
         };
         const signupStatus = ref("");
-        const names: string[][] = [
+        interface NameField {
+            type: "option" | "text" | "number" | "color";
+            key: string;
+            options?: string[];
+        }
+        const names: NameField[][] = [
             [
-                "Nickname",
-                "Legal name",
-                "Illegal name",
-                // "Sobriquet",
-                // "Epithet",
-                "Cryptonym",
-                "Cognomen",
+                { type: "text", key: "Nickname" },
+                { type: "text", key: "Memoirs" },
+                { type: "text", key: "Age" },
+                {
+                    type: "option",
+                    key: "Sobriquet",
+                    options: [
+                        "The Accursed",
+                        "Ducky",
+                        "Bonnie Prince Charlie",
+                        "The Emperor of Universal Dominion",
+                        "Farmer George",
+                        "The Huckster King",
+                        "He of the Little Dagger",
+                        "The Sailor King",
+                        "The Scourge of God",
+                        "The Universal Spider",
+                        "The Nameless One",
+                    ],
+                },
+                {
+                    type: "option",
+                    key: "Kenning",
+                    options: [
+                        "Sun's-house",
+                        "Serpent's-lair",
+                        "Whale-road",
+                        "Sea-steed",
+                        "Petal-fall",
+                        "Ankle-biter",
+                        "Bean-counter",
+                        "Mountains'-hall",
+                    ],
+                },
             ],
             [
-                "Pronouns",
-                "Amateur nouns",
-                "Nom de plume",
-                // "Nom de guerre",
-                // "Also known as",
-                "Moniker",
-                "Social Insecurity #",
+                { type: "text", key: "Pronouns" },
+                { type: "text", key: "Amateur Nouns" },
+                { type: "text", key: "Demonym (location)" },
+                { type: "color", key: "Favorite color" },
+                { type: "number", key: "Social Insecurity #" },
             ],
         ];
 
         // TODO: this should be computed, from identity
         const nameObj: Record<string, string> = {};
         for (const name of names.flat()) {
-            nameObj[name] = "";
+            nameObj[name.key] = "";
         }
         const nameInputs = reactive(nameObj);
+        watch(identity, (newValue) => {
+            if (newValue) {
+                let key: keyof typeof newValue.alsoKnownAs;
+                for (key in newValue.alsoKnownAs) {
+                    nameInputs[key] = newValue.alsoKnownAs[key];
+                }
+                signupEmail.value = newValue.email || "";
+            }
+        });
 
         const maxNameLength = 200;
-        const makeAccount = async () => {
-            if (!signupEmail.value.trim()) {
+        const saveProfile = async () => {
+            const editing = identity.value?.official;
+            if (!editing && !signupEmail.value.trim()) {
                 signupStatus.value = "EMAIL is required";
-            } else if (signupEmail.value.includes(" ")) {
+            } else if (signupEmail.value.match(/\s/)) {
                 signupStatus.value = "no spaces allowed in EMAIL";
             } else if (signupEmail.value.length > 254) {
                 signupStatus.value = "your EMAIL is too long";
-            } else if (!signupPassword.value.trim()) {
+            } else if (!editing && !signupPassword.value.trim()) {
                 signupStatus.value = "PASSWORD is required";
             } else if (signupPassword.value.length > 300) {
                 signupStatus.value = "your PASSWORD is too long. Good Grief";
@@ -260,20 +321,25 @@ export default defineComponent({
                         stringNames[nameType] = String(stringNames[nameType]);
                     }
                 }
-                const response = await endpoints[APIPath.signup].dispatch(
-                    oldToken || "",
-                    {
-                        email: signupEmail.value,
-                        password: signupPassword.value,
-                        alsoKnownAs: stringNames,
-                    }
-                );
+                const response = await endpoints[
+                    identity.value?.official
+                        ? APIPath.editProfile
+                        : APIPath.signup
+                ].dispatch(oldToken || "", {
+                    email: signupEmail.value,
+                    password: signupPassword.value,
+                    alsoKnownAs: stringNames,
+                });
                 if (response.error) {
                     signupStatus.value = response.error;
                 } else if (is<AuthenticationResult>(response)) {
                     processAuthentication(response, props.socket);
                     identity.value = response;
                     signupModal.value = false;
+                    signupStatus.value = "";
+                } else {
+                    signupStatus.value =
+                        "it's unclear what, but something bad happened";
                 }
             }
         };
@@ -308,7 +374,7 @@ export default defineComponent({
             signupPassword,
             verifySignupPassword,
             signupStatus,
-            makeAccount,
+            saveProfile,
             signOut,
             loginStatus,
             identitySought,
@@ -445,7 +511,8 @@ button {
     & label {
         width: 140px;
     }
-    & input {
+    & input,
+    & select {
         width: 130px;
     }
     &:not(:last-of-type) {

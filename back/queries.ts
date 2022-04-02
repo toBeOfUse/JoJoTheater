@@ -20,6 +20,7 @@ import {
     UserSnapshot,
     PublicUser,
     UserName,
+    AuthenticationResult,
 } from "../constants/types";
 import { youtubeAPIKey } from "./secrets";
 import { is } from "typescript-is";
@@ -537,23 +538,25 @@ class User {
         }
     }
 
-    static async getUserByLogin(login: {
-        email: string;
-        password: string;
-    }): Promise<User | { error: string }> {
+    static async getUserByEmail(email: string): Promise<User | undefined> {
         const user = await streamsDB
             .table<UserRecord>("users")
-            .select("passwordHash", "id")
-            .where({ email: login.email.toLowerCase() })
+            .select("id")
+            .where({ email: email.toLowerCase() })
             .first();
-        if (!user || !user.passwordHash) {
-            return { error: "email not found" };
+        return user ? new User(user.id) : undefined;
+    }
+
+    async checkPassword(password: string): Promise<boolean> {
+        const record = await streamsDB
+            .table<UserRecord>("users")
+            .select("passwordHash")
+            .where({ id: this.id })
+            .first();
+        if (!record?.passwordHash) {
+            return false;
         }
-        if (await bcrypt.compare(login.password, user.passwordHash)) {
-            return new User(user.id);
-        } else {
-            return { error: "password incorrect" };
-        }
+        return await bcrypt.compare(password, record.passwordHash);
     }
 
     /**
@@ -624,7 +627,16 @@ class User {
             .where({ id: this.id });
     }
 
+    /**
+     * If a name type is longer than 50 characters or a name is grater than 200
+     * characters, an exception is thrown.
+     */
     async addNames(names: Record<string, string>) {
+        for (const nameType of Object.keys(names)) {
+            if (nameType.length > 50 || names[nameType].length > 200) {
+                throw "Name too long";
+            }
+        }
         await Promise.all(
             Object.keys(names).map(async (nameType) => {
                 const table = streamsDB<UserName>("names");
@@ -643,14 +655,50 @@ class User {
         User.bus.emit("user_changed", await this.getPublicSnapshot());
     }
 
-    async updateLoginCredentials(login: { email: string; password: string }) {
-        const passwordHash = await bcrypt.hash(login.password, 10);
+    /**
+     * If either of these is falsy or only whitespace, it will not be updated.
+     * If either is too long or the email has spaces in it, an exception will be
+     * thrown. If the update has only an email or only a password and the
+     * account is not already official, an exception is thrown.
+     */
+    async updateLoginCredentials({
+        email,
+        password,
+    }: {
+        email?: string;
+        password?: string;
+    }) {
+        const update: { email?: string; passwordHash?: string } = {};
+        if (password && password.trim().length) {
+            if (password.length > 300) {
+                throw "Password too long";
+            }
+            update.passwordHash = await bcrypt.hash(password, 10);
+        }
+        if (email && email.trim().length) {
+            if (email.trim().length > 254) {
+                throw "Email too long";
+            }
+            if (email.match(/\s/)) {
+                throw "Email has spaces";
+            }
+            update.email = email.toLowerCase().trim();
+        }
+        if (!update.email && !update.passwordHash) {
+            return;
+        } else if (!update.email || !update.passwordHash) {
+            const official = await streamsDB
+                .table<UserRecord>("users")
+                .select("official")
+                .where({ id: this.id })
+                .first();
+            if (!official?.official) {
+                throw "Partial account initialization not allowed";
+            }
+        }
         await streamsDB
             .table<UserRecord>("users")
-            .update({
-                email: login.email.toLowerCase(),
-                passwordHash,
-            })
+            .update(update)
             .where({ id: this.id });
     }
 
