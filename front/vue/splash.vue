@@ -104,7 +104,7 @@ export default defineComponent({
     @media (max-width: 1050px) {
         // leave extra space for the log in buttons if there isn't a wide open
         // top right corner for them to be in
-        margin-top: 30px;
+        margin-top: 75px;
     }
 }
 #logo {

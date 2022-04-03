@@ -392,12 +392,8 @@ button {
 }
 #login-root {
     position: absolute;
-    top: 50px;
+    top: 40px;
     right: 50px;
-    @media (max-width: 900px) {
-        top: 20px;
-        right: 10px;
-    }
     font-family: Anivers;
 }
 #login-window {
@@ -463,7 +459,6 @@ button {
 }
 #signup-modal {
     & label {
-        // margin-bottom: 5px;
         display: inline-block;
         text-align: left;
     }
@@ -474,14 +469,6 @@ button {
     & p {
         margin: 5px 0;
     }
-    width: 70%;
-    max-width: 600px;
-    @media (max-width: 500px) {
-        width: 95%;
-        max-width: unset;
-    }
-    overflow-x: hidden;
-    overflow-y: auto;
 }
 #signup-status-container {
     position: relative;
@@ -520,6 +507,10 @@ button {
     display: flex;
     width: 100%;
     justify-content: space-evenly;
+    @media (max-width: 800px) {
+        flex-direction: column;
+        align-items: center;
+    }
 }
 #name-column-container {
     display: flex;
@@ -536,8 +527,12 @@ button {
     & input,
     & select {
         width: 130px;
-        @media (max-width: 500px) {
-            width: 140px;
+    }
+    @media (max-width: 800px) {
+        & label,
+        & input,
+        & select {
+            width: 80%;
         }
     }
     &:not(:last-of-type) {
@@ -559,5 +554,17 @@ button {
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+</style>
+
+<style lang="scss">
+#signup-modal {
+    width: 70%;
+    max-width: 600px;
+    @media (max-width: 800px) {
+        width: 95%;
+        max-width: unset;
+    }
+    overflow-x: hidden;
 }
 </style>
