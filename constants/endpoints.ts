@@ -163,7 +163,7 @@ const anywhere = { roomDependent: false, chatDependent: false };
 new PostEndpoint<ChatLogInBody>(APIPath.startChatting, halfwayThere);
 new PostEndpoint<SendMessageBody>(APIPath.sendMessage, fullyThere);
 new PostEndpoint<{}>(APIPath.stopChatting, fullyThere);
-new PostEndpoint<AddVideoBody>(APIPath.addVideo, anywhere);
+new PostEndpoint<AddVideoBody>(APIPath.addVideo, halfwayThere);
 new PostEndpoint<ChangeSceneBody>(APIPath.changeScene, fullyThere);
 new PostEndpoint<{}>(APIPath.typingStart, fullyThere);
 new GetEndpoint<{}>(APIPath.getStats, halfwayThere);
