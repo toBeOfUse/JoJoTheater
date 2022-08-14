@@ -1,22 +1,18 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import fetch from "node-fetch";
 import { Server } from "http";
-import type { Express, Request, RequestHandler, Response } from "express";
+import type { Express, Request, Response } from "express";
 import escapeHTML from "escape-html";
-import { nanoid } from "nanoid";
 import { assertType, is } from "typescript-is";
-import checkDiskSpace from "check-disk-space";
 
 import {
     Playlist,
-    playlist,
     getRecentMessages,
     addMessage,
-    saveToken,
-    saveUser,
-    getUser,
+    User,
     getAvatar,
     getAllAvatars,
+    getUserMiddleware,
 } from "./queries";
 import {
     ChatMessage,
@@ -27,9 +23,8 @@ import {
     Subscription,
     Video,
     ConnectionStatus,
-    User,
-    Token,
     Avatar,
+    PlaylistSnapshot,
 } from "../constants/types";
 import logger from "./logger";
 import { password } from "./secrets";
@@ -46,18 +41,11 @@ import {
 } from "../constants/endpoints";
 import NPCs from "./npcs";
 
-declare global {
-    namespace Express {
-        interface Request {
-            user?: User;
-        }
-    }
-}
-
 type ServerSentEvent =
     | "ping"
-    | "grant_token"
-    | "playlist_set"
+    | "authenticated"
+    | "list_playlists"
+    | "update_playlist"
     | "chat_message"
     | "state_set"
     | "set_controls_flag"
@@ -80,15 +68,15 @@ class AudienceMember {
     private socket: Socket;
     location: string = "";
     user: User;
-    connectionID: string;
     lastLatencies: number[] = [];
     chatInfo: ChatUserInfo | undefined = undefined;
     connected: Date = new Date();
     subscriptions: Set<Subscription> = new Set();
     lastClientState: (PlayerState & { receivedTimeISO: string }) | undefined =
         undefined;
+    httpToken: string;
 
-    get loggedIn(): boolean {
+    get inChat(): boolean {
         return !!this.chatInfo;
     }
 
@@ -101,6 +89,10 @@ class AudienceMember {
             this.lastLatencies.reduce((acc, v) => acc + v, 0) /
             this.lastLatencies.length
         );
+    }
+
+    get connectionID(): string {
+        return this.socket.id;
     }
 
     /**
@@ -147,13 +139,13 @@ class AudienceMember {
         };
     }
 
-    constructor(socket: Socket, user: User) {
+    constructor(socket: Socket, user: User, httpToken: string) {
         this.socket = socket;
-        this.connectionID = socket.id;
         this.user = user;
+        this.httpToken = httpToken;
         this.socket.onAny((eventName: string) => {
             if (
-                eventName !== "pong" &&
+                eventName != "pong" &&
                 eventName != "state_report" &&
                 eventName != "typing_start" &&
                 eventName != "jump"
@@ -237,7 +229,8 @@ type APIHandler =
 
 class Theater {
     audience: AudienceMember[] = [];
-    playlist: Playlist;
+    _playlistsByID: Record<number, Playlist>;
+    _currentPlaylistID: number;
     graphics: SceneController;
     apiHandlers: Partial<Record<APIPath, APIHandler>>;
 
@@ -277,38 +270,69 @@ class Theater {
         };
     }
 
-    constructor(playlist: Playlist, graphics: SceneController) {
+    constructor(playlists: Playlist[], graphics: SceneController) {
         this.graphics = graphics;
         // this will propogate all changes in our SceneController object to the
         // front-end:
         this.graphics.on("change", () => {
             this.emitAll("audience_info_set", this.graphics.outputGraphics);
         });
-        this.playlist = playlist;
-        this.playlist.getVideos().then((videos) => {
-            this.baseState = { ...this.currentState, video: videos[0] };
-            this.audience.forEach((a) =>
-                a.emit("state_set", this.currentState)
-            );
-        });
-        this.playlist.on("video_added", async () => {
-            const receivers = this.audience.filter((a) =>
-                a.subscriptions.has(Subscription.playlist)
-            );
-            receivers.forEach(async (r) =>
-                r.emit("playlist_set", await this.playlist.getVideos())
-            );
-        });
+        this._playlistsByID = {};
+        for (const playlist of playlists) {
+            this._playlistsByID[playlist.id] = playlist;
+        }
+        this._currentPlaylistID = playlists[0].id;
+        this._playlistsByID[this._currentPlaylistID]
+            .getVideos()
+            .then((videos) => {
+                this.baseState = { ...this.currentState, video: videos[0] };
+                this.audience.forEach((a) =>
+                    a.emit("state_set", this.currentState)
+                );
+            });
+
+        Playlist.bus.on(
+            "playlist_changed",
+            async (newSnapshot: PlaylistSnapshot) => {
+                const playlist = this._playlistsByID[newSnapshot.id];
+                if (playlist) {
+                    const receivers = this.audience.filter((a) =>
+                        a.subscriptions.has(Subscription.playlist)
+                    );
+                    receivers.forEach(async (r) =>
+                        r.emit("update_playlist", newSnapshot)
+                    );
+                }
+            }
+        );
+        User.bus.on(
+            "invalidate_token",
+            (patch: {
+                old: { token: string; user: User };
+                new: { token: string; user: User };
+            }) => {
+                for (const member of this.audience) {
+                    if (
+                        patch.old.token == member.httpToken &&
+                        member.user.id == patch.old.user.id
+                    ) {
+                        member.user = patch.new.user;
+                        member.httpToken = patch.new.token;
+                    }
+                }
+            }
+        );
+        // TODO: User.bus.on("user_changed")
         this.apiHandlers = {
-            [APIPath.logIn]: this.logIn,
+            [APIPath.startChatting]: this.logIn,
             [APIPath.sendMessage]: this.sendMessage,
-            [APIPath.logOut]: this.logOut,
+            [APIPath.stopChatting]: this.logOut,
             [APIPath.addVideo]: this.addVideo,
             [APIPath.typingStart]: this.typingStart,
             [APIPath.changeScene]: this.changeScene,
             [APIPath.getMessages]: this.getMessages,
             [APIPath.getStats]: this.getStats,
-            [APIPath.getScenes]: this.getScenes,
+            [APIPath.getRoomScenes]: this.getScenes,
             [APIPath.switchProps]: this.newProps,
             [APIPath.getAvatars]: this.getAvatars,
             [APIPath.setIdle]: this.setIdle,
@@ -319,8 +343,20 @@ class Theater {
         this.audience.forEach((a) => a.emit(event, ...args));
     }
 
-    async sendToChat(messageIn: Omit<ChatMessage, "createdAt">) {
-        const message = { ...messageIn, createdAt: new Date().getTime() };
+    get playlists(): Playlist[] {
+        return Object.values(this._playlistsByID);
+    }
+
+    get currentPlaylist(): Playlist {
+        return this._playlistsByID[this._currentPlaylistID];
+    }
+
+    async queryPlaylists(): Promise<PlaylistSnapshot[]> {
+        return await Promise.all(this.playlists.map((p) => p.getSnapshot()));
+    }
+
+    async publishMessage(messageIn: Omit<ChatMessage, "createdAt">) {
+        const message = { ...messageIn, createdAt: Date.now() };
         await addMessage(message);
         const receivers = this.audience.filter((a) =>
             a.subscriptions.has(Subscription.chat)
@@ -333,8 +369,7 @@ class Theater {
     async logIn(req: Request, res: Response, member: AudienceMember) {
         if (!member) {
             console.error("logIn called without AudienceMember argument");
-            res.status(400);
-            res.end();
+            res.status(400).end();
             return;
         }
         let info, loadedAvatar;
@@ -346,8 +381,7 @@ class Theater {
                 "invalid LogInBody in logIn: " +
                     JSON.stringify(req.body).slice(0, 1000)
             );
-            res.status(400);
-            res.end();
+            res.status(400).end();
             return;
         }
         if (
@@ -383,24 +417,20 @@ class Theater {
                         `<strong>${member.chatInfo.name}</strong>` +
                         " joined the Chat.",
                 };
-                this.sendToChat(announcement);
+                this.publishMessage(announcement);
             }
             this.graphics.addInhabitant(member.chatInfo, member.user);
             // just in case
             member.subscriptions.add(Subscription.chat);
-            member.user = {
-                ...member.user,
-                lastUsername: info.name,
-                lastAvatarID: info.avatarID,
-            };
-            saveUser(member.user);
-            res.status(200);
+            member.user.updateChatInfo({
+                avatarID: member.chatInfo.avatar.id,
+                name: member.chatInfo.name,
+            });
             res.end();
         } else {
             logger.warn("chat info rejected:");
             logger.warn(JSON.stringify(info).substring(0, 1000));
-            res.status(400);
-            res.end();
+            res.status(400).end();
         }
     }
 
@@ -421,8 +451,7 @@ class Theater {
                     senderName: member.chatInfo.name,
                     senderAvatarURL: member.avatarURL,
                 };
-                this.sendToChat(message).then(() => {
-                    res.status(200);
+                this.publishMessage(message).then(() => {
                     res.end();
                 });
                 (async () => {
@@ -431,7 +460,7 @@ class Theater {
                         const response = responder(message.messageHTML);
                         if (response) {
                             await new Promise((r) => setTimeout(r, 750));
-                            this.sendToChat({
+                            this.publishMessage({
                                 isAnnouncement: false,
                                 ...npcInfo,
                                 messageHTML: response,
@@ -439,7 +468,7 @@ class Theater {
                         }
                     }
                 })();
-                this.graphics.stopTyping(member.user.id);
+                this.graphics.stopTyping(member.connectionID);
             }
         } else {
             logger.warn(
@@ -449,30 +478,43 @@ class Theater {
         }
     }
 
-    addVideo(req: Request, res: Response) {
+    async addVideo(req: Request, res: Response) {
         if (is<AddVideoBody>(req.body)) {
-            const url = req.body.url;
+            const { url, playlistID } = req.body;
             logger.debug(
-                "attempting to add video with url " + url + " to playlist"
+                "attempting to add video with url " +
+                    url +
+                    " to playlist " +
+                    playlistID
             );
-            this.playlist
-                .addFromURL(url)
+            const playlist = this._playlistsByID[playlistID];
+            // TODO: playlist ownership permissions check
+            if (!(await playlist.getMetadata()).publicallyEditable) {
+                console.warn(
+                    "request to add video to playlist " +
+                        "without requisite permissions"
+                );
+                res.status(403).end();
+                return;
+            }
+            playlist
+                ?.addFromURL(url)
                 .then(() => {
-                    res.status(200);
                     res.end();
                 })
                 .catch((e) => {
                     logger.warn("could not get video from url " + url);
                     logger.warn(e);
-                    res.status(400);
-                    res.end();
+                    res.status(400).end();
                 });
+        } else {
+            console.warn("malformed request to addVideo endpoint:");
+            console.warn(JSON.stringify(req.body).substring(0, 1000));
         }
     }
 
-    typingStart(req: Request, res: Response, member: AudienceMember) {
-        this.graphics.startTyping(member.user.id);
-        res.status(200);
+    typingStart(_req: Request, res: Response, member: AudienceMember) {
+        this.graphics.startTyping(member.connectionID);
         res.end();
     }
 
@@ -489,21 +531,18 @@ class Theater {
                 this.emitAll("audience_info_set", this.graphics.outputGraphics);
             });
             this.graphics.emit("change");
-            this.sendToChat({
+            this.publishMessage({
                 isAnnouncement: true,
                 messageHTML: `<strong>${member.chatInfo?.name}</strong> ushered in a change of scene.`,
             });
-            res.status(200);
             res.end();
         } else {
-            res.status(400);
-            res.end();
+            res.status(400).end();
         }
     }
 
     newProps(_req: Request, res: Response, member: AudienceMember) {
-        this.graphics.changeInhabitantProps(member.user.id);
-        res.status(200);
+        this.graphics.changeInhabitantProps(member.connectionID);
         res.end();
     }
 
@@ -511,18 +550,15 @@ class Theater {
         logger.debug(`member ${member.chatInfo?.name} logged out`);
         this.graphics.removeInhabitant(member.connectionID);
         member.chatInfo = undefined;
-        res.status(200);
         res.end();
     }
 
     getStats(req: Request, res: Response) {
         if (req.header("Admin") != password) {
             console.warn("Incorrectly passworded request for stats");
-            res.status(403);
-            res.end();
+            res.status(403).end();
             return;
         }
-        res.status(200);
         res.json({
             players: this.audience.map((a) => a.getConnectionInfo()),
             server: this.currentState,
@@ -530,12 +566,10 @@ class Theater {
     }
 
     async getMessages(_req: Request, res: Response) {
-        res.status(200);
         res.json({ messages: await getRecentMessages(50) });
     }
 
     getScenes(_req: Request, res: Response) {
-        res.status(200);
         res.json({
             scenes: SceneController.scenes,
             currentScene: this.graphics.currentScene,
@@ -551,14 +585,12 @@ class Theater {
     setIdle(req: Request, res: Response, member: AudienceMember) {
         if (member && member.user) {
             if (is<{ idle: boolean }>(req.body)) {
-                this.graphics.setIdle(member.user.id, req.body.idle);
-                res.status(200);
+                this.graphics.setIdle(member.connectionID, req.body.idle);
                 res.end();
                 return;
             }
         }
-        res.status(400);
-        res.end();
+        res.status(400).end();
     }
 
     async handleAPICall(req: Request, res: Response) {
@@ -569,13 +601,23 @@ class Theater {
             let member;
             if (req.user) {
                 member =
-                    this.audience.find((m) => m.user.id == req.user?.id) ||
-                    null;
+                    this.audience.find(
+                        (m) => m.connectionID == req.connectionID
+                    ) || null;
+                if (member && member.httpToken != req.token) {
+                    logger.warn(
+                        "attempt to act on behalf of an AudienceMember" +
+                            " without being able to provide the token they" +
+                            " were sent"
+                    );
+                    res.status(403).end();
+                    return;
+                }
             } else if (req.user !== undefined) {
                 member = null;
             }
             if (
-                member?.loggedIn ||
+                member?.inChat ||
                 !endpoints[req.path as APIPath]?.chatDependent
             ) {
                 try {
@@ -586,21 +628,18 @@ class Theater {
                     );
                     logger.warn(e.message && e.message());
                     logger.warn(e.stack);
-                    res.status(400);
-                    res.end();
+                    res.status(400).end();
                 }
             } else {
                 logger.warn(
                     "received unauthenticated request for secure path " +
                         req.path
                 );
-                res.status(403);
-                res.end();
+                res.status(403).end();
             }
         } else {
             logger.warn("received request for unknown path " + req.path);
-            res.status(404);
-            res.end();
+            res.status(404).end();
         }
     }
 
@@ -621,9 +660,9 @@ class Theater {
             } else if (sub == Subscription.audience) {
                 member.emit("audience_info_set", this.graphics.outputGraphics);
             } else if (sub == Subscription.playlist) {
-                this.playlist.getVideos().then((videos) => {
-                    member.emit("playlist_set", videos);
-                });
+                this.queryPlaylists().then((ps) =>
+                    member.emit("list_playlists", ps)
+                );
             }
         });
 
@@ -638,7 +677,7 @@ class Theater {
         member.on(
             "state_change_request",
             async (change: StateChangeRequest) => {
-                if (!member.loggedIn) {
+                if (!member.inChat) {
                     member.emit(
                         "alert",
                         "Log in to the chat to  be allowed to control the video 👀"
@@ -678,22 +717,32 @@ class Theater {
                                 newState.currentTimeMs / 1000 / currentDuration,
                         });
                     }
-                } else if (change.changeType == ChangeTypes.videoID) {
-                    const newVideoID = change.newValue as number;
-                    const newVideo = await this.playlist.getVideoByID(
-                        newVideoID
-                    );
-                    if (newVideo) {
-                        this.startNewVideo(newVideo);
+                } else if (change.changeType == ChangeTypes.video) {
+                    if (is<Pick<Video, "id" | "playlistID">>(change.newValue)) {
+                        const newVideoID = change.newValue.id as number;
+                        this._currentPlaylistID = change.newValue.playlistID;
+                        const newVideo = await Playlist.getVideoByID(
+                            newVideoID
+                        );
+                        if (newVideo) {
+                            this.startNewVideo(newVideo);
+                        } else {
+                            logger.warn(
+                                "client requested video with unknown id" +
+                                    newVideoID
+                            );
+                        }
                     } else {
                         logger.warn(
-                            "client requested video with unknown id" +
-                                newVideoID
+                            "client requested video with mangled newValue in change request:"
                         );
+                        logger.warn(JSON.stringify(change).substring(0, 1000));
                     }
                 } else if (change.changeType == ChangeTypes.nextVideo) {
                     this.startNewVideo(
-                        await this.playlist.getNextVideo(this.baseState.video)
+                        await this.currentPlaylist.getNextVideo(
+                            this.baseState.video
+                        )
                     );
                     this.emitAll("set_controls_flag", {
                         target: "next_video",
@@ -701,7 +750,9 @@ class Theater {
                     });
                 } else if (change.changeType == ChangeTypes.prevVideo) {
                     this.startNewVideo(
-                        await this.playlist.getPrevVideo(this.baseState.video)
+                        await this.currentPlaylist.getPrevVideo(
+                            this.baseState.video
+                        )
                     );
                     this.emitAll("set_controls_flag", {
                         target: "prev_video",
@@ -743,7 +794,7 @@ class Theater {
                 "setting timer to switch to next video in " + timeUntil + "ms"
             );
             this.nextVideoTimer = setTimeout(async () => {
-                const nextVideo = await this.playlist.getNextVideo(
+                const nextVideo = await this.currentPlaylist.getNextVideo(
                     this.baseState.video
                 );
                 if (nextVideo) {
@@ -826,13 +877,13 @@ class Theater {
     }
 }
 
-export default function init(server: Server, app: Express) {
+export default async function init(server: Server, app: Express) {
     const io = new SocketServer(server);
     const graphics = new SceneController(scenes.lilypads);
 
     // (async () => {
     //     const avatars = await getAllAvatars();
-    //     for (let i = 0; i < 10; i++) {
+    //     for (let i = 1; i <= 10; i++) {
     //         graphics.addInhabitant(
     //             {
     //                 connectionID: "connectionID" + i,
@@ -840,46 +891,43 @@ export default function init(server: Server, app: Express) {
     //                 resumed: false,
     //                 avatar: avatars[Math.floor(Math.random() * avatars.length)],
     //             },
-    //             { id: -1 }
+    //             (await User.getUserByID(-1)) as User
     //         );
     //     }
     // })();
 
-    const theater = new Theater(playlist, graphics);
+    const playlists = await Playlist.getAll();
+    const theater = new Theater(playlists, graphics);
     io.on("connection", (socket: Socket) => {
         // In the multi-room future a room id will also be sent
-        socket.on("log_in", async (token: string) => {
+        socket.on("handshake", async (token: string) => {
             let user: User | undefined;
             if (token) {
-                user = await getUser(token);
+                user = await User.getUserByToken(token);
             }
             if (!user) {
-                const userInit = {
-                    watchTime: 0,
-                };
-                user = { ...userInit, ...(await saveUser(userInit)) };
-                const newToken: Token = {
-                    createdAt: new Date(),
-                    token: nanoid(),
-                    userID: user.id,
-                };
-                await saveToken(newToken);
-                socket.emit("grant_token", newToken.token);
+                user = await User.createAnon();
+                token = await user.addToken();
             }
-            const newMember = new AudienceMember(socket, user);
+            socket.emit("authenticated", {
+                ...(await user.getPublicSnapshot()),
+                token,
+            });
+            const newMember = new AudienceMember(socket, user, token);
             theater.initializeMember(newMember);
             logger.info(
                 "new client added: " +
                     theater.audience.length +
                     " total connected"
             );
+            for (const member of theater.audience) {
+                const { connected, user, httpToken, connectionID } = member;
+                logger.info(
+                    JSON.stringify({ connected, user, httpToken, connectionID })
+                );
+            }
         });
     });
-
-    const getUserMiddleware: RequestHandler = async (req, _res, next) => {
-        req.user = await getUser(req.header("Auth") as string);
-        next();
-    };
 
     for (const endpoint of Object.values(endpoints)) {
         if (endpoint.roomDependent) {
@@ -888,21 +936,6 @@ export default function init(server: Server, app: Express) {
                 getUserMiddleware,
                 (req: Request, res: Response) => theater.handleAPICall(req, res)
             );
-        } else if (endpoint.path == APIPath.getIdentity) {
-            app.get(endpoint.path, getUserMiddleware, async (req, res) => {
-                if (req.user) {
-                    res.status(200);
-                    res.json(req.user);
-                    res.end();
-                } else {
-                    res.status(400);
-                    res.end();
-                }
-            });
-        } else if (endpoint.path == APIPath.getFreeSpace) {
-            app.get(endpoint.path, async (_req, res) => {
-                res.json(await checkDiskSpace(__dirname));
-            });
         }
     }
 }

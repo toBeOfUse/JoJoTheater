@@ -100,11 +100,12 @@ export default defineComponent({
         const storedPassword = localStorage.getItem("password");
         const password = ref(storedPassword ?? "");
         const authorize = async () => {
-            const headers = { Admin: password.value };
+            const headers = { "MB-Admin": password.value };
             try {
                 const info = await endpoints[APIPath.getStats].dispatch(
                     "",
                     {},
+                    "",
                     headers
                 );
                 authorized.value = true;
@@ -120,6 +121,7 @@ export default defineComponent({
                     await endpoints[APIPath.getMessages].dispatch(
                         "",
                         {},
+                        "",
                         headers
                     )
                 ).messages;
@@ -154,8 +156,7 @@ export default defineComponent({
             if (state.playing) {
                 return msToHMS(
                     state.currentTimeMs +
-                        (new Date().getTime() -
-                            new Date(state.receivedTimeISO).getTime())
+                        (Date.now() - new Date(state.receivedTimeISO).getTime())
                 );
             } else {
                 return msToHMS(state.currentTimeMs);

@@ -1,19 +1,26 @@
+import { deNull } from "./types";
+
 enum APIPath {
-    logIn = "/api/logIn",
-    logOut = "/api/logOut",
-    sendMessage = "/api/sendMessage",
-    addVideo = "/api/addVideo",
-    typingStart = "/events/typing",
-    changeScene = "/events/changeScene",
-    getStats = "/get/stats",
-    getMessages = "/get/messages",
-    getScenes = "/get/scenes",
+    startChatting = "/room/chatLogin",
+    stopChatting = "/room/chatLogout",
+    sendMessage = "/room/sendMessage",
+    addVideo = "/room/addVideo",
+    typingStart = "/room/typing",
+    changeScene = "/room/changeScene",
+    getStats = "/api/stats",
+    getMessages = "/room/messages",
+    getAllScenes = "/api/scenes",
+    getRoomScenes = "/room/scenes",
     optimizedImage = "/imgopt",
-    switchProps = "/scene/propSwitch",
-    getAvatars = "/get/avatars",
-    getIdentity = "/get/identity",
-    setIdle = "/events/idle",
-    getFreeSpace = "/get/gb",
+    switchProps = "/room/propSwitch",
+    getAvatars = "/room/avatars",
+    getIdentity = "/api/identity",
+    setIdle = "/room/idle",
+    getFreeSpace = "/api/gb",
+    signup = "/api/signup",
+    signin = "/api/signin",
+    editProfile = "/api/editProfile",
+    signout = "/api/signout",
 }
 
 interface PostBody {}
@@ -37,6 +44,7 @@ abstract class Endpoint<BodyType> {
     abstract dispatch(
         token: string,
         body: BodyType,
+        connectionID?: string,
         headers?: Record<string, string>
     ): Promise<Record<string, any>>;
 }
@@ -45,9 +53,10 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
     async dispatch(
         token: string,
         body: BodyType,
+        connectionID?: string,
         headers: Record<string, string> = {}
     ) {
-        if (this.roomDependent && !token) {
+        if ((this.roomDependent || this.chatDependent) && !token) {
             throw (
                 "Missing identification token for room-dependent endpoint " +
                 this.path
@@ -56,7 +65,8 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
         const response = await fetch(this.path, {
             method: "POST",
             headers: {
-                Auth: token,
+                "MB-Token": token,
+                "MB-Connection": connectionID || "none",
                 "Content-Type": "application/json",
                 ...headers,
             },
@@ -67,7 +77,7 @@ class PostEndpoint<BodyType extends PostBody> extends Endpoint<BodyType> {
         }
         const text = await response.text();
         try {
-            return JSON.parse(text);
+            return deNull(JSON.parse(text));
         } catch {
             return text;
         }
@@ -87,26 +97,33 @@ class GetEndpoint<BodyType extends GetBody> extends Endpoint<BodyType> {
     async dispatch(
         token: string,
         body: BodyType,
+        connectionID?: string,
         headers: Record<string, string> = {}
     ) {
-        if (this.roomDependent && !token) {
+        if ((this.roomDependent || this.chatDependent) && !token) {
             throw (
-                "Missing authentication token for secure endpoint " + this.path
+                "Missing authentication token for room-dependent endpoint " +
+                this.path
             );
         }
         const response = await fetch(this.fullPath(body), {
-            headers: { Auth: token, ...headers },
+            headers: {
+                "MB-Token": token,
+                "MB-Connection": connectionID || "none",
+                ...headers,
+            },
         });
         const text = await response.text();
         try {
-            return JSON.parse(text);
+            const obj = JSON.parse(text);
+            return deNull(obj);
         } catch {
             return text;
         }
     }
 }
 
-interface LogInBody extends PostBody {
+interface ChatLogInBody extends PostBody {
     name: string;
     avatarID: number;
     resumed: boolean;
@@ -115,6 +132,7 @@ interface SendMessageBody extends PostBody {
     messageText: string;
 }
 interface AddVideoBody extends PostBody {
+    playlistID: number;
     url: string;
 }
 interface ChangeSceneBody extends PostBody {
@@ -126,68 +144,42 @@ interface OptimizedImageBody extends GetBody {
     flip?: boolean;
     ratio?: string;
 }
+interface SignupBody extends PostBody {
+    email: string;
+    password: string;
+    alsoKnownAs: Record<string, string>;
+}
+type EditProfileBody = Partial<SignupBody>;
+interface SigninBody extends PostBody {
+    email: string;
+    password: string;
+}
 
-new PostEndpoint<LogInBody>(APIPath.logIn, {
-    roomDependent: true,
-    chatDependent: false,
-});
-new PostEndpoint<SendMessageBody>(APIPath.sendMessage, {
-    roomDependent: true,
-    chatDependent: true,
-});
-new PostEndpoint<{}>(APIPath.logOut, {
-    roomDependent: true,
-    chatDependent: true,
-});
-new PostEndpoint<AddVideoBody>(APIPath.addVideo, {
-    roomDependent: true,
-    chatDependent: false,
-});
-new PostEndpoint<ChangeSceneBody>(APIPath.changeScene, {
-    roomDependent: true,
-    chatDependent: true,
-});
-new PostEndpoint<{}>(APIPath.typingStart, {
-    roomDependent: true,
-    chatDependent: true,
-});
-new GetEndpoint<{}>(APIPath.getStats, {
-    roomDependent: true,
-    chatDependent: false,
-});
-new GetEndpoint<{}>(APIPath.getMessages, {
-    roomDependent: true,
-    chatDependent: false,
-});
-new GetEndpoint<{}>(APIPath.getScenes, {
-    roomDependent: true,
-    chatDependent: false,
-});
-new GetEndpoint<OptimizedImageBody>(APIPath.optimizedImage, {
-    roomDependent: false,
-    chatDependent: false,
-});
-new PostEndpoint<{}>(APIPath.switchProps, {
-    roomDependent: true,
-    chatDependent: true,
-});
-new GetEndpoint<{ room: string }>(APIPath.getAvatars, {
-    roomDependent: true,
-    chatDependent: false,
-});
-new GetEndpoint<{}>(APIPath.getIdentity, {
-    roomDependent: false,
-    chatDependent: false,
-});
-new PostEndpoint<{ idle: boolean }>(APIPath.setIdle, {
-    roomDependent: true,
-    chatDependent: true,
-});
+// TODO: extra "admin only" permissions for like stats and uploads
+const fullyThere = { roomDependent: true, chatDependent: true };
+const halfwayThere = { roomDependent: true, chatDependent: false };
+const anywhere = { roomDependent: false, chatDependent: false };
 
-new GetEndpoint<{}>(APIPath.getFreeSpace, {
-    roomDependent: false,
-    chatDependent: false,
-});
+new PostEndpoint<ChatLogInBody>(APIPath.startChatting, halfwayThere);
+new PostEndpoint<SendMessageBody>(APIPath.sendMessage, fullyThere);
+new PostEndpoint<{}>(APIPath.stopChatting, fullyThere);
+new PostEndpoint<AddVideoBody>(APIPath.addVideo, halfwayThere);
+new PostEndpoint<ChangeSceneBody>(APIPath.changeScene, fullyThere);
+new PostEndpoint<{}>(APIPath.typingStart, fullyThere);
+new GetEndpoint<{}>(APIPath.getStats, halfwayThere);
+new GetEndpoint<{}>(APIPath.getMessages, halfwayThere);
+new GetEndpoint<{}>(APIPath.getAllScenes, anywhere);
+new GetEndpoint<{ roomID: number }>(APIPath.getRoomScenes, halfwayThere);
+new GetEndpoint<OptimizedImageBody>(APIPath.optimizedImage, anywhere);
+new PostEndpoint<{}>(APIPath.switchProps, fullyThere);
+new GetEndpoint<{ room: string }>(APIPath.getAvatars, halfwayThere);
+new GetEndpoint<{}>(APIPath.getIdentity, anywhere);
+new PostEndpoint<{ idle: boolean }>(APIPath.setIdle, fullyThere);
+new GetEndpoint<{}>(APIPath.getFreeSpace, anywhere);
+new PostEndpoint<SignupBody>(APIPath.signup, anywhere);
+new PostEndpoint<SigninBody>(APIPath.signin, anywhere);
+new PostEndpoint<{}>(APIPath.signout, anywhere);
+new PostEndpoint<EditProfileBody>(APIPath.editProfile, anywhere);
 
 const endpoints = Endpoint.dir as Record<APIPath, Endpoint<PostBody | GetBody>>;
 
@@ -212,7 +204,7 @@ function getAvatarImageURL(avatarFile: string) {
 }
 
 export {
-    LogInBody,
+    ChatLogInBody as LogInBody,
     SendMessageBody,
     AddVideoBody,
     ChangeSceneBody,
@@ -223,4 +215,7 @@ export {
     OptimizedImageBody,
     getOptimizedImageURL,
     getAvatarImageURL,
+    SignupBody,
+    SigninBody,
+    EditProfileBody,
 };

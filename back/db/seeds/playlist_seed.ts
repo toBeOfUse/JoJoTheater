@@ -1,11 +1,31 @@
 import { Knex } from "knex";
-import { Video, UserSubmittedFolderName } from "../../../constants/types";
+import { PlaylistRecord, Video } from "../../../constants/types";
 export async function seed(knex: Knex): Promise<void> {
-    await knex<Omit<Video, "captions">>("playlist")
+    await knex<PlaylistRecord>("playlists").insert([
+        {
+            name: "Couple of Mirrors",
+            createdAt: Date.now(),
+            publicallyEditable: false,
+            id: 0,
+        },
+        {
+            name: "MitchBot Recommends",
+            createdAt: Date.now(),
+            publicallyEditable: false,
+            id: 1,
+        },
+        {
+            name: "The Unrestrained Id of the Audience",
+            createdAt: Date.now(),
+            publicallyEditable: false,
+            id: 2,
+        },
+    ]);
+    await knex<Omit<Video, "captions">>("videos")
         .insert([
             {
                 duration: 2742,
-                folder: "Couple of Mirrors",
+                playlistID: 0,
                 id: 1,
                 provider: "youtube",
                 src: "GU4DJf2_jqE",
@@ -13,7 +33,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 2852,
-                folder: "Couple of Mirrors",
+                playlistID: 0,
                 id: 2,
                 provider: "youtube",
                 src: "8zqUunbOsoQ",
@@ -21,7 +41,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 2801,
-                folder: "Couple of Mirrors",
+                playlistID: 0,
                 id: 3,
                 provider: "youtube",
                 src: "SCp4a42sdWc",
@@ -29,7 +49,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 3011,
-                folder: "Couple of Mirrors",
+                playlistID: 0,
                 id: 4,
                 provider: "youtube",
                 src: "6btkPmu8j9M",
@@ -37,7 +57,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 2705,
-                folder: "Couple of Mirrors",
+                playlistID: 0,
                 id: 5,
                 provider: "youtube",
                 src: "Qx896VPc0LM",
@@ -45,7 +65,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 374,
-                folder: "MitchBot Recommends",
+                playlistID: 1,
                 id: 6,
                 provider: "vimeo",
                 src: "33548881",
@@ -53,7 +73,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 317,
-                folder: "MitchBot Recommends",
+                playlistID: 1,
                 id: 7,
                 provider: "vimeo",
                 src: "33560398",
@@ -61,7 +81,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 384,
-                folder: "MitchBot Recommends",
+                playlistID: 1,
                 id: 8,
                 provider: "vimeo",
                 src: "33807212",
@@ -69,7 +89,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 132,
-                folder: "MitchBot Recommends",
+                playlistID: 1,
                 id: 9,
                 provider: "youtube",
                 src: "NHZr6P1csiY",
@@ -77,7 +97,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 165,
-                folder: "MitchBot Recommends",
+                playlistID: 1,
                 id: 10,
                 provider: "youtube",
                 src: "mpkf_p71rKY",
@@ -85,7 +105,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 153,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 11,
                 provider: "youtube",
                 src: "nBHkIWAJitg",
@@ -93,7 +113,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 481,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 12,
                 provider: "youtube",
                 src: "yE5DiniY45w",
@@ -101,7 +121,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 149,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 13,
                 provider: "youtube",
                 src: "3L7VJl76i9U",
@@ -109,7 +129,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 9,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 14,
                 provider: "youtube",
                 src: "4Rr-ra5Sobk",
@@ -117,7 +137,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 261,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 15,
                 provider: "youtube",
                 src: "VuE4qxOcluk",
@@ -125,7 +145,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 848,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 16,
                 provider: "youtube",
                 src: "guMbC8Gig6I",
@@ -133,7 +153,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 692,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 18,
                 provider: "youtube",
                 src: "DSUilYKcRMA",
@@ -141,7 +161,7 @@ export async function seed(knex: Knex): Promise<void> {
             },
             {
                 duration: 9719,
-                folder: UserSubmittedFolderName,
+                playlistID: 1,
                 id: 23,
                 provider: "youtube",
                 src: "WJndaDpohSY",

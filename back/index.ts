@@ -10,6 +10,7 @@ import cdn from "./optimizeimages";
 import webpackConfig from "../webpack.config";
 import webpack from "webpack";
 import path from "path";
+import initBasicAPI from "./basicapi";
 const mode =
     process.env.NODE_ENV == "production" ? "production" : "development";
 logger.info("starting webpack in mode " + mode);
@@ -65,6 +66,7 @@ app.get("/room", (_req, res) => {
         }
     });
 });
+initBasicAPI(app);
 const server = http.createServer(app);
 initTheater(server, app);
 

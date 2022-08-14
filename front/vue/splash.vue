@@ -1,4 +1,5 @@
 <template>
+    <login />
     <div id="container">
         <img id="logo" src="/images/welcome-logo.svg" />
         <div id="mascot-container">
@@ -62,13 +63,14 @@ import { defineComponent, ref } from "vue";
 import { endpoints, APIPath } from "../../constants/endpoints";
 import Image from "./image.vue";
 import InfoModals from "./infomodals.vue";
+import Login from "./login.vue";
 
 export default defineComponent({
-    components: { optImage: Image, InfoModals },
+    components: { optImage: Image, InfoModals, Login },
     setup() {
         const availableScenes = ref([]);
         const currentScene = ref("");
-        endpoints[APIPath.getScenes].dispatch("", {}).then((e) => {
+        endpoints[APIPath.getAllScenes].dispatch("", {}).then((e) => {
             currentScene.value = e.scenes[0];
             availableScenes.value = e.scenes;
         });
@@ -99,6 +101,11 @@ export default defineComponent({
     max-width: 850px;
     margin: 0 auto 30px auto;
     text-align: left;
+    @media (max-width: 1050px) {
+        // leave extra space for the log in buttons if there isn't a wide open
+        // top right corner for them to be in
+        margin-top: 75px;
+    }
 }
 #logo {
     width: 70%;

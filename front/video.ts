@@ -176,6 +176,7 @@ class HTML5VideoController extends VideoController {
     videoElement: HTMLVideoElement;
     videoReady: Promise<void>;
     prevSrc: string = "";
+    _currentCaptions: number = -1;
     get currentTimeMs(): number {
         return this.videoElement?.currentTime * 1000 || 0;
     }
@@ -273,17 +274,25 @@ class HTML5VideoController extends VideoController {
     }
 
     toggleCaptions(): void {
-        // TODO: cycle through available captions?
         if (this.videoElement.textTracks.length == 0) {
+            setCaptionsOn(false);
             return;
         }
-        const currentMode = this.videoElement.textTracks[0].mode;
-        if (currentMode == "showing") {
-            this.videoElement.textTracks[0].mode = "hidden";
+        if (this._currentCaptions != -1) {
+            // hide anything we're currently showing
+            this.videoElement.textTracks[this._currentCaptions].mode = "hidden";
+        }
+        // check if there is a next available track
+        const nextTrack = this._currentCaptions + 1;
+        if (nextTrack >= this.videoElement.textTracks.length) {
+            // if there isn't, keep captions off
+            this._currentCaptions = -1;
             setCaptionsOn(false);
         } else {
-            this.videoElement.textTracks[0].mode = "showing";
+            // if there is, activate it
+            this._currentCaptions = nextTrack;
             setCaptionsOn(true);
+            this.videoElement.textTracks[nextTrack].mode = "showing";
         }
     }
 

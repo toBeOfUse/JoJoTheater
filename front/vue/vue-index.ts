@@ -1,9 +1,6 @@
-import type { StreamsSocket, Video } from "../../constants/types";
+import { ServerInteractor } from "../serverinteractor";
 
-async function loadIndexComps(
-    socket: StreamsSocket,
-    initialActiveVideo: Video | undefined
-) {
+async function loadIndexComps(socket: ServerInteractor) {
     import(/* webpackMode: "eager" */ "vue").then(async (Vue) => {
         // Create a Promise for each Vue component and then await them with
         // Promise.all so they can load in parallel
@@ -17,25 +14,36 @@ async function loadIndexComps(
         const InfoPromise = import(
             /* webpackMode: "eager" */ "./infomodals.vue"
         );
-        const [Chat, Playlist, Audience, Info] = await Promise.all([
+        const LoginPromise = import(/* webpackMode: "eager" */ "./login.vue");
+        const [Chat, Playlist, Audience, Info, Login] = await Promise.all([
             ChatPromise,
             PlaylistPromise,
             AudiencePromise,
             InfoPromise,
+            LoginPromise,
         ]);
         // ensure socket is connected and authenticated before Vue components
         // are created so they can all use it without fear
-        await new Promise<void>((resolve) =>
-            socket.ifAndWhenGlobalAvailable("token", resolve)
-        );
+        await new Promise<void>((resolve) => {
+            if (socket.getGlobal("identity")) {
+                resolve();
+            } else {
+                const tokenWatcher = () => {
+                    resolve();
+                    socket.stopWatchingGlobal("identity", tokenWatcher);
+                };
+                socket.watchGlobal("identity", tokenWatcher);
+            }
+        });
         Vue.createApp(Chat.default, { socket }).mount("#chat-container");
-        Vue.createApp(Playlist.default, { socket, initialActiveVideo }).mount(
+        Vue.createApp(Playlist.default, { socket }).mount(
             "#playlist-container"
         );
         Vue.createApp(Audience.default, { socket }).mount(
             "#audience-container"
         );
         Vue.createApp(Info.default).mount("#info-container");
+        Vue.createApp(Login.default).mount("#login-container");
     });
 }
 

@@ -66,7 +66,11 @@
                         title="Previous Page"
                     />
                     <div>
-                        <div class="avatar-row" v-for="row in 2" :key="row">
+                        <div
+                            class="avatar-row"
+                            v-for="row in rowsPerPage"
+                            :key="row"
+                        >
                             <opt-image
                                 v-for="avatar in avatarRow(row)"
                                 :key="avatar.id"
@@ -177,12 +181,7 @@
 </template>
 
 <script lang="ts">
-import {
-    ChatMessage,
-    Subscription,
-    StreamsSocket,
-    Avatar,
-} from "../../constants/types";
+import { ChatMessage, Subscription, Avatar } from "../../constants/types";
 import OptImage from "./image.vue";
 import { ref, nextTick, defineComponent, PropType, computed, Ref } from "vue";
 import {
@@ -190,10 +189,11 @@ import {
     getAvatarImageURL,
     LogInBody,
 } from "../../constants/endpoints";
+import { ServerInteractor } from "../serverinteractor";
 export default defineComponent({
     props: {
         socket: {
-            type: Object as PropType<StreamsSocket>,
+            type: Object as PropType<ServerInteractor>,
             required: true,
         },
     },
@@ -499,9 +499,7 @@ export default defineComponent({
                         if (found) selectedAvatar.value = found;
                     }
                     if (lastLogin.name && lastLogin.avatarID) {
-                        socket.ifAndWhenGlobalAvailable("token", () =>
-                            attemptLogin(true)
-                        );
+                        attemptLogin(true);
                     }
                 } catch {
                     console.log("could not parse previous login info");
@@ -509,20 +507,20 @@ export default defineComponent({
                 // if we don't have a previous session saved in the browser to
                 // reference, pull from the server's identity information
             } else {
-                socket.http(APIPath.getIdentity).then((response) => {
-                    if (!nameInput.value && response.lastUsername) {
-                        nameInput.value = response.lastUsername;
+                // TODO: watch for identity changes
+                const identity = props.socket.getGlobal("identity");
+                if (!nameInput.value && identity.lastUsername) {
+                    nameInput.value = identity.lastUsername;
+                }
+                if (!selectedAvatar.value && identity.lastAvatarID) {
+                    const avatarIndex = avatars.value.findIndex(
+                        (a) => a.id == identity.lastAvatarID
+                    );
+                    if (avatarIndex != -1) {
+                        selectedAvatar.value = avatars.value[avatarIndex];
+                        avatarPage.value = Math.floor(avatarIndex / 12);
                     }
-                    if (!selectedAvatar.value && response.lastAvatarID) {
-                        const avatarIndex = avatars.value.findIndex(
-                            (a) => a.id == response.lastAvatarID
-                        );
-                        if (avatarIndex) {
-                            selectedAvatar.value = avatars.value[avatarIndex];
-                            avatarPage.value = Math.floor(avatarIndex / 12);
-                        }
-                    }
-                });
+                }
             }
         });
 
@@ -542,7 +540,7 @@ export default defineComponent({
         };
         const avatarRow = (which: number) => {
             let offset = avatarsPerRow * rowsPerPage * avatarPage.value;
-            if (which == 2) offset += avatarsPerRow;
+            offset += avatarsPerRow * (which - 1);
             return avatars.value
                 .slice(offset, offset + avatarsPerRow)
                 .map((a) => ({ path: getAvatarImageURL(a.file), ...a }));
@@ -569,7 +567,7 @@ export default defineComponent({
                     console.log("could not use session storage");
                 }
                 try {
-                    await props.socket.http(APIPath.logIn, info);
+                    await props.socket.http(APIPath.startChatting, info);
                 } catch (e) {
                     console.error("Log in failed :(");
                     console.error(e);
@@ -594,7 +592,7 @@ export default defineComponent({
             socket.setGlobal("inChat", false);
             loggedIn.value = false;
             sessionStorage.removeItem(loginInfoKey);
-            props.socket.http(APIPath.logOut);
+            props.socket.http(APIPath.stopChatting);
         };
 
         // message display logic:
@@ -691,6 +689,7 @@ export default defineComponent({
             outgoing,
             handleEmoji,
             handleEmojiNameInput,
+            rowsPerPage,
         };
     },
 });

@@ -52,7 +52,8 @@ import {
     APIPath,
     getAvatarImageURL,
 } from "../../constants/endpoints";
-import { Avatar, StreamsSocket } from "../../constants/types";
+import { Avatar } from "../../constants/types";
+import { ServerInteractor } from "../serverinteractor";
 
 export default defineComponent({
     props: {
@@ -85,7 +86,7 @@ export default defineComponent({
             required: true,
         },
         socket: {
-            type: Object as PropType<StreamsSocket>,
+            type: Object as PropType<ServerInteractor>,
             required: true,
         },
     },
@@ -148,7 +149,7 @@ export default defineComponent({
             ) {
                 jumping = true;
                 const svg = inhabitantContainer.value.querySelector(
-                    "svg#svg-inhabitant"
+                    "svg.svg-inhabitant"
                 ) as SVGElement;
                 if (svg) {
                     svg.style.animationName = "jump";

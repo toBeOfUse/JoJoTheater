@@ -1,6 +1,3 @@
-import type { Socket } from "socket.io-client";
-import { APIPath } from "./endpoints";
-
 interface ChatMessage {
     isAnnouncement: boolean;
     messageHTML: string;
@@ -25,12 +22,29 @@ interface Video {
      * only for youtube/vimeo/dailymotion
      */
     provider?: string;
-    folder: string;
+    playlistID: number;
     /**
      * in seconds
      */
     duration: number;
     captions: Subtitles[];
+    thumbnailFilename: string;
+}
+
+interface PlaylistRecord {
+    id: number;
+    name: string;
+    description?: string;
+    filePhoto?: string;
+    creatorID: number;
+    createdAt: number;
+    version: number;
+    publicallyEditable: boolean;
+}
+
+interface PlaylistSnapshot extends PlaylistRecord {
+    videos: Video[];
+    // TODO: data about the creator?
 }
 
 interface VideoState {
@@ -41,7 +55,7 @@ interface VideoState {
 
 enum ChangeTypes {
     playing,
-    videoID,
+    video,
     time,
     nextVideo,
     prevVideo,
@@ -52,10 +66,8 @@ enum ChangeTypes {
  */
 interface StateChangeRequest {
     changeType: ChangeTypes;
-    newValue?: boolean | number;
+    newValue?: boolean | number | Pick<Video, "id" | "playlistID">;
 }
-
-const UserSubmittedFolderName = "The Unrestrained Id of the Audience";
 
 enum Subscription {
     audience,
@@ -88,15 +100,30 @@ interface ControlsFlag {
     endPos?: number;
 }
 
-interface User {
+interface UserSnapshot {
     id: number;
-    createdAt: Date;
+    createdAt: number;
     lastUsername?: string;
     lastAvatarID?: number;
     watchTime: number;
     email?: string;
-    passwordHash?: string;
-    passwordSalt?: string;
+    alsoKnownAs: Record<string, string>;
+    official: boolean;
+}
+
+interface UserName {
+    id: number;
+    name: string;
+    nameType: string;
+    createdAt: number;
+    latest: boolean;
+    userID: number;
+}
+
+type PublicUser = Omit<UserSnapshot, "email" | "passwordHash">;
+
+interface AuthenticationResult extends UserSnapshot {
+    token: string;
 }
 
 interface Token {
@@ -122,31 +149,17 @@ interface ChatUserInfo {
     resumed: boolean;
 }
 
-interface ClientGlobalValues {
-    loggedIn: boolean;
-    inChat: boolean;
-    token: string;
-}
-type GlobalType = any;
-type GlobalCallback = (newValue: any) => void;
-interface ClientStreamsSocket extends Socket {
-    _globals: ClientGlobalValues;
-    _listeners: Record<keyof ClientGlobalValues, GlobalCallback[]>;
-    setGlobal: (name: string, newValue: GlobalType) => void;
-    getGlobal: (name: keyof ClientGlobalValues) => GlobalType;
-    watchGlobal: (
-        name: keyof ClientGlobalValues,
-        callback: GlobalCallback
-    ) => void;
-    ifAndWhenGlobalAvailable: (
-        name: keyof ClientGlobalValues,
-        callback: GlobalCallback
-    ) => void;
-    http: (
-        path: APIPath,
-        body?: any,
-        headers?: Record<string, string>
-    ) => Promise<Record<string, any>>;
+function deNull(obj: any) {
+    if (typeof obj == "object" && obj !== null) {
+        for (const prop in obj) {
+            if (obj[prop] === null) {
+                delete obj[prop];
+            } else if (typeof obj[prop] == "object") {
+                deNull(obj[prop]);
+            }
+        }
+    }
+    return obj;
 }
 
 export {
@@ -156,14 +169,17 @@ export {
     ChangeTypes,
     StateChangeRequest,
     ChatUserInfo,
-    UserSubmittedFolderName,
     Subscription,
     ConnectionStatus,
     ControlsFlag,
-    User,
+    UserSnapshot,
+    PublicUser,
     Token,
     Avatar,
-    ClientStreamsSocket as StreamsSocket,
-    ClientGlobalValues,
     Subtitles,
+    PlaylistRecord,
+    PlaylistSnapshot,
+    UserName,
+    AuthenticationResult,
+    deNull,
 };

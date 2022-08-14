@@ -1,61 +1,25 @@
 import "normalize.css";
-
-import { io } from "socket.io-client";
-import { is } from "typescript-is";
-import { endpoints } from "../constants/endpoints";
-
-import {
-    Video,
-    VideoState,
-    StreamsSocket,
-    ClientGlobalValues as GlobalValues,
-} from "../constants/types";
+import { makeInteractor, processAuthentication } from "./serverinteractor";
+import { AuthenticationResult, Video, VideoState } from "../constants/types";
 import initVideo from "./video";
 
+const socket = makeInteractor();
+
 const oldToken = localStorage.getItem("token");
-const socket = io() as StreamsSocket;
-socket._globals = {
-    loggedIn: false,
-    inChat: false,
-    token: oldToken ?? "",
-};
-socket._listeners = { loggedIn: [], inChat: [], token: [] };
-socket.setGlobal = function (name, newValue) {
-    const newGlobals = { ...this._globals, [name]: newValue };
-    if (is<GlobalValues>(newGlobals)) {
-        this._globals = newGlobals;
-        this._listeners[name as keyof GlobalValues].forEach((l) => l(newValue));
-    }
-};
-socket.getGlobal = function (name) {
-    return this._globals[name];
-};
-socket.watchGlobal = function (name, callback) {
-    this._listeners[name].push(callback);
-};
-socket.ifAndWhenGlobalAvailable = function (name, callback) {
-    if (this._globals[name]) {
-        callback(this._globals[name]);
-    } else {
-        const whenListener = (newValue: any) => {
-            callback(newValue);
-            this._listeners[name] = this._listeners[name].filter(
-                (l) => l != whenListener
-            );
-        };
-        this.watchGlobal(name, whenListener);
-    }
-};
-socket.http = function (path, body = {}, headers = {}) {
-    return endpoints[path].dispatch(this._globals.token, body, headers);
-};
 
-socket.emit("log_in", socket.getGlobal("token"));
+// making ourselves known to the server flow:
+// establish a secure token so that http requests can be identified as coming
+// from the same source as this web-socket
+socket.emit("handshake", oldToken ?? ""); // server will respond with `authenticated`
 
-socket.on("grant_token", (token: string) => {
-    socket.setGlobal("token", token);
-    localStorage.setItem("token", token);
-});
+// receive a confirmed/acknowledged/validated token and store it in the
+// interactor status so it can use it for HTTP requests later. Also, store it in
+// the browser for later handshakes. Also, store the User object with the data
+// the server has on us so we can show things like "Welcome, [whoever]"
+socket.on("authenticated", async (result: AuthenticationResult) =>
+    processAuthentication(result, socket)
+);
+
 socket.on("ping", () => {
     socket.emit("pong");
 });
@@ -64,22 +28,19 @@ window.onerror = (event) => {
     socket.emit("error_report", event.toString() + " - " + new Error().stack);
 };
 
-initVideo(socket);
-
-let currentVideo: Video | undefined = undefined;
 socket.on("state_set", (v: VideoState) => {
-    currentVideo = v.video || undefined;
-    if (currentVideo) {
-        renderTitle();
-    }
+    socket.setGlobal("currentVideo", v.video || undefined);
+    if (v.video) renderTitle(v.video);
 });
 
-function renderTitle() {
+function renderTitle(v: Video) {
     let title;
-    if (currentVideo && (title = document.querySelector("#video-title"))) {
-        title.innerHTML = currentVideo.title;
+    if (v && (title = document.querySelector("#video-title"))) {
+        title.innerHTML = v.title;
     }
 }
+
+initVideo(socket);
 
 const resizeVideoContainer = () => {
     const cont = document.querySelector("#video-container") as HTMLDivElement;
@@ -109,7 +70,7 @@ async function loadUIComponents() {
     // load all the dynamic vue components
     (
         await import(/*webpackChunkName: "vue-comps"*/ "./vue/vue-index")
-    ).loadIndexComps(socket, currentVideo);
+    ).loadIndexComps(socket);
 }
 
 window.addEventListener("load", loadUIComponents);
