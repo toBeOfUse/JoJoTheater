@@ -36,7 +36,7 @@ import {
     endpoints,
     getAvatarImageURL,
     GetEndpoint,
-    LogInBody,
+    ChatLogInBody,
     SendMessageBody,
 } from "../constants/endpoints";
 import NPCs from "./npcs";
@@ -374,11 +374,11 @@ class Theater {
         }
         let info, loadedAvatar;
         try {
-            info = assertType<LogInBody>(req.body);
+            info = assertType<ChatLogInBody>(req.body);
             loadedAvatar = assertType<Avatar>(await getAvatar(info.avatarID));
         } catch {
             console.warn(
-                "invalid LogInBody in logIn: " +
+                "invalid ChatLogInBody in logIn: " +
                     JSON.stringify(req.body).slice(0, 1000)
             );
             res.status(400).end();
