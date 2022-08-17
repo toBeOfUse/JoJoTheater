@@ -240,6 +240,14 @@ class HTML5VideoController extends VideoController {
                     track.src = "/captions/" + cc.file;
                     track.kind = "subtitles";
                     track.srclang = cc.language;
+                    const cues = track.track.cues;
+                    if (cues) {
+                        for (const cue of Array.from(cues) as VTTCue[]) {
+                            if (cue.line) {
+                                cue.line = -3;
+                            }
+                        }
+                    }
                     this.videoElement.appendChild(track);
                 }
             }
