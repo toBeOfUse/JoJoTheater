@@ -136,5 +136,17 @@ function initBasicAPI(app: Express) {
         }
         res.end();
     });
+    app.get(APIPath.getUser, async (req, res) => {
+        if (is<{ id: number }>(req.body)) {
+            const user = await User.getUserByID(req.body.id);
+            if (user) {
+                res.json(await user.getPublicSnapshot());
+            } else {
+                res.status(404).end();
+            }
+        } else {
+            res.status(400).end();
+        }
+    });
 }
 export default initBasicAPI;

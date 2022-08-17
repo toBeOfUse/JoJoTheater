@@ -21,6 +21,7 @@ enum APIPath {
     signin = "/api/signin",
     editProfile = "/api/editProfile",
     signout = "/api/signout",
+    getUser = "/get/user",
 }
 
 interface PostBody {}
@@ -180,6 +181,7 @@ new PostEndpoint<SignupBody>(APIPath.signup, anywhere);
 new PostEndpoint<SigninBody>(APIPath.signin, anywhere);
 new PostEndpoint<{}>(APIPath.signout, anywhere);
 new PostEndpoint<EditProfileBody>(APIPath.editProfile, anywhere);
+new GetEndpoint<{ id: number }>(APIPath.getUser, anywhere);
 
 const endpoints = Endpoint.dir as Record<APIPath, Endpoint<PostBody | GetBody>>;
 
@@ -204,7 +206,7 @@ function getAvatarImageURL(avatarFile: string) {
 }
 
 export {
-    ChatLogInBody as LogInBody,
+    ChatLogInBody,
     SendMessageBody,
     AddVideoBody,
     ChangeSceneBody,
